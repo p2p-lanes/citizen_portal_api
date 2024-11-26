@@ -32,12 +32,7 @@ SECRET_KEY=your_secret_key
 ## Running the Application
 Follow these steps to run the application:
 
-1. Clone the repository:
-
-    ```bash
-    git clone https://github.com/your-username/citizen-portal-api.git
-    cd citizen-portal-api
-    ```
+1. Clone the repository.
 
 2. Ensure your `.env` file is correctly configured as shown above.
 
