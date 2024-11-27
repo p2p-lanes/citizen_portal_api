@@ -18,3 +18,4 @@ class Citizen(Base):
     email = Column(String, index=True, unique=True, nullable=False)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
+    spice = Column(String)

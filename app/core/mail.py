@@ -6,8 +6,8 @@ from typing import List, Optional
 import mailchimp_transactional
 from mailchimp_transactional.api_client import ApiClientError
 
-from .exceptions.mail_exceptions import ErrorMail, InvalidMail, RejectedMail
 from .config import settings
+from .exceptions.mail_exceptions import ErrorMail, InvalidMail, RejectedMail
 from .logger import logger
 
 mailchimp = mailchimp_transactional.Client(settings.MAILCHIMP_KEY)

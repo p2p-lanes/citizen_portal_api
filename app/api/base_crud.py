@@ -1,8 +1,11 @@
-from typing import Generic, TypeVar, Type, List, Optional
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from typing import Generic, List, Optional, Type, TypeVar
+
 from fastapi import HTTPException
+from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta
+from sqlalchemy.orm import Session
+
+from app.core.logger import logger
 
 ModelType = TypeVar('ModelType', bound=DeclarativeMeta)
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
@@ -16,14 +19,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def create(self, db: Session, obj: CreateSchemaType) -> ModelType:
         """Create a new record."""
         try:
-            db_obj = self.model(**obj.dict())
+            db_obj = self.model(**obj.model_dump())
             db.add(db_obj)
             db.commit()
             db.refresh(db_obj)
             return db_obj
         except Exception as e:
+            logger.error(f'Error creating {self.model.__name__}: {str(e)}')
             db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            raise e
 
     def get(self, db: Session, id: int) -> Optional[ModelType]:
         """Get a single record by id."""
@@ -34,9 +38,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
         return obj
 
-    def find(
-        self, db: Session, skip: int = 0, limit: int = 100
-    ) -> List[ModelType]:
+    def find(self, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]:
         """Get multiple records with pagination."""
         try:
             return db.query(self.model).offset(skip).limit(limit).all()

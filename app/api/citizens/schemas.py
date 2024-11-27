@@ -6,12 +6,16 @@ from pydantic import BaseModel
 
 class CitizenBase(BaseModel):
     email: str
-    first_name: Optional[str]
-    last_name: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class CitizenCreate(CitizenBase):
     pass
+
+
+class InternalCitizenCreate(CitizenCreate):
+    spice: Optional[str] = None
 
 
 class Citizen(CitizenBase):
