@@ -2,6 +2,7 @@ annotated-types==0.7.0
 anyio==4.6.2.post1
 asttokens==2.4.1
 certifi==2024.8.30
+charset-normalizer==3.4.0
 click==8.1.7
 comm==0.2.2
 debugpy==1.8.9
@@ -26,6 +27,7 @@ jedi==0.19.2
 Jinja2==3.1.4
 jupyter_client==8.6.3
 jupyter_core==5.7.2
+mailchimp-transactional==1.0.56
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
 matplotlib-inline==0.1.7
@@ -46,11 +48,13 @@ pydantic-extra-types==2.10.0
 pydantic-settings==2.6.1
 pydantic_core==2.27.1
 Pygments==2.18.0
+PyJWT==2.10.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-multipart==0.0.17
 PyYAML==6.0.2
 pyzmq==26.2.0
+requests==2.32.3
 rich==13.9.4
 shellingham==1.5.4
 six==1.16.0
@@ -64,6 +68,7 @@ traitlets==5.14.3
 typer==0.13.1
 typing_extensions==4.12.2
 ujson==5.10.0
+urllib3==2.2.3
 uvicorn==0.32.1
 uvloop==0.21.0
 watchfiles==1.0.0

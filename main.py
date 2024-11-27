@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Response
 
-from app.api.applications.views import router as applications_router
-from app.api.citizens.views import router as citizens_router
-from app.api.products.views import router as products_router
+from app.api.applications.routes import router as applications_router
+from app.api.citizens.routes import router as citizens_router
+from app.api.products.routes import router as products_router
 from app.core.database import create_db
 
 app = FastAPI()
