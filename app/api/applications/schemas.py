@@ -7,10 +7,10 @@ from app.api.citizens.models import Citizen
 
 class ApplicationBase(BaseModel):
     citizen_id: UUID
+    popup_city_id: UUID
     first_name: str
     last_name: str
-    email: str
-    telegram_username: Optional[str] = None
+    telegram: Optional[str] = None
     organization: Optional[str] = None
     role: Optional[str] = None
     gender: Optional[str] = None
@@ -21,7 +21,11 @@ class ApplicationCreate(ApplicationBase):
     pass
 
 
-class Application(ApplicationBase):
+class InternalApplicationCreate(ApplicationBase):
+    email: str
+
+
+class Application(InternalApplicationCreate):
     id: UUID
     citizen: Optional[Citizen] = None
 

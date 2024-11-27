@@ -1,12 +1,12 @@
-from sqlalchemy import Column, Float, String
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import text
 
 from app.core.database import Base
 
 
-class Product(Base):
-    __tablename__ = 'products'
+class PopUpCity(Base):
+    __tablename__ = 'popup_cities'
 
     id = Column(
         UUID(as_uuid=True),
@@ -16,5 +16,6 @@ class Product(Base):
         index=True,
     )
     name = Column(String, index=True, nullable=False)
-    description = Column(String)
-    price = Column(Float)
+    tagline = Column(String)
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
