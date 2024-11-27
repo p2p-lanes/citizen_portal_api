@@ -2,17 +2,19 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
+from app.api.citizens.models import Citizen
 
 
 class ApplicationBase(BaseModel):
+    citizen_id: UUID
     first_name: str
     last_name: str
     email: str
-    telegram_username: Optional[str]
-    organization: Optional[str]
-    role: Optional[str]
-    gender: Optional[str]
-    age: Optional[str]
+    telegram_username: Optional[str] = None
+    organization: Optional[str] = None
+    role: Optional[str] = None
+    gender: Optional[str] = None
+    age: Optional[str] = None
 
 
 class ApplicationCreate(ApplicationBase):
@@ -21,6 +23,9 @@ class ApplicationCreate(ApplicationBase):
 
 class Application(ApplicationBase):
     id: UUID
+    citizen: Optional[Citizen] = None
 
-    class Config:
-        from_attributes = True  # Allows Pydantic models to read SQLAlchemy models
+    model_config = {
+        'from_attributes': True,
+        'arbitrary_types_allowed': True,
+    }

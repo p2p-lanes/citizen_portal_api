@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.products import schemas
@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 # Create a new product
-@router.post('/', response_model=schemas.Product)
+@router.post('/', response_model=schemas.Product, status_code=status.HTTP_201_CREATED)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
     return product_crud.create(db=db, obj=product)
 

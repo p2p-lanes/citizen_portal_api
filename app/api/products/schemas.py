@@ -17,5 +17,6 @@ class ProductCreate(ProductBase):
 class Product(ProductBase):
     id: UUID
 
-    class Config:
-        from_attributes = True  # Allows Pydantic models to read SQLAlchemy models
+    model_config = {
+        'from_attributes': True  # Allows Pydantic models to read SQLAlchemy models
+    }

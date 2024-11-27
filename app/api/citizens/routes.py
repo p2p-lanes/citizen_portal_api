@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.citizens import schemas
@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 # Create a new citizen
-@router.post('/', response_model=schemas.Citizen)
+@router.post('/', response_model=schemas.Citizen, status_code=status.HTTP_201_CREATED)
 def create_citizen(citizen: schemas.CitizenCreate, db: Session = Depends(get_db)):
     return citizen_crud.create(db=db, obj=citizen)
 

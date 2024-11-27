@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import schemas
@@ -11,7 +11,9 @@ router = APIRouter()
 
 
 # Create a new application
-@router.post('/', response_model=schemas.Application)
+@router.post(
+    '/', response_model=schemas.Application, status_code=status.HTTP_201_CREATED
+)
 def create_application(
     application: schemas.ApplicationCreate, db: Session = Depends(get_db)
 ):

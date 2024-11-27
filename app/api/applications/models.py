@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
 
 from app.core.database import Base
@@ -23,3 +24,7 @@ class Application(Base):
     role = Column(String)
     gender = Column(String)
     age = Column(String)
+    citizen_id = Column(UUID(as_uuid=True), ForeignKey('citizens.id'), nullable=True)
+    citizen = relationship('Citizen', back_populates='applications', lazy='noload')
+
+    __mapper_args__ = {'exclude_properties': ['citizen']}

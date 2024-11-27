@@ -5,7 +5,9 @@ from pydantic import BaseModel
 
 
 class CitizenBase(BaseModel):
-    email: str
+    primary_email: str
+    secondary_email: Optional[str] = None
+    email_validated: bool = False
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
@@ -21,5 +23,6 @@ class InternalCitizenCreate(CitizenCreate):
 class Citizen(CitizenBase):
     id: UUID
 
-    class Config:
-        from_attributes = True  # Allows Pydantic models to read SQLAlchemy models
+    model_config = {
+        'from_attributes': True  # Allows Pydantic models to read SQLAlchemy models
+    }

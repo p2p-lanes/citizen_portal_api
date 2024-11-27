@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Boolean, Column, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
 
 from app.core.database import Base
@@ -15,7 +16,10 @@ class Citizen(Base):
         unique=True,
         index=True,
     )
-    email = Column(String, index=True, unique=True, nullable=False)
-    first_name = Column(String, index=True)
-    last_name = Column(String, index=True)
+    primary_email = Column(String, index=True, unique=True, nullable=False)
+    secondary_email = Column(String)
+    first_name = Column(String)
+    last_name = Column(String)
+    email_validated = Column(Boolean, default=False)
     spice = Column(String)
+    applications = relationship('Application', back_populates='citizen')

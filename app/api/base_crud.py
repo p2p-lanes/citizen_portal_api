@@ -2,6 +2,7 @@ from typing import Generic, List, Optional, Type, TypeVar
 
 from fastapi import HTTPException
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import Session
 
@@ -24,8 +25,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.commit()
             db.refresh(db_obj)
             return db_obj
+        except IntegrityError as e:
+            logger.error('Error creating %s: %s', self.model.__name__, str(e))
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail=f'A {self.model.__name__} with these unique fields already exists',
+            )
         except Exception as e:
-            logger.error(f'Error creating {self.model.__name__}: {str(e)}')
+            logger.error('Error creating %s: %s', self.model.__name__, str(e))
             db.rollback()
             raise e
 
