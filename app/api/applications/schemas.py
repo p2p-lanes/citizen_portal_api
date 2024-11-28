@@ -6,6 +6,12 @@ from pydantic import BaseModel, ConfigDict
 from app.api.citizens.schemas import Citizen
 
 
+class ApplicationFilter(BaseModel):
+    email: Optional[str] = None
+    citizen_id: Optional[UUID] = None
+    status: Optional[str] = None
+
+
 class ApplicationBase(BaseModel):
     citizen_id: UUID
     popup_city_id: UUID
