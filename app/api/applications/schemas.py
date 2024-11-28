@@ -2,7 +2,8 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
-from app.api.citizens.models import Citizen
+
+from app.api.citizens.schemas import Citizen
 
 
 class ApplicationBase(BaseModel):
@@ -29,7 +30,4 @@ class Application(InternalApplicationCreate):
     id: UUID
     citizen: Optional[Citizen] = None
 
-    model_config = {
-        'from_attributes': True,
-        'arbitrary_types_allowed': True,
-    }
+    model_config = {'from_attributes': True}

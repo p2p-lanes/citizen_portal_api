@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CitizenBase(BaseModel):
@@ -23,6 +23,4 @@ class InternalCitizenCreate(CitizenCreate):
 class Citizen(CitizenBase):
     id: UUID
 
-    model_config = {
-        'from_attributes': True  # Allows Pydantic models to read SQLAlchemy models
-    }
+    model_config = ConfigDict(from_attributes=True, exclude={'applications'})
