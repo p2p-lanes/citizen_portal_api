@@ -1,7 +1,10 @@
 import base64
+import posixpath
 import re
+import urllib.parse
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
 
 import mailchimp_transactional
 from mailchimp_transactional.api_client import ApiClientError
@@ -9,17 +12,29 @@ from mailchimp_transactional.api_client import ApiClientError
 from .config import settings
 from .exceptions.mail_exceptions import ErrorMail, InvalidMail, RejectedMail
 from .logger import logger
+from .utils import encode
 
 mailchimp = mailchimp_transactional.Client(settings.MAILCHIMP_KEY)
 
 
-def _generate_authenticate_url(receiver_mail: str, spice: str):
-    return f'{settings.FRONTEND_URL}/#/login?email={receiver_mail}&spice={spice}'
+def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: UUID):
+    url = posixpath.join(
+        settings.BACKEND_URL,
+        f'authenticate?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
+    )
+    token_url = encode(
+        {
+            'url': url,
+            'email': receiver_mail,
+            'citizen_id': citizen_id,
+        }
+    )
+    return f'{settings.FRONTEND_URL}/#/login?token_url={token_url}'
 
 
-def send_login_mail(receiver_mail: str, spice: str):
+def send_login_mail(receiver_mail: str, spice: str, citizen_id: UUID):
     params = {
-        'the_url': _generate_authenticate_url(receiver_mail, spice),
+        'the_url': _generate_authenticate_url(receiver_mail, spice, citizen_id),
         'festival_name': 'Citizen Portal',
     }
     template = 'auth-backoffice'

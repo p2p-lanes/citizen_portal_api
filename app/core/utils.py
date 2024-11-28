@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from uuid import UUID
 
 import jwt
 
@@ -8,7 +9,7 @@ from .config import settings
 
 class Encoder(json.JSONEncoder):
     def default(self, o):
-        if isinstance(o, (datetime)):
+        if isinstance(o, (datetime, UUID)):
             return str(o)
         return super().default(o)
 

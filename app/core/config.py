@@ -18,6 +18,7 @@ class Settings:
 
     SECRET_KEY: str = os.getenv('SECRET_KEY')
     MAILCHIMP_KEY: str = os.getenv('MAILCHIMP_KEY')
+    BACKEND_URL: str = os.getenv('BACKEND_URL')
     FRONTEND_URL: str = os.getenv('FRONTEND_URL')
 
 

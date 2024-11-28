@@ -21,6 +21,20 @@ def signup(citizen: schemas.CitizenCreate, db: Session = Depends(get_db)):
     return citizen_crud.signup(db=db, obj=citizen)
 
 
+@router.get('/authenticate')
+def authenticate(email: str, db: Session = Depends(get_db)):
+    return citizen_crud.authenticate(db=db, email=email)
+
+
+@router.post('/login')
+def login(
+    email: str,
+    spice: str,
+    db: Session = Depends(get_db),
+):
+    return citizen_crud.login(db=db, email=email, spice=spice)
+
+
 # Get all citizens
 @router.get('/', response_model=list[schemas.Citizen])
 def get_citizens(
