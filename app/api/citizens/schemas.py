@@ -4,6 +4,10 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
+class Authenticate(BaseModel):
+    email: str
+
+
 class CitizenBase(BaseModel):
     primary_email: str
     secondary_email: Optional[str] = None

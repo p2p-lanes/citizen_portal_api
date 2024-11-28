@@ -31,9 +31,14 @@ class CRUDCitizen(
 
     def authenticate(self, db: Session, *, email: str) -> models.Citizen:
         citizen = self.get_by_email(db, email)
+        spice = create_spice()
         if not citizen:
-            raise HTTPException(status_code=404, detail='Citizen not found')
-        citizen.spice = create_spice()
+            to_create = schemas.InternalCitizenCreate(
+                primary_email=email,
+                spice=spice,
+            )
+            citizen = self.create(db, to_create)
+        citizen.spice = spice
         db.commit()
         db.refresh(citizen)
         send_login_mail(email, citizen.spice, citizen.id)
