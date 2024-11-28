@@ -59,7 +59,7 @@ class Application(Base):
     citizen_id = Column(UUID(as_uuid=True), ForeignKey('citizens.id'), nullable=False)
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')
     popup_city_id = Column(
-        UUID(as_uuid=True), ForeignKey('popup_cities.id'), nullable=False
+        UUID(as_uuid=True), ForeignKey('popups.id'), nullable=False
     )
     popup_city = relationship('PopUpCity', lazy='noload')
 
