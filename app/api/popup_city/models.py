@@ -6,7 +6,7 @@ from app.core.database import Base
 
 
 class PopUpCity(Base):
-    __tablename__ = 'popup_cities'
+    __tablename__ = 'popups'
 
     id = Column(
         UUID(as_uuid=True),

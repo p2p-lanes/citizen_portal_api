@@ -10,9 +10,9 @@ app = FastAPI()
 
 create_db()
 # Include routers
-app.include_router(applications_router, prefix='/applications', tags=['applications'])
-app.include_router(citizens_router, prefix='/citizens', tags=['citizens'])
-app.include_router(popup_cities_router, prefix='/popup_cities', tags=['popup_cities'])
+app.include_router(applications_router, prefix='/applications', tags=['Applications'])
+app.include_router(citizens_router, prefix='/citizens', tags=['Citizens'])
+app.include_router(popup_cities_router, prefix='/popups', tags=['Popups'])
 
 
 origins = ['*']
