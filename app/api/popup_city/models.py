@@ -17,5 +17,7 @@ class PopUpCity(Base):
     )
     name = Column(String, index=True, nullable=False)
     tagline = Column(String)
+    location = Column(String)
+    image_url = Column(String)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
