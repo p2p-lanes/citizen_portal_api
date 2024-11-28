@@ -12,9 +12,7 @@ class ApplicationFilter(BaseModel):
     status: Optional[str] = None
 
 
-class ApplicationBase(BaseModel):
-    citizen_id: UUID
-    popup_city_id: UUID
+class ApplicationBaseCommon(BaseModel):
     first_name: str
     last_name: str
     telegram: Optional[str] = None
@@ -52,8 +50,18 @@ class ApplicationBase(BaseModel):
     status: Optional[str] = None
 
 
+class ApplicationBase(ApplicationBaseCommon):
+    citizen_id: UUID
+    popup_city_id: UUID
+
+
 class ApplicationCreate(ApplicationBase):
     pass
+
+
+class ApplicationUpdate(ApplicationBaseCommon):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class InternalApplicationCreate(ApplicationBase):

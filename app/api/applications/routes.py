@@ -38,3 +38,13 @@ def get_application(application_id: UUID, db: Session = Depends(get_db)):
     if db_application is None:
         raise HTTPException(status_code=404, detail='Application not found')
     return db_application
+
+
+# Update application
+@router.put('/{application_id}', response_model=schemas.Application)
+def update_application(
+    application_id: UUID,
+    application: schemas.ApplicationUpdate,
+    db: Session = Depends(get_db),
+):
+    return application_crud.update(db=db, id=application_id, obj=application)
