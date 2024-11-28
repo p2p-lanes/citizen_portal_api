@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.api.citizens.schemas import Citizen
 
@@ -30,4 +30,6 @@ class Application(InternalApplicationCreate):
     id: UUID
     citizen: Optional[Citizen] = None
 
-    model_config = {'from_attributes': True}
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

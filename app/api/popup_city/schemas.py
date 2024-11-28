@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class PopUpCityBase(BaseModel):
@@ -19,6 +19,6 @@ class PopUpCityCreate(PopUpCityBase):
 class PopUpCity(PopUpCityBase):
     id: UUID
 
-    model_config = {
-        'from_attributes': True  # Allows Pydantic models to read SQLAlchemy models
-    }
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

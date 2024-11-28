@@ -23,4 +23,7 @@ class InternalCitizenCreate(CitizenCreate):
 class Citizen(CitizenBase):
     id: UUID
 
-    model_config = ConfigDict(from_attributes=True, exclude={'applications'})
+    model_config = ConfigDict(
+        from_attributes=True,
+        exclude={'applications'},
+    )
