@@ -16,6 +16,34 @@ class ApplicationBase(BaseModel):
     role: Optional[str] = None
     gender: Optional[str] = None
     age: Optional[str] = None
+    social_media: Optional[str] = None
+    residence: Optional[str] = None
+    eth_address: Optional[str] = None
+
+    duration: Optional[str] = None
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+
+    builder_boolean: Optional[bool] = None
+    builder_description: Optional[str] = None
+
+    investor: Optional[bool] = None
+    success_definition: Optional[list[str]] = None
+    top_tracks: Optional[list[str]] = None
+
+    # Family information
+    brings_spouse: Optional[bool] = None
+    spouse_info: Optional[str] = None
+    spouse_email: Optional[str] = None
+    brings_kids: Optional[bool] = None
+    kids_info: Optional[str] = None
+
+    # Scholarship information
+    scolarship_request: Optional[bool] = None
+    scolarship_categories: Optional[list[str]] = None
+    scolarship_details: Optional[str] = None
+
+    status: Optional[str] = None
 
 
 class ApplicationCreate(ApplicationBase):
