@@ -46,12 +46,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
         return obj
 
-    def find(self, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]:
-        """Get multiple records with pagination."""
-        try:
-            return db.query(self.model).offset(skip).limit(limit).all()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    def find(
+        self,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        filters: BaseModel | None = None,
+    ) -> List[ModelType]:
+        """Get multiple records with pagination and filters."""
+        query = db.query(self.model)
+
+        if filters:
+            for field, value in filters.model_dump().items():
+                if hasattr(self.model, field) and value is not None:
+                    query = query.filter(getattr(self.model, field) == value)
+
+        return query.offset(skip).limit(limit).all()
 
     def update(self, db: Session, id: int, obj: UpdateSchemaType) -> ModelType:
         """Update a record."""

@@ -22,8 +22,18 @@ def create_application(
 
 # Get all applications
 @router.get('/', response_model=list[schemas.Application])
-def get_applications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return application_crud.find(db=db, skip=skip, limit=limit)
+def get_applications(
+    email: str | None = None,
+    citizen_id: UUID | None = None,
+    status: str | None = None,  # assuming you have a status field
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    filters = {'email': email, 'citizen_id': citizen_id, 'status': status}
+    filters = {k: v for k, v in filters.items() if v is not None}
+
+    return application_crud.find(db=db, skip=skip, limit=limit, filters=filters)
 
 
 # Get application by ID

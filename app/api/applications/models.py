@@ -1,8 +1,5 @@
-from enum import Enum
-
 from sqlalchemy import Boolean, Column, ForeignKey, String
-from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
 
@@ -58,9 +55,7 @@ class Application(Base):
 
     citizen_id = Column(UUID(as_uuid=True), ForeignKey('citizens.id'), nullable=False)
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')
-    popup_city_id = Column(
-        UUID(as_uuid=True), ForeignKey('popups.id'), nullable=False
-    )
+    popup_city_id = Column(UUID(as_uuid=True), ForeignKey('popups.id'), nullable=False)
     popup_city = relationship('PopUpCity', lazy='noload')
 
     __mapper_args__ = {'exclude_properties': ['citizen', 'popup_city']}

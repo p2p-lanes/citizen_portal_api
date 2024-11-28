@@ -27,3 +27,7 @@ class Citizen(CitizenBase):
         from_attributes=True,
         exclude={'applications'},
     )
+
+
+class CitizenFilter(BaseModel):
+    primary_email: str | None = None

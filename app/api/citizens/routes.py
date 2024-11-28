@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.citizens import schemas
@@ -23,8 +23,13 @@ def signup(citizen: schemas.CitizenCreate, db: Session = Depends(get_db)):
 
 # Get all citizens
 @router.get('/', response_model=list[schemas.Citizen])
-def get_citizens(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return citizen_crud.find(db=db, skip=skip, limit=limit)
+def get_citizens(
+    filters: schemas.CitizenFilter = Depends(),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return citizen_crud.find(db=db, skip=skip, limit=limit, filters=filters)
 
 
 # Get citizen by ID
