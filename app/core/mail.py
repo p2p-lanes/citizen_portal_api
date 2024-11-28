@@ -29,7 +29,7 @@ def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: UUID)
             'citizen_id': citizen_id,
         }
     )
-    return f'{settings.FRONTEND_URL}/#/login?token_url={token_url}'
+    return posixpath.join(settings.FRONTEND_URL, f'/auth?token_url={token_url}')
 
 
 def send_login_mail(receiver_mail: str, spice: str, citizen_id: UUID):
