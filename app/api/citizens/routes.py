@@ -21,7 +21,7 @@ def signup(citizen: schemas.CitizenCreate, db: Session = Depends(get_db)):
     return citizen_crud.signup(db=db, obj=citizen)
 
 
-@router.get('/authenticate')
+@router.post('/authenticate')
 def authenticate(email: str, db: Session = Depends(get_db)):
     return citizen_crud.authenticate(db=db, email=email)
 
