@@ -7,8 +7,8 @@ from app.core.database import get_db
 router = APIRouter()
 
 
-@router.post('/send_mail', status_code=status.HTTP_201_CREATED)
-def send_mail(
+@router.post('/send_email', status_code=status.HTTP_201_CREATED)
+def send_email(
     webhook_payload: schemas.WebhookPayload,
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
