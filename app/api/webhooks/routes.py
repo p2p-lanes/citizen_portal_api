@@ -11,7 +11,7 @@ router = APIRouter()
 def send_mail(
     webhook_payload: schemas.WebhookPayload,
     template: str = Query(..., description='Email template name'),
-    fields: dict = Query(..., description='Template fields'),
+    fields: str = Query(..., description='Template fields'),
     platform_name: str = Query(..., description='Platform name'),
     pop_up_city: str = Query(..., description='Pop-up city name'),
     db: Session = Depends(get_db),
