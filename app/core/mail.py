@@ -20,7 +20,7 @@ mailchimp = mailchimp_transactional.Client(settings.MAILCHIMP_KEY)
 def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: UUID):
     url = posixpath.join(
         settings.BACKEND_URL,
-        f'authenticate?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
+        f'citizens/authenticate?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
     )
     token_url = encode(
         {
@@ -29,7 +29,7 @@ def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: UUID)
             'citizen_id': citizen_id,
         }
     )
-    return posixpath.join(settings.FRONTEND_URL, f'/auth?token_url={token_url}')
+    return urllib.parse.urljoin(settings.FRONTEND_URL, f'/auth?token_url={token_url}')
 
 
 def send_login_mail(receiver_mail: str, spice: str, citizen_id: UUID):
