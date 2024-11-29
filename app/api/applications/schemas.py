@@ -9,6 +9,7 @@ from app.api.citizens.schemas import Citizen
 class ApplicationFilter(BaseModel):
     email: Optional[str] = None
     citizen_id: Optional[UUID] = None
+    popup_city_id: Optional[UUID] = None
     status: Optional[str] = None
 
 
