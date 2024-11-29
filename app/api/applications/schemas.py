@@ -1,5 +1,6 @@
 from typing import Optional
 from uuid import UUID
+from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
@@ -26,8 +27,8 @@ class ApplicationBaseCommon(BaseModel):
     eth_address: Optional[str] = None
 
     duration: Optional[str] = None
-    check_in: Optional[str] = None
-    check_out: Optional[str] = None
+    check_in: Optional[date] = None
+    check_out: Optional[date] = None
 
     builder_boolean: Optional[bool] = None
     builder_description: Optional[str] = None

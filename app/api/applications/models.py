@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, String
+from sqlalchemy import Boolean, Column, Date, ForeignKey, String
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
@@ -29,8 +29,8 @@ class Application(Base):
     eth_address = Column(String)
 
     duration = Column(String)
-    check_in = Column(String, nullable=True)
-    check_out = Column(String, nullable=True)
+    check_in = Column(Date, nullable=True)
+    check_out = Column(Date, nullable=True)
 
     builder_boolean = Column(Boolean)
     builder_description = Column(String)
