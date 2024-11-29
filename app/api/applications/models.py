@@ -38,9 +38,10 @@ class Application(Base):
     hackathon_interest = Column(Boolean)
     gitcoin_oss = Column(Boolean)
     draft_and_demos = Column(Boolean)
-    host_session = Column(Boolean)
+    host_session = Column(String)
     personal_goals = Column(String)
     referral = Column(String)
+    info_to_share = Column(ARRAY(String), nullable=True)
 
     investor = Column(Boolean)
     success_definition = Column(ARRAY(String), nullable=True)
