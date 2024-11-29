@@ -29,8 +29,8 @@ class Application(Base):
     eth_address = Column(String)
 
     duration = Column(String)
-    check_in = Column(String)
-    check_out = Column(String)
+    check_in = Column(String, nullable=True)
+    check_out = Column(String, nullable=True)
 
     builder_boolean = Column(Boolean)
     builder_description = Column(String)
