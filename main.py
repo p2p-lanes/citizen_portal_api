@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.applications.routes import router as applications_router
 from app.api.citizens.routes import router as citizens_router
 from app.api.popup_city.routes import router as popup_cities_router
+from app.api.webhooks.routes import router as webhooks_router
 from app.core.database import create_db
 
 app = FastAPI()
@@ -13,7 +14,7 @@ create_db()
 app.include_router(applications_router, prefix='/applications', tags=['Applications'])
 app.include_router(citizens_router, prefix='/citizens', tags=['Citizens'])
 app.include_router(popup_cities_router, prefix='/popups', tags=['Popups'])
-
+app.include_router(webhooks_router, prefix='/webhooks', tags=['Webhooks'])
 
 origins = ['*']
 app.add_middleware(
