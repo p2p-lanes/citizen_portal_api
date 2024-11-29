@@ -35,6 +35,13 @@ class Application(Base):
     builder_boolean = Column(Boolean)
     builder_description = Column(String)
 
+    hackathon_interest = Column(Boolean)
+    gitcoin_oss = Column(Boolean)
+    draft_and_demos = Column(Boolean)
+    host_session = Column(Boolean)
+    personal_goals = Column(String)
+    referral = Column(String)
+
     investor = Column(Boolean)
     success_definition = Column(ARRAY(String), nullable=True)
     top_tracks = Column(ARRAY(String), nullable=True)

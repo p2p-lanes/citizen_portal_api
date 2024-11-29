@@ -31,6 +31,13 @@ class ApplicationBaseCommon(BaseModel):
     builder_boolean: Optional[bool] = None
     builder_description: Optional[str] = None
 
+    hackathon_interest: Optional[bool] = None
+    gitcoin_oss: Optional[bool] = None
+    draft_and_demos: Optional[bool] = None
+    host_session: Optional[bool] = None
+    personal_goals: Optional[str] = None
+    referral: Optional[str] = None
+
     investor: Optional[bool] = None
     success_definition: Optional[list[str]] = None
     top_tracks: Optional[list[str]] = None
