@@ -34,9 +34,10 @@ class ApplicationBaseCommon(BaseModel):
     hackathon_interest: Optional[bool] = None
     gitcoin_oss: Optional[bool] = None
     draft_and_demos: Optional[bool] = None
-    host_session: Optional[bool] = None
+    host_session: Optional[str] = None
     personal_goals: Optional[str] = None
     referral: Optional[str] = None
+    info_to_share: Optional[list[str]] = None
 
     investor: Optional[bool] = None
     success_definition: Optional[list[str]] = None
