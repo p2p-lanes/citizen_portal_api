@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from app.core.database import Base
 
@@ -19,3 +19,5 @@ class PopUpCity(Base):
     image_url = Column(String)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
+    clickable_in_portal = Column(Boolean, default=False)
+    visible_in_portal = Column(Boolean, default=False)

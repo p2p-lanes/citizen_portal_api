@@ -11,6 +11,8 @@ class PopUpCityBase(BaseModel):
     image_url: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    clickable_in_portal: Optional[bool] = False
+    visible_in_portal: Optional[bool] = False
 
 
 class PopUpCityCreate(PopUpCityBase):
