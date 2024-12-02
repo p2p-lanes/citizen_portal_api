@@ -10,7 +10,7 @@ class Authenticate(BaseModel):
 class CitizenBase(BaseModel):
     primary_email: str
     secondary_email: Optional[str] = None
-    email_validated: bool = False
+    email_validated: Optional[bool] = False
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
