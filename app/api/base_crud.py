@@ -1,6 +1,6 @@
 from typing import Generic, List, Optional, Type, TypeVar
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -28,9 +28,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         except IntegrityError as e:
             logger.error('Error creating %s: %s', self.model.__name__, str(e))
             db.rollback()
+            orig = str(e.orig)
+            detail = 'Integrity error'
+            if orig and orig.find('DETAIL') != -1:
+                detail = orig.split('DETAIL: ')[1].split('\n')[0].strip()
             raise HTTPException(
-                status_code=409,
-                detail=f'A {self.model.__name__} with these unique fields already exists',
+                status_code=status.HTTP_409_CONFLICT,
+                detail=detail,
             )
         except Exception as e:
             logger.error('Error creating %s: %s', self.model.__name__, str(e))
