@@ -35,7 +35,7 @@ def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
         'the_url': _generate_authenticate_url(receiver_mail, spice, citizen_id),
         'festival_name': 'Citizen Portal',
     }
-    template = 'auth-backoffice'
+    template = 'auth_citizen_portal'
     return send_mail(
         receiver_mail=receiver_mail,
         template=template,
