@@ -23,17 +23,46 @@ class CRUDApplication(
         email = citizen.primary_email
         obj = schemas.InternalApplicationCreate(**obj.model_dump(), email=email)
 
-        params = {
-            "submission_form_url": "https://citizen-portal-ten.vercel.app/portal",
-            "first_name": obj.first_name
-        }
-        send_mail(
-            receiver_mail=email,
-            template="application-recieved",
-            params=params,
-        )
+        if obj.status != "draft":
+            params = {
+                "submission_form_url": "https://citizen-portal-ten.vercel.app/portal",
+                "first_name": obj.first_name
+            }
+            send_mail(
+                receiver_mail=email,
+                template="application-recieved",
+                params=params,
+            )
 
         return super().create(db, obj)
+    
+
+    def update(self, db: Session, id: int, obj: UpdateSchemaType) -> ModelType:
+        
+        application = super().update(db, obj)
+        
+        citizen = (
+            db.query(CitizenModel).filter(CitizenModel.id == obj.citizen_id).first()
+        )
+        if not citizen:
+            raise HTTPException(status_code=404, detail='Citizen not found')
+        email = citizen.primary_email
+
+        
+        id = application.id
+
+        if obj.status != "draft":
+            params = {
+                "submission_form_url": "https://citizen-portal-ten.vercel.app/portal",
+                "first_name": obj.first_name,
+                "id": id
+            }
+            send_mail(
+                receiver_mail=email,
+                template="application-recieved",
+                params=params,
+            )
+        return application
 
 
 application = CRUDApplication(models.Application)
