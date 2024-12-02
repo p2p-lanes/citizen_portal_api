@@ -1,7 +1,6 @@
-from sqlalchemy import Boolean, Column, Date, ForeignKey, String
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import text
 
 from app.core.database import Base
 
@@ -10,9 +9,9 @@ class Application(Base):
     __tablename__ = 'applications'
 
     id = Column(
-        UUID(as_uuid=True),
+        Integer,
         primary_key=True,
-        server_default=text('uuid_generate_v4()'),
+        autoincrement=True,
         unique=True,
         index=True,
     )
@@ -61,9 +60,9 @@ class Application(Base):
 
     status = Column(String)
 
-    citizen_id = Column(UUID(as_uuid=True), ForeignKey('citizens.id'), nullable=False)
+    citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')
-    popup_city_id = Column(UUID(as_uuid=True), ForeignKey('popups.id'), nullable=False)
+    popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     popup_city = relationship('PopUpCity', lazy='noload')
 
     __mapper_args__ = {'exclude_properties': ['citizen', 'popup_city']}

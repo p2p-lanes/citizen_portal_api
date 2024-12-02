@@ -1,6 +1,4 @@
-from sqlalchemy import Column, DateTime, String
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import text
+from sqlalchemy import Column, DateTime, Integer, String
 
 from app.core.database import Base
 
@@ -9,9 +7,9 @@ class PopUpCity(Base):
     __tablename__ = 'popups'
 
     id = Column(
-        UUID(as_uuid=True),
+        Integer,
         primary_key=True,
-        server_default=text('uuid_generate_v4()'),
+        autoincrement=True,
         unique=True,
         index=True,
     )

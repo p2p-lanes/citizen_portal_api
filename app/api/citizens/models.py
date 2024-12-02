@@ -1,7 +1,5 @@
-from sqlalchemy import Boolean, Column, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import text
 
 from app.core.database import Base
 
@@ -10,9 +8,9 @@ class Citizen(Base):
     __tablename__ = 'citizens'
 
     id = Column(
-        UUID(as_uuid=True),
+        Integer,
         primary_key=True,
-        server_default=text('uuid_generate_v4()'),
+        autoincrement=True,
         unique=True,
         index=True,
     )
