@@ -1,5 +1,4 @@
 import base64
-import posixpath
 import re
 import urllib.parse
 from datetime import datetime
@@ -17,7 +16,7 @@ mailchimp = mailchimp_transactional.Client(settings.MAILCHIMP_KEY)
 
 
 def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: int):
-    url = posixpath.join(
+    url = urllib.parse.urljoin(
         settings.BACKEND_URL,
         f'citizens/authenticate?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
     )
@@ -57,7 +56,7 @@ def send_mail(
     send_at: Optional[datetime] = None,
     cc: Optional[List[str]] = None,
 ):
-    logger.info('sending %s email', template)
+    logger.info('sending %s email to %s', template, receiver_mail)
     global_merge_vars = [{'name': k, 'content': v} for k, v in params.items()]
 
     attachment = []

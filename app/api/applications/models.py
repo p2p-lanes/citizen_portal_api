@@ -58,6 +58,8 @@ class Application(Base):
     scolarship_categories = Column(ARRAY(String), nullable=True)
     scolarship_details = Column(String)
 
+    sent_mails = Column(ARRAY(String), nullable=True)
+
     status = Column(String)
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
