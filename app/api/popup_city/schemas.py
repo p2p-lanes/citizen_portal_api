@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 class PopUpCityBase(BaseModel):
     name: str
+    slug: str
     tagline: Optional[str] = None
     location: Optional[str] = None
     image_url: Optional[str] = None
