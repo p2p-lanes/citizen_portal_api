@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -48,7 +46,7 @@ def get_citizens(
 
 # Get citizen by ID
 @router.get('/{citizen_id}', response_model=schemas.Citizen)
-def get_citizen(citizen_id: UUID, db: Session = Depends(get_db)):
+def get_citizen(citizen_id: int, db: Session = Depends(get_db)):
     db_citizen = citizen_crud.get(db=db, id=citizen_id)
     if db_citizen is None:
         raise HTTPException(status_code=404, detail='Citizen not found')

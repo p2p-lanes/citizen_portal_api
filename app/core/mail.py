@@ -4,7 +4,6 @@ import re
 import urllib.parse
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
 
 import mailchimp_transactional
 from mailchimp_transactional.api_client import ApiClientError
@@ -17,7 +16,7 @@ from .utils import encode
 mailchimp = mailchimp_transactional.Client(settings.MAILCHIMP_KEY)
 
 
-def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: UUID):
+def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: int):
     url = posixpath.join(
         settings.BACKEND_URL,
         f'citizens/authenticate?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
@@ -32,7 +31,7 @@ def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: UUID)
     return urllib.parse.urljoin(settings.FRONTEND_URL, f'/auth?token_url={token_url}')
 
 
-def send_login_mail(receiver_mail: str, spice: str, citizen_id: UUID):
+def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
     params = {
         'the_url': _generate_authenticate_url(receiver_mail, spice, citizen_id),
         'festival_name': 'Citizen Portal',

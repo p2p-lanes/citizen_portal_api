@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from datetime import date
 
 from pydantic import BaseModel, ConfigDict
@@ -9,8 +8,8 @@ from app.api.citizens.schemas import Citizen
 
 class ApplicationFilter(BaseModel):
     email: Optional[str] = None
-    citizen_id: Optional[UUID] = None
-    popup_city_id: Optional[UUID] = None
+    citizen_id: Optional[int] = None
+    popup_city_id: Optional[int] = None
     status: Optional[str] = None
 
 
@@ -61,8 +60,8 @@ class ApplicationBaseCommon(BaseModel):
 
 
 class ApplicationBase(ApplicationBaseCommon):
-    citizen_id: UUID
-    popup_city_id: UUID
+    citizen_id: int
+    popup_city_id: int
 
 
 class ApplicationCreate(ApplicationBase):
@@ -79,7 +78,7 @@ class InternalApplicationCreate(ApplicationBase):
 
 
 class Application(InternalApplicationCreate):
-    id: UUID
+    id: int
     citizen: Optional[Citizen] = None
 
     model_config = ConfigDict(

@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,7 +24,7 @@ class InternalCitizenCreate(CitizenCreate):
 
 
 class Citizen(CitizenBase):
-    id: UUID
+    id: int
 
     model_config = ConfigDict(
         from_attributes=True,

@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -33,7 +31,7 @@ def get_applications(
 
 # Get application by ID
 @router.get('/{application_id}', response_model=schemas.Application)
-def get_application(application_id: UUID, db: Session = Depends(get_db)):
+def get_application(application_id: int, db: Session = Depends(get_db)):
     db_application = application_crud.get(db=db, id=application_id)
     if db_application is None:
         raise HTTPException(status_code=404, detail='Application not found')
@@ -43,7 +41,7 @@ def get_application(application_id: UUID, db: Session = Depends(get_db)):
 # Update application
 @router.put('/{application_id}', response_model=schemas.Application)
 def update_application(
-    application_id: UUID,
+    application_id: int,
     application: schemas.ApplicationUpdate,
     db: Session = Depends(get_db),
 ):

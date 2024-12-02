@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
@@ -19,7 +18,7 @@ class PopUpCityCreate(PopUpCityBase):
 
 
 class PopUpCity(PopUpCityBase):
-    id: UUID
+    id: int
 
     model_config = ConfigDict(
         from_attributes=True,
