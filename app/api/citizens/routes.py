@@ -13,6 +13,7 @@ router = APIRouter()
 @router.post('/', response_model=schemas.Citizen, status_code=status.HTTP_201_CREATED)
 def create_citizen(
     citizen: schemas.CitizenCreate,
+    current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     return citizen_crud.create(db=db, obj=citizen)
@@ -53,7 +54,7 @@ def login(
 # Get all citizens
 @router.get('/', response_model=list[schemas.Citizen])
 def get_citizens(
-    current_citizen: TokenData = Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
     filters: schemas.CitizenFilter = Depends(),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=100),
@@ -66,7 +67,7 @@ def get_citizens(
 @router.get('/{citizen_id}', response_model=schemas.Citizen)
 def get_citizen(
     citizen_id: int,
-    current_citizen: TokenData = Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     db_citizen = citizen_crud.get(db=db, id=citizen_id)
