@@ -18,7 +18,7 @@ mailchimp = mailchimp_transactional.Client(settings.MAILCHIMP_KEY)
 def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: int):
     url = urllib.parse.urljoin(
         settings.BACKEND_URL,
-        f'citizens/authenticate?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
+        f'citizens/login?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
     )
     token_url = encode(
         {
