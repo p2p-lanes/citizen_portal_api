@@ -1,6 +1,6 @@
 import random
 import string
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.base_crud import CRUDBase
 from app.api.citizens import models, schemas
 from app.core.mail import send_login_mail
+from app.core.security import TokenData
 
 
 def create_spice() -> str:
@@ -18,6 +19,22 @@ def create_spice() -> str:
 class CRUDCitizen(
     CRUDBase[models.Citizen, schemas.CitizenCreate, schemas.CitizenCreate]
 ):
+    def check_permission(self, db_obj: models.Citizen, user: TokenData) -> bool:
+        return db_obj.id == user.citizen_id
+
+    def find(
+        self,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        filters: schemas.CitizenFilter | None = None,
+        user: TokenData | None = None,
+    ) -> List[models.Citizen]:
+        if user:
+            filters = filters or schemas.CitizenFilter()
+            filters.id = user.citizen_id
+        return super().find(db, skip, limit, filters)
+
     def get_by_email(self, db: Session, email: str) -> Optional[models.Citizen]:
         return db.query(self.model).filter(self.model.primary_email == email).first()
 

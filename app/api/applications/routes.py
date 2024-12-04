@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import schemas
@@ -19,7 +19,7 @@ def create_application(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return application_crud.create(db=db, obj=application)
+    return application_crud.create(db=db, obj=application, user=current_user)
 
 
 @router.get('/', response_model=list[schemas.Application])
@@ -30,7 +30,13 @@ def get_applications(
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
-    return application_crud.find(db=db, skip=skip, limit=limit, filters=filters)
+    return application_crud.find(
+        db=db,
+        skip=skip,
+        limit=limit,
+        filters=filters,
+        user=current_user,
+    )
 
 
 @router.get('/{application_id}', response_model=schemas.Application)
@@ -39,10 +45,7 @@ def get_application(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    db_application = application_crud.get(db=db, id=application_id)
-    if db_application is None:
-        raise HTTPException(status_code=404, detail='Application not found')
-    return db_application
+    return application_crud.get(db=db, id=application_id, user=current_user)
 
 
 @router.put('/{application_id}', response_model=schemas.Application)
@@ -52,4 +55,9 @@ def update_application(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return application_crud.update(db=db, id=application_id, obj=application)
+    return application_crud.update(
+        db=db,
+        id=application_id,
+        obj=application,
+        user=current_user,
+    )

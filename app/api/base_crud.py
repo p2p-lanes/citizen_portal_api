@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import Session
 
 from app.core.logger import logger
+from app.core.security import TokenData
 
 ModelType = TypeVar('ModelType', bound=DeclarativeMeta)
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
@@ -17,7 +18,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    def create(self, db: Session, obj: CreateSchemaType) -> ModelType:
+    def check_permission(self, db_obj: ModelType, user: TokenData) -> bool:
+        """Override this method to implement permission checks"""
+        return True
+
+    def create(self, db: Session, obj: CreateSchemaType, user: TokenData) -> ModelType:
         """Create a new record."""
         try:
             db_obj = self.model(**obj.model_dump())
@@ -41,12 +46,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.rollback()
             raise e
 
-    def get(self, db: Session, id: int) -> Optional[ModelType]:
-        """Get a single record by id."""
+    def get(self, db: Session, id: int, user: TokenData) -> Optional[ModelType]:
+        """Get a single record by id with permission check."""
         obj = db.query(self.model).filter(self.model.id == id).first()
         if not obj:
             raise HTTPException(
                 status_code=404, detail=f'{self.model.__name__} not found'
+            )
+        if not self.check_permission(obj, user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail='Not authorized to access this resource',
             )
         return obj
 
@@ -56,8 +66,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         skip: int = 0,
         limit: int = 100,
         filters: BaseModel | None = None,
+        user: TokenData | None = None,
     ) -> List[ModelType]:
-        """Get multiple records with pagination and filters."""
+        """Get multiple records with pagination, filters and permission check."""
         query = db.query(self.model)
 
         if filters:
@@ -67,10 +78,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         return query.offset(skip).limit(limit).all()
 
-    def update(self, db: Session, id: int, obj: UpdateSchemaType) -> ModelType:
+    def update(
+        self,
+        db: Session,
+        id: int,
+        obj: UpdateSchemaType,
+        user: TokenData,
+    ) -> ModelType:
         """Update a record."""
         try:
-            db_obj = self.get(db, id)  # This will raise 404 if not found
+            db_obj = self.get(db, id, user)  # This will raise 404 if not found
             obj_data = obj.dict(exclude_unset=True)
 
             for field, value in obj_data.items():
@@ -85,10 +102,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.rollback()
             raise HTTPException(status_code=400, detail=str(e))
 
-    def delete(self, db: Session, id: int) -> ModelType:
+    def delete(self, db: Session, id: int, user: TokenData) -> ModelType:
         """Delete a record."""
         try:
-            obj = self.get(db, id)  # This will raise 404 if not found
+            obj = self.get(db, id, user)  # This will raise 404 if not found
             db.delete(obj)
             db.commit()
             return obj

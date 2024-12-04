@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.citizens import schemas
@@ -7,16 +7,6 @@ from app.core.database import get_db
 from app.core.security import Token, TokenData, create_access_token, get_current_user
 
 router = APIRouter()
-
-
-# Create a new citizen
-@router.post('/', response_model=schemas.Citizen, status_code=status.HTTP_201_CREATED)
-def create_citizen(
-    citizen: schemas.CitizenCreate,
-    current_user: TokenData = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return citizen_crud.create(db=db, obj=citizen)
 
 
 @router.post('/signup', response_model=schemas.Citizen)
@@ -60,7 +50,13 @@ def get_citizens(
     limit: int = Query(default=100, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    return citizen_crud.find(db=db, skip=skip, limit=limit, filters=filters)
+    return citizen_crud.find(
+        db=db,
+        skip=skip,
+        limit=limit,
+        filters=filters,
+        user=current_user,
+    )
 
 
 # Get citizen by ID
@@ -70,7 +66,4 @@ def get_citizen(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    db_citizen = citizen_crud.get(db=db, id=citizen_id)
-    if db_citizen is None:
-        raise HTTPException(status_code=404, detail='Citizen not found')
-    return db_citizen
+    return citizen_crud.get(db=db, id=citizen_id, user=current_user)
