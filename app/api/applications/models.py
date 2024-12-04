@@ -25,6 +25,7 @@ class Application(Base):
     age = Column(String, nullable=True)
     social_media = Column(String)
     residence = Column(String)
+    local_resident = Column(Boolean)
     eth_address = Column(String)
 
     duration = Column(String)

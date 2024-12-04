@@ -23,6 +23,7 @@ class ApplicationBaseCommon(BaseModel):
     age: Optional[str] = None
     social_media: Optional[str] = None
     residence: Optional[str] = None
+    local_resident: Optional[bool] = None
     eth_address: Optional[str] = None
 
     duration: Optional[str] = None
