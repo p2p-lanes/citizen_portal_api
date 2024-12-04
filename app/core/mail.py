@@ -1,7 +1,7 @@
 import base64
 import re
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 import mailchimp_transactional
@@ -23,9 +23,10 @@ def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: int):
     token_url = encode(
         {
             'url': url,
-            'email': receiver_mail,
+            'citizen_email': receiver_mail,
             'citizen_id': citizen_id,
-        }
+        },
+        expires_delta=timedelta(hours=3),
     )
     return urllib.parse.urljoin(settings.FRONTEND_URL, f'/auth?token_url={token_url}')
 

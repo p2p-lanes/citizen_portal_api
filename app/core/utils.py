@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import jwt
@@ -14,8 +14,10 @@ class Encoder(json.JSONEncoder):
         return super().default(o)
 
 
-def encode(payload: dict) -> str:
+def encode(payload: dict, *, expires_delta: timedelta | None = None) -> str:
     payload['iat'] = datetime.now()
+    if expires_delta:
+        payload['exp'] = datetime.now() + expires_delta
     return jwt.encode(
         payload, settings.SECRET_KEY, algorithm='HS256', json_encoder=Encoder
     )
