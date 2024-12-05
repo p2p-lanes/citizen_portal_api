@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -25,25 +25,17 @@ class ApplicationBaseCommon(BaseModel):
     residence: Optional[str] = None
     local_resident: Optional[bool] = None
     eth_address: Optional[str] = None
-
     duration: Optional[str] = None
-    check_in: Optional[date] = None
-    check_out: Optional[date] = None
 
     builder_boolean: Optional[bool] = None
     builder_description: Optional[str] = None
 
     hackathon_interest: Optional[bool] = None
-    gitcoin_oss: Optional[bool] = None
-    draft_and_demos: Optional[bool] = None
     host_session: Optional[str] = None
     personal_goals: Optional[str] = None
     referral: Optional[str] = None
     info_not_shared: Optional[list[str]] = None
-
     investor: Optional[bool] = None
-    success_definition: Optional[list[str]] = None
-    top_tracks: Optional[list[str]] = None
 
     # Family information
     brings_spouse: Optional[bool] = None

@@ -29,25 +29,17 @@ class Application(Base):
     residence = Column(String)
     local_resident = Column(Boolean)
     eth_address = Column(String)
-
     duration = Column(String)
-    check_in = Column(Date, nullable=True)
-    check_out = Column(Date, nullable=True)
 
     builder_boolean = Column(Boolean)
     builder_description = Column(String)
 
     hackathon_interest = Column(Boolean)
-    gitcoin_oss = Column(Boolean)
-    draft_and_demos = Column(Boolean)
     host_session = Column(String)
     personal_goals = Column(String)
     referral = Column(String)
     info_not_shared = Column(ARRAY(String), nullable=True)
-
     investor = Column(Boolean)
-    success_definition = Column(ARRAY(String), nullable=True)
-    top_tracks = Column(ARRAY(String), nullable=True)
 
     # Family information
     brings_spouse = Column(Boolean)

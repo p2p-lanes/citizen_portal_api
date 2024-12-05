@@ -84,6 +84,7 @@ def send_mail(
         'preserve_recipients': True,
         'global_merge_vars': global_merge_vars,
         'attachments': attachment,
+        'headers': {'To': receiver_mail},
     }
     if subject:
         msg['subject'] = subject
