@@ -39,7 +39,7 @@ class ApplicationBaseCommon(BaseModel):
     host_session: Optional[str] = None
     personal_goals: Optional[str] = None
     referral: Optional[str] = None
-    info_to_share: Optional[list[str]] = None
+    info_not_shared: Optional[list[str]] = None
 
     investor: Optional[bool] = None
     success_definition: Optional[list[str]] = None

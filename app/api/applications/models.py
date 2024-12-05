@@ -43,7 +43,7 @@ class Application(Base):
     host_session = Column(String)
     personal_goals = Column(String)
     referral = Column(String)
-    info_to_share = Column(ARRAY(String), nullable=True)
+    info_not_shared = Column(ARRAY(String), nullable=True)
 
     investor = Column(Boolean)
     success_definition = Column(ARRAY(String), nullable=True)
