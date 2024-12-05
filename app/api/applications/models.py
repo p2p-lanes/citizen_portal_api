@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
@@ -67,5 +69,10 @@ class Application(Base):
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     popup_city = relationship('PopUpCity', lazy='noload')
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String)
+    updated_by = Column(String)
 
     __mapper_args__ = {'exclude_properties': ['citizen', 'popup_city']}

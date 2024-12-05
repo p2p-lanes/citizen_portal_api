@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -13,6 +14,9 @@ class CitizenBase(BaseModel):
     email_validated: Optional[bool] = False
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class CitizenCreate(CitizenBase):
@@ -33,4 +37,5 @@ class Citizen(CitizenBase):
 
 
 class CitizenFilter(BaseModel):
+    id: int | None = None
     primary_email: str | None = None

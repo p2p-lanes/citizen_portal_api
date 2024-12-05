@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -21,3 +23,8 @@ class Citizen(Base):
     email_validated = Column(Boolean, default=False)
     spice = Column(String)
     applications = relationship('Application', back_populates='citizen')
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String)
+    updated_by = Column(String)

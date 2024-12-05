@@ -15,6 +15,9 @@ class PopUpCityBase(BaseModel):
     clickable_in_portal: Optional[bool] = False
     visible_in_portal: Optional[bool] = False
 
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
 
 class PopUpCityCreate(PopUpCityBase):
     pass
