@@ -40,8 +40,6 @@ def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
     return send_mail(
         receiver_mail=receiver_mail,
         template=template,
-        subject='Citizen Portal Authentication',
-        from_name='Citizen Portal',
         params=params,
     )
 
