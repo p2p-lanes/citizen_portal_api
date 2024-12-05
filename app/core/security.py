@@ -56,7 +56,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
         raise credentials_exception
 
     citizen_id: int = payload.get('citizen_id')
-    email: str = payload.get('citizen_email')
+    email: str = payload.get('email')
     if citizen_id is None or email is None:
         logger.error('Invalid token payload: %s', payload)
         raise credentials_exception
