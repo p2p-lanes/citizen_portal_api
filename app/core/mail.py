@@ -80,7 +80,7 @@ def send_mail(
     ]
 
     msg = {
-        'from_email': 'no-reply@simplefi.tech',
+        'from_email': 'no-reply@edgecity.live',
         'from_name': from_name,
         'to': send_to,
         'preserve_recipients': True,

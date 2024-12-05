@@ -14,7 +14,7 @@ class Encoder(json.JSONEncoder):
         return super().default(o)
 
 
-def encode(payload: dict, *, expires_delta: timedelta | None = None) -> str:
+def encode(payload: dict, *, expires_delta: timedelta = None) -> str:
     payload['iat'] = datetime.now()
     if expires_delta:
         payload['exp'] = datetime.now() + expires_delta
