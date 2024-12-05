@@ -22,7 +22,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """Override this method to implement permission checks"""
         return True
 
-    def create(self, db: Session, obj: CreateSchemaType, user: TokenData) -> ModelType:
+    def create(
+        self,
+        db: Session,
+        obj: CreateSchemaType,
+        user: Optional[TokenData] = None,
+    ) -> ModelType:
         """Create a new record."""
         try:
             db_obj = self.model(**obj.model_dump())
