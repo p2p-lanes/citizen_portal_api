@@ -7,6 +7,11 @@ from pydantic import BaseModel, ConfigDict
 class Authenticate(BaseModel):
     email: str
 
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_to_lower=True,
+    )
+
 
 class CitizenBase(BaseModel):
     primary_email: str
