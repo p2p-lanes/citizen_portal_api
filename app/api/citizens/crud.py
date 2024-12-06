@@ -73,6 +73,9 @@ class CRUDCitizen(
             raise HTTPException(status_code=404, detail='Citizen not found')
         if citizen.spice != spice:
             raise HTTPException(status_code=401, detail='Invalid spice')
+        citizen.email_validated = True
+        db.commit()
+        db.refresh(citizen)
         return citizen
 
 
