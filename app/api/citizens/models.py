@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, event
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -28,3 +28,11 @@ class Citizen(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(String)
     updated_by = Column(String)
+
+
+@event.listens_for(Citizen, 'before_insert')
+def clean_email(mapper, connection, target):
+    if target.primary_email:
+        target.primary_email = target.primary_email.lower().strip()
+    if target.secondary_email:
+        target.secondary_email = target.secondary_email.lower().strip()
