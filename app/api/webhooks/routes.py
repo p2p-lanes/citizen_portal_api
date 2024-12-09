@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.applications.schemas import Application
+from app.api.applications.models import Application
 from app.api.webhooks import schemas
 from app.core.database import get_db
 from app.core.logger import logger
