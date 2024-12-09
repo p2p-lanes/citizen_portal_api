@@ -30,10 +30,6 @@ def send_email_webhook(
             logger.info('No email to send email. Skipping...')
             continue
 
-        if 'muvinai.com' not in row['email']:
-            logger.info('Email %s is not from Muvinai. Skipping...', row['email'])
-            continue
-
         params = {k: v for k, v in row.items() if k in fields}
 
         send_mail(
