@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.api.webhooks import schemas
 from app.core.database import get_db
@@ -10,11 +11,10 @@ router = APIRouter()
 
 
 @router.post('/send_email', status_code=status.HTTP_201_CREATED)
-def send_email_webhook(
+async def send_email_webhook(
     webhook_payload: schemas.WebhookPayload,
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
-    pop_up_city: str = Query(..., description='Pop-up city name'),
     db: Session = Depends(get_db),
 ):
     if not webhook_payload.data.rows:
@@ -22,8 +22,11 @@ def send_email_webhook(
         return {'message': 'No rows to send email'}
 
     fields = [f.strip() for f in fields.split(',')]
+    processed_ids = []
+
     logger.info('Sending email %s to %s rows', template, len(webhook_payload.data.rows))
     logger.info('Fields: %s', fields)
+
     for row in webhook_payload.data.rows:
         row = row.model_dump()
         if not row.get('email'):
@@ -37,5 +40,21 @@ def send_email_webhook(
             template=template,
             params=params,
         )
+        processed_ids.append(row['id'])
+
+    if processed_ids:
+        db.execute(
+            text(
+                'UPDATE :table_name '
+                'SET sent_mails = COALESCE(sent_mails, ARRAY[]::text[]) || :template '
+                'WHERE id = ANY(:ids)'
+            ),
+            {
+                'table_name': webhook_payload.data.table_name,
+                'template': template,
+                'ids': processed_ids,
+            },
+        )
+        db.commit()
 
     return {'message': 'Email sent successfully'}
