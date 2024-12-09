@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 
+from app.api.applications.schemas import Application
 from app.api.webhooks import schemas
 from app.core.database import get_db
-from app.core.mail import send_mail
 from app.core.logger import logger
+from app.core.mail import send_mail
 
 router = APIRouter()
 
@@ -43,18 +43,11 @@ async def send_email_webhook(
         processed_ids.append(row['id'])
 
     if processed_ids:
-        db.execute(
-            text(
-                'UPDATE :table_name '
-                'SET sent_mails = COALESCE(sent_mails, ARRAY[]::text[]) || :template '
-                'WHERE id = ANY(:ids)'
-            ),
-            {
-                'table_name': webhook_payload.data.table_name,
-                'template': template,
-                'ids': processed_ids,
-            },
-        )
-        db.commit()
+        if webhook_payload.data.table_name == 'applications':
+            db.query(Application).filter(Application.id.in_(processed_ids)).update(
+                {Application.sent_mails: Application.sent_mails + [template]},
+                synchronize_session=False,
+            )
+            db.commit()
 
     return {'message': 'Email sent successfully'}
