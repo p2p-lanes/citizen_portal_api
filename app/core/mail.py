@@ -37,6 +37,15 @@ def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
     )
 
 
+def send_application_received_mail(receiver_mail: str):
+    submission_form_url = urllib.parse.urljoin(settings.FRONTEND_URL, 'portal')
+    params = {
+        'submission_form_url': submission_form_url,
+        'email': receiver_mail,
+    }
+    return send_mail(receiver_mail, template='application-received', params=params)
+
+
 def send_mail(
     receiver_mail: str,
     *,

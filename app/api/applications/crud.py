@@ -8,7 +8,7 @@ from app.api.applications import models, schemas
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
 from app.core.config import settings
-from app.core.mail import send_mail
+from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
 
 
@@ -41,16 +41,7 @@ class CRUDApplication(
         obj = schemas.InternalApplicationCreate(**obj.model_dump(), email=email)
 
         if obj.status and obj.status != 'draft':
-            submission_form_url = urllib.parse.urljoin(settings.FRONTEND_URL, 'portal')
-            params = {
-                'submission_form_url': submission_form_url,
-                'first_name': obj.first_name,
-            }
-            send_mail(
-                receiver_mail=email,
-                template='application-recieved',
-                params=params,
-            )
+            send_application_received_mail(receiver_mail=email)
 
         return super().create(db, obj)
 
