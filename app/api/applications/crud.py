@@ -1,4 +1,3 @@
-import urllib.parse
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -7,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.api.applications import models, schemas
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
-from app.core.config import settings
 from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
 
@@ -55,20 +53,9 @@ class CRUDApplication(
         application = super().update(db, id, obj, user)
 
         if obj.status != 'draft':
-            submission_form_url = urllib.parse.urljoin(settings.FRONTEND_URL, 'portal')
-            params = {
-                'submission_form_url': submission_form_url,
-                'first_name': obj.first_name,
-                'id': application.id,
-            }
-            template = 'application-recieved'
-            send_mail(
-                receiver_mail=application.email,
-                template=template,
-                params=params,
-            )
+            send_application_received_mail(receiver_mail=application.email)
             application.sent_mails = application.sent_mails or []
-            application.sent_mails.append(template)
+            application.sent_mails.append('application-recieved')
             db.commit()
             db.refresh(application)
         return application
