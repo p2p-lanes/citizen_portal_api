@@ -30,6 +30,7 @@ class Application(Base):
     local_resident = Column(Boolean)
     eth_address = Column(String)
     duration = Column(String)
+    video_url = Column(String)
 
     builder_boolean = Column(Boolean)
     builder_description = Column(String)

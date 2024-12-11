@@ -26,6 +26,7 @@ class ApplicationBaseCommon(BaseModel):
     local_resident: Optional[bool] = None
     eth_address: Optional[str] = None
     duration: Optional[str] = None
+    video_url: Optional[str] = None
 
     builder_boolean: Optional[bool] = None
     builder_description: Optional[str] = None
