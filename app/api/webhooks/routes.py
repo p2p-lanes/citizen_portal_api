@@ -10,7 +10,7 @@ from app.core.mail import send_mail
 router = APIRouter()
 
 
-@router.post('/send_email', status_code=status.HTTP_201_CREATED)
+@router.post('/send_email', status_code=status.HTTP_200_OK)
 async def send_email_webhook(
     webhook_payload: schemas.WebhookPayload,
     template: str = Query(..., description='Email template name'),
