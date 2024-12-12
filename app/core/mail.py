@@ -1,7 +1,14 @@
+import json
 import urllib.parse
 from datetime import timedelta
+from functools import wraps
+from typing import Any, Callable
 
 import requests
+
+from app.api.email_logs.crud import email_log
+from app.api.email_logs.schemas import EmailLogCreate
+from app.core.database import SessionLocal
 
 from .config import settings
 from .logger import logger
@@ -46,6 +53,51 @@ def send_application_received_mail(receiver_mail: str):
     return send_mail(receiver_mail, template='application-received', params=params)
 
 
+def log_email_send(func: Callable) -> Callable:
+    @wraps(func)
+    def wrapper(
+        receiver_mail: str,
+        *,
+        template: str,
+        params: dict,
+        **kwargs: Any,
+    ) -> Any:
+        db = SessionLocal()
+        status = 'failed'
+        error_message = None
+
+        try:
+            # Execute the original send_mail function
+            response_data = func(
+                receiver_mail=receiver_mail,
+                template=template,
+                params=params,
+                **kwargs,
+            )
+            status = 'success'
+            return response_data
+        except Exception as e:
+            error_message = str(e)
+            raise
+        finally:
+            try:
+                email_log_data = EmailLogCreate(
+                    receiver_email=receiver_mail,
+                    template=template,
+                    params=json.dumps(params),
+                    status=status,
+                    error_message=error_message,
+                )
+                email_log.create(db, obj=email_log_data)
+            except Exception as db_error:
+                logger.error('Failed to log email: %s', str(db_error))
+            finally:
+                db.close()
+
+    return wrapper
+
+
+@log_email_send
 def send_mail(
     receiver_mail: str,
     *,
@@ -67,8 +119,6 @@ def send_mail(
     }
 
     response = requests.post(url, json=data, headers=headers)
+    response.raise_for_status()
 
-    if response.status_code == 200:
-        return response.json()
-    else:
-        response.raise_for_status()
+    return response.json()
