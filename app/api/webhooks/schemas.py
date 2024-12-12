@@ -1,8 +1,10 @@
+from typing import Union
+
 from pydantic import BaseModel, ConfigDict
 
 
 class WebhookRow(BaseModel):
-    id: int | str
+    id: Union[int, str]
     # Using a dynamic dict to accept any key-value pairs
     model_config = ConfigDict(extra='allow')
 

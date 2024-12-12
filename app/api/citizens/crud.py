@@ -19,7 +19,7 @@ def create_spice() -> str:
 class CRUDCitizen(
     CRUDBase[models.Citizen, schemas.CitizenCreate, schemas.CitizenCreate]
 ):
-    def check_permission(self, db_obj: models.Citizen, user: TokenData) -> bool:
+    def _check_permission(self, db_obj: models.Citizen, user: TokenData) -> bool:
         return db_obj.id == user.citizen_id
 
     def find(
@@ -27,8 +27,8 @@ class CRUDCitizen(
         db: Session,
         skip: int = 0,
         limit: int = 100,
-        filters: schemas.CitizenFilter | None = None,
-        user: TokenData | None = None,
+        filters: Optional[schemas.CitizenFilter] = None,
+        user: Optional[TokenData] = None,
     ) -> List[models.Citizen]:
         if user:
             filters = filters or schemas.CitizenFilter()

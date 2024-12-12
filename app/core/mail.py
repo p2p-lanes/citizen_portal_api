@@ -84,7 +84,7 @@ def log_email_send(func: Callable) -> Callable:
                 email_log_data = EmailLogCreate(
                     receiver_email=receiver_mail,
                     template=template,
-                    params=json.dumps(params),
+                    params=params,
                     status=status,
                     error_message=error_message,
                 )

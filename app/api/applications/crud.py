@@ -13,7 +13,7 @@ from app.core.security import TokenData
 class CRUDApplication(
     CRUDBase[models.Application, schemas.ApplicationCreate, schemas.ApplicationCreate]
 ):
-    def check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
+    def _check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
         return db_obj.citizen_id == user.citizen_id
 
     def get_by_email(self, db: Session, email: str) -> Optional[models.Application]:
@@ -65,8 +65,8 @@ class CRUDApplication(
         db: Session,
         skip: int = 0,
         limit: int = 100,
-        filters: schemas.ApplicationFilter | None = None,
-        user: TokenData | None = None,
+        filters: Optional[schemas.ApplicationFilter] = None,
+        user: Optional[TokenData] = None,
     ) -> List[models.Application]:
         if user:
             filters = filters or schemas.ApplicationFilter()

@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import DeclarativeMeta
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.core.logger import logger
 from app.core.security import TokenData
@@ -18,9 +18,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    def check_permission(self, db_obj: ModelType, user: TokenData) -> bool:
+    def _check_permission(self, db_obj: ModelType, user: TokenData) -> bool:
         """Override this method to implement permission checks"""
         return True
+
+    def _apply_filters(
+        self, query: Query, filters: Optional[BaseModel] = None
+    ) -> Query:
+        """Override this method to implement filter logic"""
+        if not filters:
+            return query
+
+        for field, value in filters.model_dump().items():
+            if hasattr(self.model, field) and value is not None:
+                query = query.filter(getattr(self.model, field) == value)
+        return query
 
     def create(
         self,
@@ -58,7 +70,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             raise HTTPException(
                 status_code=404, detail=f'{self.model.__name__} not found'
             )
-        if not self.check_permission(obj, user):
+        if not self._check_permission(obj, user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Not authorized to access this resource',
@@ -70,16 +82,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         skip: int = 0,
         limit: int = 100,
-        filters: BaseModel | None = None,
-        user: TokenData | None = None,
+        filters: Optional[BaseModel] = None,
+        user: Optional[TokenData] = None,
     ) -> List[ModelType]:
         """Get multiple records with pagination, filters and permission check."""
         query = db.query(self.model)
-
-        if filters:
-            for field, value in filters.model_dump().items():
-                if hasattr(self.model, field) and value is not None:
-                    query = query.filter(getattr(self.model, field) == value)
+        query = self._apply_filters(query, filters)
 
         return query.offset(skip).limit(limit).all()
 
