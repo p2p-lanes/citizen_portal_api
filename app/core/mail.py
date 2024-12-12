@@ -1,4 +1,3 @@
-import json
 import urllib.parse
 from datetime import timedelta
 from functools import wraps

@@ -42,5 +42,5 @@ class Citizen(CitizenBase):
 
 
 class CitizenFilter(BaseModel):
-    id: int | None = None
-    primary_email: str | None = None
+    id: Optional[int] = None
+    primary_email: Optional[str] = None
