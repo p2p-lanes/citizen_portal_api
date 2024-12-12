@@ -31,6 +31,7 @@ class Application(Base):
     eth_address = Column(String)
     duration = Column(String)
     video_url = Column(String)
+    scolarship_video_url = Column(String)
 
     builder_boolean = Column(Boolean)
     builder_description = Column(String)
