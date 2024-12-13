@@ -5,6 +5,7 @@ from app.api.applications.models import Application
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.webhooks import schemas
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
 from app.core.mail import send_mail
@@ -37,6 +38,8 @@ async def send_email_webhook(
             continue
 
         params = {k: v for k, v in row.items() if k in fields}
+        if 'ticketing_url' not in params:
+            params['ticketing_url'] = settings.FRONTEND_URL
 
         send_mail(
             receiver_mail=row['email'],
