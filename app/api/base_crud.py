@@ -29,9 +29,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if not filters:
             return query
 
-        for field, value in filters.model_dump().items():
+        for field, value in filters.model_dump(exclude_none=True).items():
             if hasattr(self.model, field) and value is not None:
-                query = query.filter(getattr(self.model, field) == value)
+                if field.endswith('_in') and isinstance(value, list):
+                    field = field[:-3]
+                    query = query.filter(getattr(self.model, field).in_(value))
+                else:
+                    query = query.filter(getattr(self.model, field) == value)
         return query
 
     def create(
@@ -63,7 +67,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.rollback()
             raise e
 
-    def get(self, db: Session, id: int, user: TokenData) -> Optional[ModelType]:
+    def get(self, db: Session, id: int, user: TokenData) -> ModelType:
         """Get a single record by id with permission check."""
         obj = db.query(self.model).filter(self.model.id == id).first()
         if not obj:

@@ -20,6 +20,8 @@ class Settings:
     POSTMARK_API_TOKEN: str = os.getenv('POSTMARK_API_TOKEN')
     BACKEND_URL: str = os.getenv('BACKEND_URL')
     FRONTEND_URL: str = os.getenv('FRONTEND_URL')
+    SIMPLEFI_API_URL: str = os.getenv('SIMPLEFI_API_URL')
+    SIMPLEFI_API_KEY: str = os.getenv('SIMPLEFI_API_KEY')
 
 
 settings = Settings()

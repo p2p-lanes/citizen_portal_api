@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.applications.routes import router as applications_router
 from app.api.citizens.routes import router as citizens_router
+from app.api.payments.routes import router as payments_router
 from app.api.popup_city.routes import router as popup_cities_router
+from app.api.products.routes import router as products_router
 from app.api.webhooks.routes import router as webhooks_router
 from app.core.database import create_db
 
@@ -13,7 +15,9 @@ create_db()
 # Include routers
 app.include_router(applications_router, prefix='/applications', tags=['Applications'])
 app.include_router(citizens_router, prefix='/citizens', tags=['Citizens'])
+app.include_router(payments_router, prefix='/payments', tags=['Payments'])
 app.include_router(popup_cities_router, prefix='/popups', tags=['Popups'])
+app.include_router(products_router, prefix='/products', tags=['Products'])
 app.include_router(webhooks_router, prefix='/webhooks', tags=['Webhooks'])
 
 origins = ['*']
