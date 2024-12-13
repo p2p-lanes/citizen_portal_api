@@ -8,6 +8,7 @@ from app.api.webhooks import schemas
 from app.core.database import get_db
 from app.core.logger import logger
 from app.core.mail import send_mail
+from app.core.security import TokenData
 
 router = APIRouter()
 
@@ -83,6 +84,11 @@ async def simplefi_webhook(
         status=payment_request_status,
         currency=currency,
     )
-    payment_crud.update(db, payment.id, payment_update, user=None)
+    payment_crud.update(
+        db,
+        payment.id,
+        payment_update,
+        user=TokenData(citizen_id=payment.citizen_id),
+    )
 
     return {'message': 'Payment status updated successfully'}
