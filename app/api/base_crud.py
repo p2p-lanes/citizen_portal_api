@@ -30,9 +30,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             return query
 
         for field, value in filters.model_dump(exclude_none=True).items():
+            op = 'eq'
+            if field.endswith('_in') and isinstance(value, list):
+                field = field[:-3]
+                op = 'in_'
             if hasattr(self.model, field) and value is not None:
-                if field.endswith('_in') and isinstance(value, list):
-                    field = field[:-3]
+                if op == 'in_':
                     query = query.filter(getattr(self.model, field).in_(value))
                 else:
                     query = query.filter(getattr(self.model, field) == value)
