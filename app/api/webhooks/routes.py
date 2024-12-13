@@ -62,6 +62,12 @@ async def simplefi_webhook(
     db: Session = Depends(get_db),
 ):
     payment_request_id = webhook_payload.data.payment_request.id
+    event_type = webhook_payload.event_type
+    logger.info('Payment request id: %s, event type: %s', payment_request_id, event_type)
+    if event_type not in ['new_payment', 'new_card_payment']:
+        logger.info('Event type is not new_payment or new_card_payment. Skipping...')
+        return {'message': 'Event type is not new_payment or new_card_payment'}
+
     payments = payment_crud.find(
         db, filters=PaymentFilter(external_id=payment_request_id)
     )
