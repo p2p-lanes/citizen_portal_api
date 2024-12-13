@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import Text
 
 from app.core.database import Base
 
@@ -55,7 +56,7 @@ class Application(Base):
     scolarship_categories = Column(ARRAY(String), nullable=True)
     scolarship_details = Column(String)
 
-    sent_mails = Column(ARRAY(String), nullable=True)
+    sent_mails = Column(Text, nullable=True)
 
     status = Column(String)
 
