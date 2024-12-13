@@ -50,4 +50,5 @@ class Payment(PaymentBase):
 class PaymentFilter(BaseModel):
     id: Optional[int] = None
     application_id: Optional[int] = None
+    citizen_id: Optional[int] = None
     external_id: Optional[str] = None
