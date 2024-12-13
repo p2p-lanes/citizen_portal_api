@@ -1,4 +1,5 @@
-from typing import Union
+from datetime import datetime
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict
 
@@ -19,3 +20,53 @@ class WebhookPayload(BaseModel):
     type: str
     id: str
     data: WebhookData
+
+
+# Simplefi Models
+
+
+class CardPaymentModel(BaseModel):
+    provider: str
+    status: str
+    coin: str = 'USD'
+
+
+class TransactionModel(BaseModel):
+    id: str
+    coin: str
+    chain_id: int
+    status: str
+
+
+class PaymentInfo(BaseModel):
+    coin: str
+    hash: str
+    amount: float
+    paid_at: datetime
+
+
+class PaymentRequestModel(BaseModel):
+    id: str
+    order_id: int
+    amount: float
+    amount_paid: float
+    currency: str
+    reference: dict
+    status: str
+    status_detail: str
+    transactions: List[TransactionModel]
+    card_payment: Optional[CardPaymentModel] = None
+    payments: List[PaymentInfo]
+
+
+class SimplefiDataModel(BaseModel):
+    payment_request: PaymentRequestModel
+    new_payment: Optional[Union[PaymentInfo, CardPaymentModel]] = None
+
+
+class SimplefiWebhookPayload(BaseModel):
+    id: str
+    event_type: str
+    entity_type: str
+    entity_id: str
+    data: SimplefiDataModel

@@ -34,6 +34,11 @@ class InternalPaymentCreate(PaymentCreate, PaymentBase):
     pass
 
 
+class PaymentUpdate(BaseModel):
+    status: Optional[str] = None
+    currency: Optional[str] = None
+
+
 class Payment(PaymentBase):
     id: int
 
@@ -45,3 +50,4 @@ class Payment(PaymentBase):
 class PaymentFilter(BaseModel):
     id: Optional[int] = None
     application_id: Optional[int] = None
+    external_id: Optional[str] = None

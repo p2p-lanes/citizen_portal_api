@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
+from app.api.payments.crud import payment as payment_crud
+from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.webhooks import schemas
 from app.core.database import get_db
 from app.core.logger import logger
@@ -51,3 +53,38 @@ async def send_email_webhook(
             db.commit()
 
     return {'message': 'Email sent successfully'}
+
+
+@router.post('/simplefi', status_code=status.HTTP_200_OK)
+async def simplefi_webhook(
+    webhook_payload: schemas.SimplefiWebhookPayload,
+    db: Session = Depends(get_db),
+):
+    payment_request_id = webhook_payload.data.payment_request.id
+    payments = payment_crud.find(
+        db, filters=PaymentFilter(external_id=payment_request_id)
+    )
+    if not payments:
+        logger.info('Payment not found')
+        return {'message': 'Payment not found'}
+
+    payment = payments[0]
+    logger.info('Payment found: %s', payment)
+    logger.info(
+        'Payment request status: %s', webhook_payload.data.payment_request.status
+    )
+    logger.info('Payment status: %s', payment.status)
+
+    payment_request_status = webhook_payload.data.payment_request.status
+    if payment.status == payment_request_status:
+        logger.info('Payment status is the same as payment request status. Skipping...')
+        return {'message': 'Payment status is the same as payment request status'}
+
+    currency = webhook_payload.data.new_payment.coin
+    payment_update = PaymentUpdate(
+        status=payment_request_status,
+        currency=currency,
+    )
+    payment_crud.update(db, payment.id, payment_update, user=None)
+
+    return {'message': 'Payment status updated successfully'}
