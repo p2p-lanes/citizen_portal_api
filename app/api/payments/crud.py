@@ -9,7 +9,7 @@ from app.core.security import TokenData
 
 
 class CRUDPayment(
-    CRUDBase[models.Payment, schemas.PaymentCreate, schemas.PaymentCreate]
+    CRUDBase[models.Payment, schemas.PaymentCreate, schemas.PaymentUpdate]
 ):
     def _check_permission(self, db_obj: models.Payment, user: TokenData) -> bool:
         return db_obj.citizen_id == user.citizen_id

@@ -69,13 +69,11 @@ async def simplefi_webhook(
         return {'message': 'Payment not found'}
 
     payment = payments[0]
-    logger.info('Payment found: %s', payment)
-    logger.info(
-        'Payment request status: %s', webhook_payload.data.payment_request.status
-    )
+    payment_request_status = webhook_payload.data.payment_request.status
+    logger.info('Payment found: %s', payment.id)
+    logger.info('Payment request status: %s', payment_request_status)
     logger.info('Payment status: %s', payment.status)
 
-    payment_request_status = webhook_payload.data.payment_request.status
     if payment.status == payment_request_status:
         logger.info('Payment status is the same as payment request status. Skipping...')
         return {'message': 'Payment status is the same as payment request status'}
