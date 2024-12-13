@@ -61,6 +61,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             detail = 'Integrity error'
             if orig and orig.find('DETAIL') != -1:
                 detail = orig.split('DETAIL: ')[1].split('\n')[0].strip()
+            logger.error('Integrity error: %s', detail)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=detail,
@@ -74,10 +75,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """Get a single record by id with permission check."""
         obj = db.query(self.model).filter(self.model.id == id).first()
         if not obj:
+            logger.error('Record not found')
             raise HTTPException(
                 status_code=404, detail=f'{self.model.__name__} not found'
             )
         if not self._check_permission(obj, user):
+            logger.error('Not authorized to access this resource')
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Not authorized to access this resource',
@@ -116,9 +119,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.commit()
             db.refresh(db_obj)
             return db_obj
-        except HTTPException:
+        except HTTPException as e:
+            logger.error('HTTPException in update: %s', e)
             raise
         except Exception as e:
+            logger.error('Exception in update: %s', e)
             db.rollback()
             raise HTTPException(status_code=400, detail=str(e))
 
@@ -129,8 +134,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.delete(obj)
             db.commit()
             return obj
-        except HTTPException:
+        except HTTPException as e:
+            logger.error('HTTPException in delete: %s', e)
             raise
         except Exception as e:
+            logger.error('Exception in delete: %s', e)
             db.rollback()
             raise HTTPException(status_code=400, detail=str(e))
