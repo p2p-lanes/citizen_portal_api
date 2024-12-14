@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
@@ -51,7 +52,12 @@ async def send_email_webhook(
     if processed_ids:
         if webhook_payload.data.table_name == 'applications':
             db.query(Application).filter(Application.id.in_(processed_ids)).update(
-                {Application.sent_mails: Application.sent_mails + [template]},
+                {
+                    Application.sent_mails: case(
+                        [(Application.sent_mails.is_(None), template)],
+                        else_=Application.sent_mails + ',' + template,
+                    )
+                },
                 synchronize_session=False,
             )
             db.commit()
@@ -66,7 +72,9 @@ async def simplefi_webhook(
 ):
     payment_request_id = webhook_payload.data.payment_request.id
     event_type = webhook_payload.event_type
-    logger.info('Payment request id: %s, event type: %s', payment_request_id, event_type)
+    logger.info(
+        'Payment request id: %s, event type: %s', payment_request_id, event_type
+    )
     if event_type not in ['new_payment', 'new_card_payment']:
         logger.info('Event type is not new_payment or new_card_payment. Skipping...')
         return {'message': 'Event type is not new_payment or new_card_payment'}
