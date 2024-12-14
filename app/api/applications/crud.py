@@ -54,9 +54,9 @@ class CRUDApplication(
 
         if obj.status != 'draft':
             send_application_received_mail(receiver_mail=application.email)
-            application.sent_mails = application.sent_mails or ''
-            # application.sent_mails.append('application-recieved')
-            application.sent_mails += ',application-recieved'
+            sent_mails = application.sent_mails or ''
+            sent_mails = ','.join(sent_mails.split(',') + ['application-recieved'])
+            application.sent_mails = sent_mails
             db.commit()
             db.refresh(application)
         return application
