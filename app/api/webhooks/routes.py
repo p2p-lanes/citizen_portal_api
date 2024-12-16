@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy import case
+from sqlalchemy import case, literal_column
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
@@ -54,8 +54,8 @@ async def send_email_webhook(
             db.query(Application).filter(Application.id.in_(processed_ids)).update(
                 {
                     Application.sent_mails: case(
-                        [(Application.sent_mails.is_(None), template)],
-                        else_=Application.sent_mails + ',' + template,
+                        (Application.sent_mails.is_(None), template),
+                        else_=Application.sent_mails + ',' + template
                     )
                 },
                 synchronize_session=False,
