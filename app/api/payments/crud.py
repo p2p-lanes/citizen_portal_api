@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from sqlalchemy.orm import Query, Session
+from sqlalchemy import insert
 
 from app.api.base_crud import CRUDBase
 from app.api.payments import models, schemas
@@ -54,11 +55,25 @@ class CRUDPayment(
         payment_dict = payment_data.model_dump(exclude={'product_ids'})
         db_payment = self.model(**payment_dict)
 
+        # First save the payment to get its ID
+        db.add(db_payment)
+        db.flush()  # This assigns an ID to db_payment without committing
+
         if hasattr(obj, 'product_ids'):
             products = db.query(Product).filter(Product.id.in_(obj.product_ids)).all()
-            db_payment.products = products
+            # Insert directly into the association table
+            for product in products:
+                stmt = insert(models.payment_products).values(
+                    payment_id=db_payment.id,
+                    product_id=product.id,
+                    product_name=product.name,
+                    product_description=product.description,
+                    product_price=product.price,
+                    product_category=product.category,
+                    quantity=1,
+                )
+                db.execute(stmt)
 
-        db.add(db_payment)
         db.commit()
         db.refresh(db_payment)
         return db_payment

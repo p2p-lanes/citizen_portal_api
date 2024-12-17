@@ -16,6 +16,13 @@ payment_products = Table(
     Base.metadata,
     Column('payment_id', Integer, ForeignKey('payments.id'), primary_key=True),
     Column('product_id', Integer, ForeignKey('products.id'), primary_key=True),
+    # Snapshot of product data at time of purchase
+    Column('product_name', String),
+    Column('product_description', String, nullable=True),
+    Column('product_price', Float),
+    Column('product_category', String),
+    Column('quantity', Integer, default=1),
+    Column('created_at', DateTime, default=datetime.utcnow),
 )
 
 
