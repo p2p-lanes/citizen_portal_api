@@ -1,11 +1,23 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.types import Text
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.api.products.models import Product
+
+
+application_products = Table(
+    'application_products',
+    Base.metadata,
+    Column('application_id', Integer, ForeignKey('applications.id'), primary_key=True),
+    Column('product_id', Integer, ForeignKey('products.id'), primary_key=True),
+)
 
 
 class Application(Base):
@@ -62,6 +74,9 @@ class Application(Base):
 
     payments = relationship('Payment', back_populates='application')
     attendees = relationship('Attendee', back_populates='application')
+    products: Mapped[List['Product']] = relationship(
+        'Product', secondary=application_products, back_populates='applications'
+    )
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')

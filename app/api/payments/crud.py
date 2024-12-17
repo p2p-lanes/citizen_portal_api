@@ -1,11 +1,11 @@
 from typing import List, Optional
 
-from sqlalchemy.orm import Query, Session
 from sqlalchemy import insert
+from sqlalchemy.orm import Query, Session
 
+from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.payments import models, schemas
-from app.api.applications.models import Application
 from app.api.products.models import Product
 from app.core import payments_utils
 from app.core.security import TokenData
@@ -61,6 +61,12 @@ class CRUDPayment(
 
         if hasattr(obj, 'product_ids'):
             products = db.query(Product).filter(Product.id.in_(obj.product_ids)).all()
+            application = (
+                db.query(Application)
+                .filter(Application.id == db_payment.application_id)
+                .first()
+            )
+            application.products.extend(products)
             # Insert directly into the association table
             for product in products:
                 stmt = insert(models.payment_products).values(
