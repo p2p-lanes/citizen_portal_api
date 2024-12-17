@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from app.api.applications.attendees.schemas import Attendee
 from app.api.citizens.schemas import Citizen
 
 
@@ -78,6 +79,7 @@ class InternalApplicationCreate(ApplicationBase):
 class Application(InternalApplicationCreate):
     id: int
     citizen: Optional[Citizen] = None
+    attendees: Optional[list[Attendee]] = None
 
     model_config = ConfigDict(
         from_attributes=True,

@@ -12,7 +12,7 @@ class CRUDPayment(
     CRUDBase[models.Payment, schemas.PaymentCreate, schemas.PaymentUpdate]
 ):
     def _check_permission(self, db_obj: models.Payment, user: TokenData) -> bool:
-        return db_obj.citizen_id == user.citizen_id
+        return db_obj.application.citizen_id == user.citizen_id
 
     def find(
         self,

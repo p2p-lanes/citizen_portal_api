@@ -60,6 +60,9 @@ class Application(Base):
 
     status = Column(String)
 
+    payments = relationship('Payment', back_populates='application')
+    attendees = relationship('Attendee', back_populates='application')
+
     citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)

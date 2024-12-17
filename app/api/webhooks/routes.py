@@ -111,7 +111,7 @@ async def simplefi_webhook(
         db,
         payment.id,
         payment_update,
-        user=TokenData(citizen_id=payment.citizen_id, email=''),
+        user=TokenData(citizen_id=payment.application.citizen_id, email=''),
     )
 
     return {'message': 'Payment status updated successfully'}

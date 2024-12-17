@@ -4,6 +4,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import models, schemas
+from app.api.applications.attendees import models as attendees_models
+from app.api.applications.attendees import schemas as attendees_schemas
+from app.api.applications.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
 from app.core.mail import send_application_received_mail
@@ -73,6 +76,30 @@ class CRUDApplication(
             filters = filters or schemas.ApplicationFilter()
             filters.citizen_id = user.citizen_id
         return super().find(db, skip, limit, filters, user)
+
+    def create_attendee(
+        self,
+        db: Session,
+        application_id: int,
+        attendee: attendees_schemas.AttendeeCreate,
+        user: TokenData,
+    ) -> attendees_models.Attendee:
+        _ = self.get(db, application_id, user)
+        attendee = attendees_schemas.InternalAttendeeCreate(
+            **attendee.model_dump(), application_id=application_id
+        )
+        return attendees_crud.create(db, attendee, user)
+
+    def update_attendee(
+        self,
+        db: Session,
+        application_id: int,
+        attendee_id: int,
+        attendee: attendees_schemas.AttendeeUpdate,
+        user: TokenData,
+    ) -> attendees_models.Attendee:
+        _ = self.get(db, application_id, user)
+        return attendees_crud.update(db, attendee_id, attendee, user)
 
 
 application = CRUDApplication(models.Application)
