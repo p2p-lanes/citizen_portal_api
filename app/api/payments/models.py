@@ -1,13 +1,22 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-from sqlalchemy import ARRAY, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
 
 if TYPE_CHECKING:
     from app.api.applications.models import Application
+    from app.api.products.models import Product
+
+
+payment_products = Table(
+    'payment_products',
+    Base.metadata,
+    Column('payment_id', Integer, ForeignKey('payments.id'), primary_key=True),
+    Column('product_id', Integer, ForeignKey('products.id'), primary_key=True),
+)
 
 
 class Payment(Base):
@@ -21,9 +30,6 @@ class Payment(Base):
         index=True,
     )
     application_id = Column(Integer, ForeignKey('applications.id'), nullable=False)
-    citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
-    products = Column(ARRAY(Integer), nullable=False)
-    products_data = Column(ARRAY(String), nullable=False)
     external_id = Column(String)
     status = Column(String)
     amount = Column(Float)
@@ -32,6 +38,9 @@ class Payment(Base):
 
     application: Mapped['Application'] = relationship(
         'Application', back_populates='payments'
+    )
+    products: Mapped[List['Product']] = relationship(
+        'Product', secondary=payment_products, back_populates='payments'
     )
 
     created_at = Column(DateTime, default=datetime.utcnow)

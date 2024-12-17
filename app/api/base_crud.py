@@ -49,7 +49,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> ModelType:
         """Create a new record."""
         try:
-            db_obj = self.model(**obj.model_dump())
+            # Convert to dict and filter out relationship fields that aren't direct columns
+            obj_data = obj.model_dump()
+            model_columns = self.model.__table__.columns.keys()
+            filtered_data = {k: v for k, v in obj_data.items() if k in model_columns}
+
+            db_obj = self.model(**filtered_data)
             db.add(db_obj)
             db.commit()
             db.refresh(db_obj)

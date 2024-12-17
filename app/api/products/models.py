@@ -1,8 +1,14 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, relationship
 
+from app.api.payments.models import payment_products
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.api.payments.models import Payment
 
 
 class Product(Base):
@@ -23,6 +29,10 @@ class Product(Base):
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     is_active = Column(Boolean, default=True)
+
+    payments: Mapped[List['Payment']] = relationship(
+        'Payment', secondary=payment_products, back_populates='products'
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

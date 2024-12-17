@@ -5,10 +5,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class PaymentBase(BaseModel):
-    products: List[int]
-    products_data: List[str]
     application_id: int
-    citizen_id: int
     external_id: Optional[str] = None
     status: Optional[str] = None
     amount: Optional[float] = None
@@ -21,10 +18,10 @@ class PaymentBase(BaseModel):
 
 class PaymentCreate(BaseModel):
     application_id: int
-    products: List[int]
+    product_ids: List[int]
 
-    @field_validator('products', mode='before')
-    def validate_products(cls, v: List[int]) -> List[int]:
+    @field_validator('product_ids', mode='before')
+    def validate_product_ids(cls, v: List[int]) -> List[int]:
         if not v:
             raise ValueError('At least one product must be selected')
         return v
