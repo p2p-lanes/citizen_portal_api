@@ -64,7 +64,7 @@ def update_application(
     )
 
 
-@router.put('/{application_id}/attendees', response_model=attendees_schemas.Attendee)
+@router.post('/{application_id}/attendees', response_model=attendees_schemas.Attendee)
 def create_attendee(
     application_id: int,
     attendee: attendees_schemas.AttendeeCreate,
