@@ -4,7 +4,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import models, schemas
-from app.api.applications.attendees import models as attendees_models
 from app.api.applications.attendees import schemas as attendees_schemas
 from app.api.applications.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
@@ -102,12 +101,13 @@ class CRUDApplication(
         application_id: int,
         attendee: attendees_schemas.AttendeeCreate,
         user: TokenData,
-    ) -> attendees_models.Attendee:
-        _ = self.get(db, application_id, user)
+    ) -> models.Application:
+        application = self.get(db, application_id, user)
         attendee = attendees_schemas.InternalAttendeeCreate(
             **attendee.model_dump(), application_id=application_id
         )
-        return attendees_crud.create(db, attendee, user)
+        attendee = attendees_crud.create(db, attendee, user)
+        return application
 
     def update_attendee(
         self,
@@ -116,9 +116,10 @@ class CRUDApplication(
         attendee_id: int,
         attendee: attendees_schemas.AttendeeUpdate,
         user: TokenData,
-    ) -> attendees_models.Attendee:
-        _ = self.get(db, application_id, user)
-        return attendees_crud.update(db, attendee_id, attendee, user)
+    ) -> models.Application:
+        application = self.get(db, application_id, user)
+        _ = attendees_crud.update(db, attendee_id, attendee, user)
+        return application
 
     def delete_attendee(
         self,
@@ -126,14 +127,15 @@ class CRUDApplication(
         application_id: int,
         attendee_id: int,
         user: TokenData,
-    ) -> None:
+    ) -> models.Application:
         application = self.get(db, application_id, user)
         if attendee_id not in [a.id for a in application.attendees]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Attendee not found',
             )
-        return attendees_crud.delete(db, attendee_id, user)
+        attendees_crud.delete(db, attendee_id, user)
+        return application
 
 
 application = CRUDApplication(models.Application)

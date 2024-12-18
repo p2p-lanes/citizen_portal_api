@@ -64,7 +64,7 @@ def update_application(
     )
 
 
-@router.post('/{application_id}/attendees', response_model=attendees_schemas.Attendee)
+@router.post('/{application_id}/attendees', response_model=schemas.Application)
 def create_attendee(
     application_id: int,
     attendee: attendees_schemas.AttendeeCreate,
@@ -81,7 +81,7 @@ def create_attendee(
 
 @router.put(
     '/{application_id}/attendees/{attendee_id}',
-    response_model=attendees_schemas.Attendee,
+    response_model=schemas.Application,
 )
 def update_attendee(
     application_id: int,
@@ -99,7 +99,10 @@ def update_attendee(
     )
 
 
-@router.delete('/{application_id}/attendees/{attendee_id}')
+@router.delete(
+    '/{application_id}/attendees/{attendee_id}',
+    response_model=schemas.Application,
+)
 def delete_attendee(
     application_id: int,
     attendee_id: int,
@@ -107,5 +110,8 @@ def delete_attendee(
     db: Session = Depends(get_db),
 ):
     return application_crud.delete_attendee(
-        db=db, application_id=application_id, attendee_id=attendee_id, user=current_user
+        db=db,
+        application_id=application_id,
+        attendee_id=attendee_id,
+        user=current_user,
     )
