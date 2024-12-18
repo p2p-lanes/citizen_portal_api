@@ -62,8 +62,10 @@ class CRUDPayment(
 
         if obj.products:
             # validate that the attendees correspond to the application
-            attendees_ids = [p.attendee_id for p in obj.products]
+            attendees_ids = {p.attendee_id for p in obj.products}
             attendees = db.query(Attendee).filter(Attendee.id.in_(attendees_ids)).all()
+            if len(attendees) != len(attendees_ids):
+                raise HTTPException(status_code=400, detail='Invalid attendees')
             for attendee in attendees:
                 if attendee.application_id != obj.application_id:
                     raise HTTPException(status_code=400, detail='Invalid attendees')
