@@ -1,7 +1,9 @@
 from typing import List, Optional
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
+from app.api.applications.attendees.models import Attendee
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.payments import models, schemas
@@ -59,6 +61,13 @@ class CRUDPayment(
         db.flush()  # This assigns an ID to db_payment without committing
 
         if obj.products:
+            # validate that the attendees correspond to the application
+            attendees_ids = [p.attendee_id for p in obj.products]
+            attendees = db.query(Attendee).filter(Attendee.id.in_(attendees_ids)).all()
+            for attendee in attendees:
+                if attendee.application_id != obj.application_id:
+                    raise HTTPException(status_code=400, detail='Invalid attendees')
+
             product_ids = [p.product_id for p in obj.products]
             products_data = {
                 p.id: p
