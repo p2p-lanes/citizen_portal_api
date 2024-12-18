@@ -7,7 +7,8 @@ from sqlalchemy.orm import Mapped, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
-    from app.api.applications.models import Application
+    from app.api.applications.attendees.models import Attendee, AttendeeProduct
+    from app.api.payments.models import PaymentProduct
 
 
 class Product(Base):
@@ -25,18 +26,23 @@ class Product(Base):
     popup_city_id = Column(Integer, ForeignKey('popups.id'), index=True, nullable=False)
     description = Column(String)
     category = Column(String)
+    attendee_category = Column(String)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     is_active = Column(Boolean, default=True)
 
-    applications: Mapped[List['Application']] = relationship(
-        'Application',
-        secondary='application_products',
+    attendees: Mapped[List['Attendee']] = relationship(
+        'Attendee',
+        secondary='attendee_products',
         back_populates='products',
         viewonly=True,
     )
-    application_products = relationship('ApplicationProduct', back_populates='product')
-    payment_products = relationship('PaymentProduct', back_populates='product')
+    attendee_products: Mapped[List['AttendeeProduct']] = relationship(
+        'AttendeeProduct', back_populates='product'
+    )
+    payment_products: Mapped[List['PaymentProduct']] = relationship(
+        'PaymentProduct', back_populates='product'
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

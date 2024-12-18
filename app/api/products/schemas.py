@@ -10,6 +10,7 @@ class ProductBase(BaseModel):
     popup_city_id: int
     description: Optional[str] = None
     category: Optional[str] = None
+    attendee_category: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     is_active: Optional[bool] = True

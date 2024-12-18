@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
-from app.api.applications.models import Application, ApplicationProduct
+from app.api.applications.attendees.models import AttendeeProduct
+from app.api.applications.models import Application
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
-from app.api.products.models import Product
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
@@ -131,24 +131,24 @@ async def simplefi_webhook(
         )
         logger.info('Found application %s for payment %s', application.id, payment.id)
 
-        application_product_ids = [p.id for p in application.products]
-        product_ids = [
-            p.id for p in payment.products if p.id not in application_product_ids
-        ]
-        if product_ids:
-            products = db.query(Product).filter(Product.id.in_(product_ids)).all()
-            logger.info('Found %s products for payment %s', len(products), payment.id)
-            payment_products = {p.id: p for p in payment.products}
-            application_products = [
-                ApplicationProduct(
-                    application_id=application.id,
-                    product_id=product.id,
-                    attendee_id=payment_products[product.id].attendee_id,
-                    quantity=payment_products[product.id].quantity,
-                )
-                for product in products
-            ]
-            application.products.extend(application_products)
+        if payment.products_snapshot:
+            logger.info(
+                'Found %s products for payment %s',
+                len(payment.products_snapshot),
+                payment.id,
+            )
+            for product_snapshot in payment.products_snapshot:
+                attendee = product_snapshot.attendee
+                product_id = product_snapshot.product_id
+                if product_id not in [p.id for p in attendee.products]:
+                    attendee.attendee_products.append(
+                        AttendeeProduct(
+                            attendee_id=attendee.id,
+                            product_id=product_id,
+                            quantity=product_snapshot.quantity,
+                        )
+                    )
+            db.commit()
             logger.info('Added products to application %s', application.id)
 
     return {'message': 'Payment status updated successfully'}

@@ -7,7 +7,9 @@ from sqlalchemy.orm import Mapped, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.api.applications.attendees.models import Attendee
     from app.api.applications.models import Application
+    from app.api.products.models import Product
 
 
 class PaymentProduct(Base):
@@ -24,8 +26,15 @@ class PaymentProduct(Base):
     product_category = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    payment = relationship('Payment', back_populates='products')
-    product = relationship('Product', back_populates='payment_products')
+    attendee: Mapped['Attendee'] = relationship(
+        'Attendee', back_populates='payment_products'
+    )
+    payment: Mapped['Payment'] = relationship(
+        'Payment', back_populates='products_snapshot'
+    )
+    product: Mapped['Product'] = relationship(
+        'Product', back_populates='payment_products'
+    )
 
 
 class Payment(Base):
@@ -48,7 +57,7 @@ class Payment(Base):
     application: Mapped['Application'] = relationship(
         'Application', back_populates='payments'
     )
-    products: Mapped[List['PaymentProduct']] = relationship(
+    products_snapshot: Mapped[List['PaymentProduct']] = relationship(
         'PaymentProduct', back_populates='payment'
     )
 
