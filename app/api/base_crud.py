@@ -1,5 +1,6 @@
 from typing import Generic, List, Optional, Type, TypeVar
 
+import psycopg2
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
@@ -139,10 +140,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.delete(obj)
             db.commit()
             return obj
-        except HTTPException as e:
-            logger.error('HTTPException in delete: %s', e)
-            raise
-        except Exception as e:
-            logger.error('Exception in delete: %s', e)
+        except IntegrityError as e:
             db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error('IntegrityError in delete: %s', e)
+
+            if isinstance(e.orig, psycopg2.errors.ForeignKeyViolation):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail='Cannot delete this record because it is referenced by other records',
+                )
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Database integrity error occurred',
+            )

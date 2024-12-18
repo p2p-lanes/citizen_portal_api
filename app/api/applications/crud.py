@@ -120,5 +120,20 @@ class CRUDApplication(
         _ = self.get(db, application_id, user)
         return attendees_crud.update(db, attendee_id, attendee, user)
 
+    def delete_attendee(
+        self,
+        db: Session,
+        application_id: int,
+        attendee_id: int,
+        user: TokenData,
+    ) -> None:
+        application = self.get(db, application_id, user)
+        if attendee_id not in [a.id for a in application.attendees]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Attendee not found',
+            )
+        return attendees_crud.delete(db, attendee_id, user)
+
 
 application = CRUDApplication(models.Application)

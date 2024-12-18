@@ -97,3 +97,15 @@ def update_attendee(
         attendee=attendee,
         user=current_user,
     )
+
+
+@router.delete('/{application_id}/attendees/{attendee_id}')
+def delete_attendee(
+    application_id: int,
+    attendee_id: int,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return application_crud.delete_attendee(
+        db=db, application_id=application_id, attendee_id=attendee_id, user=current_user
+    )
