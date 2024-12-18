@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.types import Text
@@ -12,12 +12,16 @@ if TYPE_CHECKING:
     from app.api.products.models import Product
 
 
-application_products = Table(
-    'application_products',
-    Base.metadata,
-    Column('application_id', Integer, ForeignKey('applications.id'), primary_key=True),
-    Column('product_id', Integer, ForeignKey('products.id'), primary_key=True),
-)
+class ApplicationProduct(Base):
+    __tablename__ = 'application_products'
+
+    application_id = Column(Integer, ForeignKey('applications.id'), primary_key=True)
+    product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
+    attendee_id = Column(Integer, ForeignKey('attendees.id'))
+    quantity = Column(Integer, default=1)
+
+    application = relationship('Application', back_populates='application_products')
+    product = relationship('Product', back_populates='application_products')
 
 
 class Application(Base):
@@ -76,7 +80,13 @@ class Application(Base):
     payments = relationship('Payment', back_populates='application')
     attendees = relationship('Attendee', back_populates='application')
     products: Mapped[List['Product']] = relationship(
-        'Product', secondary=application_products, back_populates='applications'
+        'Product',
+        secondary='application_products',
+        back_populates='applications',
+        viewonly=True,
+    )
+    application_products = relationship(
+        'ApplicationProduct', back_populates='application'
     )
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)

@@ -16,12 +16,18 @@ class PaymentBase(BaseModel):
     updated_at: Optional[datetime] = None
 
 
+class PaymentProduct(BaseModel):
+    product_id: int
+    attendee_id: int
+    quantity: int
+
+
 class PaymentCreate(BaseModel):
     application_id: int
-    product_ids: List[int]
+    products: List[PaymentProduct]
 
-    @field_validator('product_ids', mode='before')
-    def validate_product_ids(cls, v: List[int]) -> List[int]:
+    @field_validator('products', mode='before')
+    def validate_products(cls, v: List[PaymentProduct]) -> List[PaymentProduct]:
         if not v:
             raise ValueError('At least one product must be selected')
         return v

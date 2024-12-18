@@ -17,32 +17,41 @@ def create_payment(
 ) -> InternalPaymentCreate:
     application = application_crud.get(db, obj.application_id, user)
 
+    product_ids = [p.product_id for p in obj.products]
+    products_data = {p.product_id: p for p in obj.products}
     products = product_crud.find(
         db=db,
         filters=ProductFilter(
-            id_in=obj.product_ids,
+            id_in=product_ids,
             popup_city_id=application.popup_city_id,
             is_active=True,
         ),
         user=user,
     )
-    if len(products) != len(obj.product_ids):
+    if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
-    amount = sum(product.price for product in products)
+    amount = sum(
+        product.price * products_data[product.id].quantity for product in products
+    )
     reference = {
         'email': application.email,
         'application_id': application.id,
         'products': [
-            {'product_id': product.id, 'name': product.name} for product in products
+            {
+                'product_id': product.id,
+                'name': product.name,
+                'quantity': products_data[product.id].quantity,
+                'attendee_id': products_data[product.id].attendee_id,
+            }
+            for product in products
         ],
     }
 
     payment_request = simplefi.create_payment(amount, reference=reference)
 
     return InternalPaymentCreate(
-        product_ids=obj.product_ids,
+        products=obj.products,
         application_id=application.id,
-        citizen_id=application.citizen_id,
         external_id=payment_request['id'],
         status=payment_request['status'],
         amount=amount,

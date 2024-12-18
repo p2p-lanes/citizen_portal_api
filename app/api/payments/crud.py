@@ -1,6 +1,5 @@
 from typing import List, Optional
 
-from sqlalchemy import insert
 from sqlalchemy.orm import Query, Session
 
 from app.api.applications.models import Application
@@ -52,27 +51,33 @@ class CRUDPayment(
     ) -> models.Payment:
         payment_data = payments_utils.create_payment(db, obj, user)
 
-        payment_dict = payment_data.model_dump(exclude={'product_ids'})
+        payment_dict = payment_data.model_dump(exclude={'products'})
         db_payment = self.model(**payment_dict)
 
         # First save the payment to get its ID
         db.add(db_payment)
         db.flush()  # This assigns an ID to db_payment without committing
 
-        if hasattr(obj, 'product_ids'):
-            products = db.query(Product).filter(Product.id.in_(obj.product_ids)).all()
-            # Insert directly into the association table
-            for product in products:
-                stmt = insert(models.payment_products).values(
+        if obj.products:
+            product_ids = [p.product_id for p in obj.products]
+            products_data = {
+                p.id: p
+                for p in db.query(Product).filter(Product.id.in_(product_ids)).all()
+            }
+
+            for product in obj.products:
+                product_id = product.product_id
+                payment_product = models.PaymentProduct(
                     payment_id=db_payment.id,
-                    product_id=product.id,
-                    product_name=product.name,
-                    product_description=product.description,
-                    product_price=product.price,
-                    product_category=product.category,
-                    quantity=1,
+                    product_id=product_id,
+                    attendee_id=product.attendee_id,
+                    quantity=product.quantity,
+                    product_name=products_data[product_id].name,
+                    product_description=products_data[product_id].description,
+                    product_price=products_data[product_id].price,
+                    product_category=products_data[product_id].category,
                 )
-                db.execute(stmt)
+                db.add(payment_product)
 
         db.commit()
         db.refresh(db_payment)

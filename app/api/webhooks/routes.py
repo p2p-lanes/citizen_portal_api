@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
-from app.api.applications.models import Application
+from app.api.applications.models import Application, ApplicationProduct
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.products.models import Product
@@ -138,8 +138,17 @@ async def simplefi_webhook(
         if product_ids:
             products = db.query(Product).filter(Product.id.in_(product_ids)).all()
             logger.info('Found %s products for payment %s', len(products), payment.id)
-
-            application.products.extend(products)
+            payment_products = {p.id: p for p in payment.products}
+            application_products = [
+                ApplicationProduct(
+                    application_id=application.id,
+                    product_id=product.id,
+                    attendee_id=payment_products[product.id].attendee_id,
+                    quantity=payment_products[product.id].quantity,
+                )
+                for product in products
+            ]
+            application.products.extend(application_products)
             logger.info('Added products to application %s', application.id)
 
     return {'message': 'Payment status updated successfully'}
