@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.applications.models import Application
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
+from app.api.products.models import Product
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
@@ -103,6 +104,13 @@ async def simplefi_webhook(
         return {'message': 'Payment status is the same as payment request status'}
 
     currency = webhook_payload.data.new_payment.coin
+    logger.info(
+        'Updating payment %s with status %s and currency %s',
+        payment.id,
+        payment_request_status,
+        currency,
+    )
+
     payment_update = PaymentUpdate(
         status=payment_request_status,
         currency=currency,
@@ -113,5 +121,25 @@ async def simplefi_webhook(
         payment_update,
         user=TokenData(citizen_id=payment.application.citizen_id, email=''),
     )
+    logger.info('Payment %s updated successfully', payment.id)
+
+    if payment_request_status == 'approved':
+        application = (
+            db.query(Application)
+            .filter(Application.id == payment.application_id)
+            .first()
+        )
+        logger.info('Found application %s for payment %s', application.id, payment.id)
+
+        application_product_ids = [p.id for p in application.products]
+        product_ids = [
+            p.id for p in payment.products if p.id not in application_product_ids
+        ]
+        if product_ids:
+            products = db.query(Product).filter(Product.id.in_(product_ids)).all()
+            logger.info('Found %s products for payment %s', len(products), payment.id)
+
+            application.products.extend(products)
+            logger.info('Added products to application %s', application.id)
 
     return {'message': 'Payment status updated successfully'}

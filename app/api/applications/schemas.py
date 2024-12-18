@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 from app.api.applications.attendees.schemas import Attendee
-from app.api.citizens.schemas import Citizen
+from app.api.products.schemas import Product
 
 
 class ApplicationFilter(BaseModel):
@@ -78,9 +78,9 @@ class InternalApplicationCreate(ApplicationBase):
 
 class Application(InternalApplicationCreate):
     id: int
-    citizen: Optional[Citizen] = None
     attendees: Optional[list[Attendee]] = None
     ticket_category: Optional[str] = None
+    products: Optional[list[Product]] = None
 
     model_config = ConfigDict(
         from_attributes=True,

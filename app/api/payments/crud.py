@@ -61,12 +61,6 @@ class CRUDPayment(
 
         if hasattr(obj, 'product_ids'):
             products = db.query(Product).filter(Product.id.in_(obj.product_ids)).all()
-            application = (
-                db.query(Application)
-                .filter(Application.id == db_payment.application_id)
-                .first()
-            )
-            application.products.extend(products)
             # Insert directly into the association table
             for product in products:
                 stmt = insert(models.payment_products).values(
