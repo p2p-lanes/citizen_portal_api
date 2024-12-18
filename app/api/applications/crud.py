@@ -41,7 +41,7 @@ class CRUDApplication(
         email = citizen.primary_email
         obj = schemas.InternalApplicationCreate(**obj.model_dump(), email=email)
 
-        if obj.status and obj.status not in ['draft', 'in_review']:
+        if obj.status and obj.status not in ['draft', 'in review']:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Invalid status',
@@ -68,7 +68,7 @@ class CRUDApplication(
     ) -> models.Application:
         application = super().update(db, id, obj, user)
 
-        if obj.status and obj.status not in ['draft', 'in_review']:
+        if obj.status and obj.status not in ['draft', 'in review']:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Invalid status',
