@@ -52,9 +52,9 @@ class Application(Base):
     builder_description = Column(String)
 
     # Scholarship information
-    scolarship_request = Column(Boolean)
-    scolarship_details = Column(String)
-    scolarship_video_url = Column(String)
+    scholarship_request = Column(Boolean)
+    scholarship_details = Column(String)
+    scholarship_video_url = Column(String)
 
     sent_mails = Column(Text, nullable=True)
 

@@ -48,9 +48,9 @@ class ApplicationBaseCommon(BaseModel):
     builder_description: Optional[str] = None
 
     # Scholarship information
-    scolarship_request: Optional[bool] = None
-    scolarship_details: Optional[str] = None
-    scolarship_video_url: Optional[str] = None
+    scholarship_request: Optional[bool] = None
+    scholarship_details: Optional[str] = None
+    scholarship_video_url: Optional[str] = None
 
     status: Optional[str] = None
 
