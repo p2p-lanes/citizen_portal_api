@@ -44,10 +44,6 @@ class Application(Base):
     eth_address = Column(String)
     duration = Column(String)
     video_url = Column(String)
-    scolarship_video_url = Column(String)
-
-    builder_boolean = Column(Boolean)
-    builder_description = Column(String)
 
     hackathon_interest = Column(Boolean)
     host_session = Column(String)
@@ -63,14 +59,19 @@ class Application(Base):
     brings_kids = Column(Boolean)
     kids_info = Column(String)
 
+    # Builder information
+    builder_boolean = Column(Boolean)
+    builder_description = Column(String)
+
     # Scholarship information
     scolarship_request = Column(Boolean)
-    scolarship_categories = Column(ARRAY(String), nullable=True)
     scolarship_details = Column(String)
+    scolarship_video_url = Column(String)
 
     sent_mails = Column(Text, nullable=True)
 
     status = Column(String)
+    ticket_category = Column(String)  # builder, scolarship, standard
 
     payments = relationship('Payment', back_populates='application')
     attendees = relationship('Attendee', back_populates='application')

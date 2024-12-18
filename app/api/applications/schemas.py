@@ -28,10 +28,6 @@ class ApplicationBaseCommon(BaseModel):
     eth_address: Optional[str] = None
     duration: Optional[str] = None
     video_url: Optional[str] = None
-    scolarship_video_url: Optional[str] = None
-
-    builder_boolean: Optional[bool] = None
-    builder_description: Optional[str] = None
 
     hackathon_interest: Optional[bool] = None
     host_session: Optional[str] = None
@@ -47,10 +43,14 @@ class ApplicationBaseCommon(BaseModel):
     brings_kids: Optional[bool] = None
     kids_info: Optional[str] = None
 
+    # Builder information
+    builder_boolean: Optional[bool] = None
+    builder_description: Optional[str] = None
+
     # Scholarship information
     scolarship_request: Optional[bool] = None
-    scolarship_categories: Optional[list[str]] = None
     scolarship_details: Optional[str] = None
+    scolarship_video_url: Optional[str] = None
 
     status: Optional[str] = None
 
@@ -80,6 +80,7 @@ class Application(InternalApplicationCreate):
     id: int
     citizen: Optional[Citizen] = None
     attendees: Optional[list[Attendee]] = None
+    ticket_category: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True,
