@@ -50,7 +50,14 @@ class CRUDApplication(
         if obj.status and obj.status != 'draft':
             send_application_received_mail(receiver_mail=email)
 
-        return super().create(db, obj)
+        application = super().create(db, obj)
+        attendee = attendees_schemas.AttendeeCreate(
+            name=f'{obj.first_name} {obj.last_name}'.strip(),
+            category='main',
+            email=email,
+        )
+        self.create_attendee(db, application.id, attendee, user)
+        return application
 
     def update(
         self,
