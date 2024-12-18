@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict
+
+from app.api.products.schemas import Product
 
 
 class AttendeeBase(BaseModel):
@@ -32,6 +34,7 @@ class AttendeeUpdate(BaseModel):
 
 class Attendee(AttendeeBase):
     id: int
+    products: List[Product]
 
     model_config = ConfigDict(
         from_attributes=True,
