@@ -52,6 +52,16 @@ def send_application_received_mail(receiver_mail: str):
     return send_mail(receiver_mail, template='application-received', params=params)
 
 
+def send_payment_confirmed_mail(
+    receiver_mail: str, first_name: str, ticket_list: list[str]
+):
+    params = {
+        'first_name': first_name,
+        'ticket_list': ' - '.join(ticket_list),
+    }
+    return send_mail(receiver_mail, template='payment-confirmed', params=params)
+
+
 def log_email_send(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(

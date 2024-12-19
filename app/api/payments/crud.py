@@ -10,6 +10,7 @@ from app.api.payments import models, schemas
 from app.api.products.models import Product
 from app.core import payments_utils
 from app.core.logger import logger
+from app.core.mail import send_payment_confirmed_mail
 from app.core.security import TokenData
 
 
@@ -104,12 +105,17 @@ class CRUDPayment(
         currency: Optional[str] = None,
     ) -> models.Payment:
         """Handle payment approval and related operations."""
+        if payment.status == 'approved':
+            logger.info('Payment %s already approved', payment.id)
+            return payment
+
         payment_update = schemas.PaymentUpdate(
             status='approved',
             currency=currency,
         )
         updated_payment = self.update(db, payment.id, payment_update, user)
 
+        ticket_list = []
         if payment.products_snapshot:
             logger.info(
                 'Processing %s products for payment %s',
@@ -128,7 +134,14 @@ class CRUDPayment(
                         )
                     )
                 logger.info('Added products to attendee %s', attendee.id)
+                ticket_list.append(f'{product_snapshot.product_name} ({attendee.name})')
             db.commit()
+
+        send_payment_confirmed_mail(
+            receiver_mail=payment.application.citizen.email,
+            first_name=payment.application.citizen.first_name,
+            ticket_list=ticket_list,
+        )
 
         logger.info('Payment %s approved', payment.id)
         return updated_payment
