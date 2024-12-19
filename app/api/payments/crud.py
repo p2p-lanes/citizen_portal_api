@@ -92,9 +92,26 @@ class CRUDPayment(
                 )
                 db.add(payment_product)
 
+        if db_payment.status == 'approved':
+            self._add_products_to_attendees(db_payment)
+
         db.commit()
         db.refresh(db_payment)
         return db_payment
+
+    def _add_products_to_attendees(self, payment: models.Payment) -> None:
+        for product_snapshot in payment.products_snapshot:
+            attendee = product_snapshot.attendee
+            product_id = product_snapshot.product_id
+            if product_id not in [p.id for p in attendee.products]:
+                attendee.attendee_products.append(
+                    AttendeeProduct(
+                        attendee_id=attendee.id,
+                        product_id=product_id,
+                        quantity=product_snapshot.quantity,
+                    )
+                )
+            logger.info('Added products to attendee %s', attendee.id)
 
     def approve_payment(
         self,
@@ -122,18 +139,9 @@ class CRUDPayment(
                 len(payment.products_snapshot),
                 payment.id,
             )
+            self._add_products_to_attendees(payment)
             for product_snapshot in payment.products_snapshot:
                 attendee = product_snapshot.attendee
-                product_id = product_snapshot.product_id
-                if product_id not in [p.id for p in attendee.products]:
-                    attendee.attendee_products.append(
-                        AttendeeProduct(
-                            attendee_id=attendee.id,
-                            product_id=product_id,
-                            quantity=product_snapshot.quantity,
-                        )
-                    )
-                logger.info('Added products to attendee %s', attendee.id)
                 ticket_list.append(f'{product_snapshot.product_name} ({attendee.name})')
             db.commit()
 
