@@ -5,9 +5,16 @@ from app.api.applications.crud import application as application_crud
 from app.api.payments import schemas
 from app.api.payments.schemas import InternalPaymentCreate
 from app.api.products.crud import product as product_crud
+from app.api.products.models import Product
 from app.api.products.schemas import ProductFilter
 from app.core import simplefi
 from app.core.security import TokenData
+
+
+def _get_price(product: Product, ticket_category: str) -> float:
+    if ticket_category == 'builder' and product.builder_price is not None:
+        return product.builder_price
+    return product.price
 
 
 def create_payment(
@@ -45,11 +52,14 @@ def create_payment(
             checkout_url=None,
         )
 
-    patreon_product = next((p for p in products if p.slug == 'patreon'), None)
-    if patreon_product:
-        amount = patreon_product.price
+    ticket_category = application.ticket_category
+    if patreon_product := next((p for p in products if p.slug == 'patreon'), None):
+        amount = _get_price(patreon_product, ticket_category)
     else:
-        amount = sum(p.price * products_data[p.id].quantity for p in products)
+        amount = sum(
+            _get_price(p, ticket_category) * products_data[p.id].quantity
+            for p in products
+        )
 
     reference = {
         'email': application.email,

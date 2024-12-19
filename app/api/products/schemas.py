@@ -6,8 +6,10 @@ from pydantic import BaseModel, ConfigDict
 
 class ProductBase(BaseModel):
     name: str
+    slug: str
     price: float
     compare_price: Optional[float] = None
+    builder_price: Optional[float] = None
     popup_city_id: int
     description: Optional[str] = None
     category: Optional[str] = None
