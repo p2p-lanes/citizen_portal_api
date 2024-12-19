@@ -31,6 +31,17 @@ def create_payment(
     if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
 
+    if application.ticket_category == 'scholarship':
+        return InternalPaymentCreate(
+            products=obj.products,
+            application_id=application.id,
+            external_id=None,
+            status='approved',
+            amount=0,
+            currency='USD',
+            checkout_url=None,
+        )
+
     patreon_product = next((p for p in products if p.slug == 'patreon'), None)
     if patreon_product:
         amount = patreon_product.price
