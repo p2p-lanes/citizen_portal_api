@@ -22,6 +22,7 @@ class Product(Base):
         index=True,
     )
     name = Column(String, nullable=False)
+    slug = Column(String, nullable=False)
     price = Column(Float, nullable=False)
     compare_price = Column(Float, nullable=False)
     popup_city_id = Column(Integer, ForeignKey('popups.id'), index=True, nullable=False)

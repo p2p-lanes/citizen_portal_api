@@ -30,9 +30,13 @@ def create_payment(
     )
     if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
-    amount = sum(
-        product.price * products_data[product.id].quantity for product in products
-    )
+
+    patreon_product = next((p for p in products if p.slug == 'patreon'), None)
+    if patreon_product:
+        amount = patreon_product.price
+    else:
+        amount = sum(p.price * products_data[p.id].quantity for p in products)
+
     reference = {
         'email': application.email,
         'application_id': application.id,
