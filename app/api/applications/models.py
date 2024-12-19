@@ -1,11 +1,16 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.types import Text
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.api.applications.attendees.models import Attendee
+    from app.api.payments.models import Payment
 
 
 class Application(Base):
@@ -61,8 +66,12 @@ class Application(Base):
     status = Column(String)
     ticket_category = Column(String)  # builder, scolarship, standard
 
-    payments = relationship('Payment', back_populates='application')
-    attendees = relationship('Attendee', back_populates='application')
+    payments: Mapped[List['Payment']] = relationship(
+        'Payment', back_populates='application'
+    )
+    attendees: Mapped[List['Attendee']] = relationship(
+        'Attendee', back_populates='application'
+    )
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
     citizen = relationship('Citizen', back_populates='applications', lazy='noload')

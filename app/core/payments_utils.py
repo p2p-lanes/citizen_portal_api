@@ -31,7 +31,10 @@ def create_payment(
     if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
 
-    if application.ticket_category == 'scholarship':
+    application_products = [p for a in application.attendees for p in a.products]
+    already_patreon = any(p.slug == 'patreon' for p in application_products)
+
+    if already_patreon or application.ticket_category == 'scholarship':
         return InternalPaymentCreate(
             products=obj.products,
             application_id=application.id,
