@@ -3,12 +3,13 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
-from app.api.applications.attendees.models import Attendee
+from app.api.applications.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.payments import models, schemas
 from app.api.products.models import Product
 from app.core import payments_utils
+from app.core.logger import logger
 from app.core.security import TokenData
 
 
@@ -93,6 +94,44 @@ class CRUDPayment(
         db.commit()
         db.refresh(db_payment)
         return db_payment
+
+    def approve_payment(
+        self,
+        db: Session,
+        payment: models.Payment,
+        *,
+        user: TokenData,
+        currency: Optional[str] = None,
+    ) -> models.Payment:
+        """Handle payment approval and related operations."""
+        payment_update = schemas.PaymentUpdate(
+            status='approved',
+            currency=currency,
+        )
+        updated_payment = self.update(db, payment.id, payment_update, user)
+
+        if payment.products_snapshot:
+            logger.info(
+                'Processing %s products for payment %s',
+                len(payment.products_snapshot),
+                payment.id,
+            )
+            for product_snapshot in payment.products_snapshot:
+                attendee = product_snapshot.attendee
+                product_id = product_snapshot.product_id
+                if product_id not in [p.id for p in attendee.products]:
+                    attendee.attendee_products.append(
+                        AttendeeProduct(
+                            attendee_id=attendee.id,
+                            product_id=product_id,
+                            quantity=product_snapshot.quantity,
+                        )
+                    )
+                logger.info('Added products to attendee %s', attendee.id)
+            db.commit()
+
+        logger.info('Payment %s approved', payment.id)
+        return updated_payment
 
 
 payment = CRUDPayment(models.Payment)

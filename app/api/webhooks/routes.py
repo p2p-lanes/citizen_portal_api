@@ -2,10 +2,9 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
-from app.api.applications.attendees.models import AttendeeProduct
 from app.api.applications.models import Application
 from app.api.payments.crud import payment as payment_crud
-from app.api.payments.schemas import PaymentFilter, PaymentUpdate
+from app.api.payments.schemas import PaymentFilter
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
@@ -95,60 +94,18 @@ async def simplefi_webhook(
 
     payment = payments[0]
     payment_request_status = webhook_payload.data.payment_request.status
-    logger.info('Payment found: %s', payment.id)
-    logger.info('Payment request status: %s', payment_request_status)
-    logger.info('Payment status: %s', payment.status)
 
     if payment.status == payment_request_status:
         logger.info('Payment status is the same as payment request status. Skipping...')
         return {'message': 'Payment status is the same as payment request status'}
 
     currency = webhook_payload.data.new_payment.coin
-    logger.info(
-        'Updating payment %s with status %s and currency %s',
-        payment.id,
-        payment_request_status,
-        currency,
-    )
-
-    payment_update = PaymentUpdate(
-        status=payment_request_status,
-        currency=currency,
-    )
-    payment_crud.update(
-        db,
-        payment.id,
-        payment_update,
-        user=TokenData(citizen_id=payment.application.citizen_id, email=''),
-    )
-    logger.info('Payment %s updated successfully', payment.id)
+    user = TokenData(citizen_id=payment.application.citizen_id, email='')
 
     if payment_request_status == 'approved':
-        application = (
-            db.query(Application)
-            .filter(Application.id == payment.application_id)
-            .first()
-        )
-        logger.info('Found application %s for payment %s', application.id, payment.id)
-
-        if payment.products_snapshot:
-            logger.info(
-                'Found %s products for payment %s',
-                len(payment.products_snapshot),
-                payment.id,
-            )
-            for product_snapshot in payment.products_snapshot:
-                attendee = product_snapshot.attendee
-                product_id = product_snapshot.product_id
-                if product_id not in [p.id for p in attendee.products]:
-                    attendee.attendee_products.append(
-                        AttendeeProduct(
-                            attendee_id=attendee.id,
-                            product_id=product_id,
-                            quantity=product_snapshot.quantity,
-                        )
-                    )
-            db.commit()
-            logger.info('Added products to application %s', application.id)
+        payment_crud.approve_payment(db, payment, currency=currency, user=user)
+    else:
+        logger.info('Payment status is not approved. Skipping...')
+        return {'message': 'Payment status is not approved'}
 
     return {'message': 'Payment status updated successfully'}
