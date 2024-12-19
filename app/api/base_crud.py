@@ -100,11 +100,25 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         limit: int = 100,
         filters: Optional[BaseModel] = None,
         user: Optional[TokenData] = None,
+        sort_by: str = 'created_at',
+        sort_order: str = 'desc',
     ) -> List[ModelType]:
-        """Get multiple records with pagination, filters and permission check."""
+        """Get multiple records with pagination, filters, sorting and permission check."""
         query = db.query(self.model)
         query = self._apply_filters(query, filters)
 
+        # Validate sort field exists
+        if not hasattr(self.model, sort_by):
+            raise HTTPException(
+                status_code=400, detail=f'Invalid sort field: {sort_by}'
+            )
+
+        # Apply sorting
+        order_by = getattr(self.model, sort_by)
+        if sort_order == 'desc':
+            order_by = order_by.desc()
+
+        query = query.order_by(order_by)
         return query.offset(skip).limit(limit).all()
 
     def update(
