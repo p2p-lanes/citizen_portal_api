@@ -41,7 +41,8 @@ def create_payment(
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.slug == 'patreon' for p in application_products)
 
-    if already_patreon or application.ticket_category == 'Scholarship':
+    ticket_category = application.ticket_category
+    if already_patreon or ticket_category == 'Scholarship':
         return InternalPaymentCreate(
             products=obj.products,
             application_id=application.id,
@@ -52,7 +53,6 @@ def create_payment(
             checkout_url=None,
         )
 
-    ticket_category = application.ticket_category
     if patreon_product := next((p for p in products if p.slug == 'patreon'), None):
         amount = _get_price(patreon_product, ticket_category)
     else:

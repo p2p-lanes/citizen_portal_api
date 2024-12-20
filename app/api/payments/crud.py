@@ -92,6 +92,9 @@ class CRUDPayment(
                 )
                 db.add(payment_product)
 
+            db.flush()
+            db.refresh(db_payment)
+
         if db_payment.status == 'approved':
             self._add_products_to_attendees(db_payment)
 
@@ -100,6 +103,7 @@ class CRUDPayment(
         return db_payment
 
     def _add_products_to_attendees(self, payment: models.Payment) -> None:
+        logger.info('Adding products to attendees')
         for product_snapshot in payment.products_snapshot:
             attendee = product_snapshot.attendee
             product_id = product_snapshot.product_id
@@ -111,7 +115,6 @@ class CRUDPayment(
                         quantity=product_snapshot.quantity,
                     )
                 )
-            logger.info('Added products to attendee %s', attendee.id)
 
     def approve_payment(
         self,
