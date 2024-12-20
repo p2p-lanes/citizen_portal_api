@@ -12,7 +12,7 @@ from app.core.security import TokenData
 
 
 def _get_price(product: Product, ticket_category: str) -> float:
-    if ticket_category == 'builder' and product.builder_price is not None:
+    if ticket_category == 'Builder' and product.builder_price is not None:
         return product.builder_price
     return product.price
 
