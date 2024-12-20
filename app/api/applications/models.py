@@ -10,6 +10,7 @@ from app.core.database import Base
 
 if TYPE_CHECKING:
     from app.api.applications.attendees.models import Attendee
+    from app.api.citizens.models import Citizen
     from app.api.payments.models import Payment
 
 
@@ -74,7 +75,9 @@ class Application(Base):
     )
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
-    citizen = relationship('Citizen', back_populates='applications', lazy='noload')
+    citizen: Mapped['Citizen'] = relationship(
+        'Citizen', back_populates='applications', lazy='joined'
+    )
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     popup_city = relationship('PopUpCity', lazy='noload')
 
