@@ -99,7 +99,9 @@ async def simplefi_webhook(
         logger.info('Payment status is the same as payment request status. Skipping...')
         return {'message': 'Payment status is the same as payment request status'}
 
-    currency = webhook_payload.data.new_payment.coin
+    currency = 'USD'
+    if webhook_payload.data.new_payment:
+        currency = webhook_payload.data.new_payment.coin
     user = TokenData(citizen_id=payment.application.citizen_id, email='')
 
     if payment_request_status == 'approved':
