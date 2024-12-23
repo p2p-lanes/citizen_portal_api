@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.api.products.schemas import Product
 
@@ -21,6 +21,13 @@ class AttendeeCreate(BaseModel):
     category: str
     email: Optional[str] = None
 
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        if not value:
+            return None
+        return value.lower().strip()
+
 
 class InternalAttendeeCreate(AttendeeCreate):
     application_id: int
@@ -30,6 +37,13 @@ class AttendeeUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     category: Optional[str] = None
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        if not value:
+            return None
+        return value.lower().strip()
 
 
 class Attendee(AttendeeBase):
