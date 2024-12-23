@@ -103,6 +103,21 @@ class CRUDApplication(
         user: TokenData,
     ) -> models.Application:
         application = self.get(db, application_id, user)
+        existing_categories = {a.category for a in application.attendees}
+        if (
+            attendee.category in ['main', 'spouse']
+            and attendee.category in existing_categories
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Attendee {attendee.category} already exists',
+            )
+        existing_emails = [a.email for a in application.attendees if a.email]
+        if attendee.email and attendee.email in existing_emails:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Attendee {attendee.email} already exists',
+            )
         attendee = attendees_schemas.InternalAttendeeCreate(
             **attendee.model_dump(), application_id=application_id
         )
@@ -118,6 +133,12 @@ class CRUDApplication(
         user: TokenData,
     ) -> models.Application:
         application = self.get(db, application_id, user)
+        existing_emails = [a.email for a in application.attendees if a.email]
+        if attendee.email and attendee.email in existing_emails:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Attendee {attendee.email} already exists',
+            )
         _ = attendees_crud.update(db, attendee_id, attendee, user)
         return application
 
@@ -133,6 +154,12 @@ class CRUDApplication(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Attendee not found',
+            )
+        attendee = attendees_crud.get(db, attendee_id, user)
+        if attendee.category == 'main':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Cannot delete main attendee',
             )
         attendees_crud.delete(db, attendee_id, user)
         return application
