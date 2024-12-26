@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.api.applications.attendees.schemas import Attendee
 from app.api.products.schemas import Product
@@ -74,6 +74,11 @@ class ApplicationUpdate(ApplicationBaseCommon):
 
 class InternalApplicationCreate(ApplicationBase):
     email: str
+
+    @field_validator('email')
+    @classmethod
+    def clean_email(cls, value: str) -> str:
+        return value.lower().strip()
 
 
 class Application(InternalApplicationCreate):
