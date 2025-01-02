@@ -8,10 +8,18 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.citizens.models import Citizen
 from app.api.popup_city.models import PopUpCity
-from app.core.config import settings
+from app.core.config import Environment, settings
 from app.core.database import Base, get_db
 from app.core.security import create_access_token
 from main import app
+
+
+@pytest.fixture(scope='session', autouse=True)
+def check_test_environment():
+    if settings.ENVIRONMENT != Environment.TEST:
+        raise RuntimeError(
+            f'Tests can only be executed in test environment. Current environment: {settings.ENVIRONMENT}'
+        )
 
 
 @pytest.fixture(scope='session')

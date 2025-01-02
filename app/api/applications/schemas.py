@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -18,6 +18,11 @@ class ApplicationStatus(str, Enum):
 class UserSettableStatus(str, Enum):
     DRAFT = ApplicationStatus.DRAFT.value
     IN_REVIEW = ApplicationStatus.IN_REVIEW.value
+
+
+class TicketCategory(str, Enum):
+    STANDARD = 'standard'
+    DISCOUNTED = 'discounted'
 
 
 class ApplicationFilter(BaseModel):
@@ -98,7 +103,8 @@ class InternalApplicationCreate(ApplicationBase):
 class Application(InternalApplicationCreate):
     id: int
     attendees: Optional[list[Attendee]] = None
-    ticket_category: Optional[str] = None
+    ticket_category: Optional[TicketCategory] = None
+    discount_assigned: Optional[int] = None
     products: Optional[list[Product]] = None
 
     model_config = ConfigDict(

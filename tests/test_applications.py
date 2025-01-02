@@ -209,3 +209,80 @@ def test_update_application_with_invalid_status(client, auth_headers, test_appli
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['status'] == 'in review'
+
+
+def test_application_status_validation(
+    client, auth_headers, test_application, db_session
+):
+    from app.api.applications.models import Application
+    from app.api.applications.schemas import ApplicationStatus, TicketCategory
+
+    # First create a basic application
+    test_application['status'] = ApplicationStatus.IN_REVIEW.value
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()['status'] == test_application['status']
+    assert response.json()['ticket_category'] is None
+    assert response.json()['discount_assigned'] is None
+    application_id = response.json()['id']
+
+    # Test 1: Can't be ACCEPTED without ticket category
+    db_session.query(Application).filter(Application.id == application_id).update(
+        {'status': ApplicationStatus.ACCEPTED.value}
+    )
+    db_session.commit()
+
+    response = client.get(f'/applications/{application_id}', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == ApplicationStatus.IN_REVIEW.value
+    assert response.json()['ticket_category'] is None
+    assert response.json()['discount_assigned'] is None
+
+    # Test 2: Can be ACCEPTED with STANDARD ticket
+    db_session.query(Application).filter(Application.id == application_id).update(
+        {
+            'status': ApplicationStatus.ACCEPTED,
+            'ticket_category': TicketCategory.STANDARD,
+        }
+    )
+    db_session.commit()
+
+    response = client.get(f'/applications/{application_id}', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == ApplicationStatus.ACCEPTED.value
+    assert response.json()['ticket_category'] == TicketCategory.STANDARD.value
+    assert response.json()['discount_assigned'] is None
+
+    # Test 3: Can't be ACCEPTED with DISCOUNTED ticket without discount assigned
+    db_session.query(Application).filter(Application.id == application_id).update(
+        {
+            'status': ApplicationStatus.ACCEPTED,
+            'ticket_category': TicketCategory.DISCOUNTED,
+            'discount_assigned': None,
+        }
+    )
+    db_session.commit()
+
+    response = client.get(f'/applications/{application_id}', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == ApplicationStatus.IN_REVIEW.value
+    assert response.json()['ticket_category'] == TicketCategory.DISCOUNTED.value
+    assert response.json()['discount_assigned'] is None
+
+    # Test 4: Can be ACCEPTED with DISCOUNTED ticket and discount assigned
+    db_session.query(Application).filter(Application.id == application_id).update(
+        {
+            'status': ApplicationStatus.ACCEPTED,
+            'ticket_category': TicketCategory.DISCOUNTED,
+            'discount_assigned': '10',
+        }
+    )
+    db_session.commit()
+
+    response = client.get(f'/applications/{application_id}', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == ApplicationStatus.ACCEPTED.value
+    assert response.json()['ticket_category'] == TicketCategory.DISCOUNTED.value
+    assert response.json()['discount_assigned'] == 10

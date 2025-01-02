@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship, synonym
 from sqlalchemy.types import Text
 
+from app.api.applications.schemas import ApplicationStatus, TicketCategory
 from app.core.database import Base
 
 if TYPE_CHECKING:
@@ -63,8 +64,9 @@ class Application(Base):
 
     sent_mails = Column(Text, nullable=True)
 
-    status = Column(String)
-    ticket_category = Column(String)  # builder, scolarship, standard
+    _status = Column('status', String)
+    ticket_category = Column(String)  # standard, discounted
+    discount_assigned = Column(String)
 
     payments: Mapped[List['Payment']] = relationship(
         'Payment', back_populates='application'
@@ -96,3 +98,25 @@ class Application(Base):
     @info_not_shared.setter
     def info_not_shared(self, value: Optional[Union[str, list[str]]]) -> None:
         self._info_not_shared = ','.join(value) if isinstance(value, list) else value
+
+    def get_status(self) -> Optional[str]:
+        """Compute the effective status based on validation rules"""
+        if not self._status or self._status != ApplicationStatus.ACCEPTED.value:
+            return self._status
+
+        if not self.ticket_category:
+            return ApplicationStatus.IN_REVIEW.value
+
+        if (
+            self.ticket_category == TicketCategory.DISCOUNTED.value
+            and not self.discount_assigned
+        ):
+            return ApplicationStatus.IN_REVIEW.value
+
+        return ApplicationStatus.ACCEPTED.value
+
+    def set_status(self, value: Optional[str]) -> None:
+        """Set the raw status value"""
+        self._status = value
+
+    status = synonym('_status', descriptor=property(get_status, set_status))
