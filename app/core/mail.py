@@ -9,7 +9,7 @@ from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailLogCreate
 from app.core.database import SessionLocal
 
-from .config import settings
+from .config import Environment, settings
 from .logger import logger
 from .utils import encode
 
@@ -126,6 +126,8 @@ def send_mail(
         'TemplateAlias': template,
         'TemplateModel': params,
     }
+    if settings.ENVIRONMENT == Environment.TEST:
+        return {}
 
     response = requests.post(url, json=data, headers=headers)
     response.raise_for_status()

@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.types import Text
 
@@ -43,7 +42,7 @@ class Application(Base):
     host_session = Column(String)
     personal_goals = Column(String)
     referral = Column(String)
-    info_not_shared = Column(ARRAY(String), nullable=True)
+    _info_not_shared = Column('info_not_shared', String, nullable=True)
     investor = Column(Boolean)
 
     # Family information
@@ -87,3 +86,13 @@ class Application(Base):
     updated_by = Column(String)
 
     __mapper_args__ = {'exclude_properties': ['citizen', 'popup_city']}
+
+    @property
+    def info_not_shared(self) -> Optional[list[str]]:
+        if not self._info_not_shared:
+            return None
+        return [i.strip() for i in self._info_not_shared.split(',') if i.strip()]
+
+    @info_not_shared.setter
+    def info_not_shared(self, value: Optional[Union[str, list[str]]]) -> None:
+        self._info_not_shared = ','.join(value) if isinstance(value, list) else value

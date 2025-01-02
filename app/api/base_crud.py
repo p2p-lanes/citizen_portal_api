@@ -142,10 +142,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         except HTTPException as e:
             logger.error('HTTPException in update: %s', e)
             raise
-        except Exception as e:
-            logger.error('Exception in update: %s', e)
-            db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
 
     def delete(self, db: Session, id: int, user: TokenData) -> ModelType:
         """Delete a record."""

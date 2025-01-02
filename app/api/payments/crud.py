@@ -21,7 +21,7 @@ class CRUDPayment(
         return db_obj.application.citizen_id == user.citizen_id
 
     def _apply_filters(
-        self, query: Query, filters: schemas.BaseModel | None = None
+        self, query: Query, filters: Optional[schemas.BaseModel] = None
     ) -> Query:
         query = super()._apply_filters(query, filters)
 

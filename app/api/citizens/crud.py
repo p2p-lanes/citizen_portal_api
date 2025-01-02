@@ -43,7 +43,7 @@ class CRUDCitizen(
             **obj.model_dump(), spice=create_spice()
         )
         citizen = self.create(db, to_create)
-        send_login_mail(obj.email, to_create.spice, citizen.id)
+        send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
         return citizen
 
     def authenticate(self, db: Session, *, email: str) -> models.Citizen:
