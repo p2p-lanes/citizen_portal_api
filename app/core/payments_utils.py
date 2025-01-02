@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as application_crud
+from app.api.applications.schemas import ApplicationStatus, TicketCategory
 from app.api.payments import schemas
 from app.api.payments.schemas import InternalPaymentCreate
 from app.api.products.crud import product as product_crud
@@ -11,10 +12,8 @@ from app.core import simplefi
 from app.core.security import TokenData
 
 
-def _get_price(product: Product, ticket_category: str) -> float:
-    if ticket_category == 'Builder' and product.builder_price is not None:
-        return product.builder_price
-    return product.price
+def _get_price(product: Product, discount_assigned: int) -> float:
+    return round(product.price * (1 - discount_assigned / 100), 2)
 
 
 def create_payment(
@@ -23,6 +22,8 @@ def create_payment(
     user: TokenData,
 ) -> InternalPaymentCreate:
     application = application_crud.get(db, obj.application_id, user)
+    if application.status != ApplicationStatus.ACCEPTED.value:
+        raise HTTPException(status_code=400, detail='Application is not accepted')
 
     product_ids = [p.product_id for p in obj.products]
     products_data = {p.product_id: p for p in obj.products}
@@ -42,7 +43,12 @@ def create_payment(
     already_patreon = any(p.slug == 'patreon' for p in application_products)
 
     ticket_category = application.ticket_category
-    if already_patreon or ticket_category == 'Scholarship':
+    discount_assigned = (
+        application.discount_assigned
+        if ticket_category == TicketCategory.DISCOUNTED.value
+        else 0
+    )
+    if already_patreon or discount_assigned == 100:
         return InternalPaymentCreate(
             products=obj.products,
             application_id=application.id,
@@ -54,10 +60,10 @@ def create_payment(
         )
 
     if patreon_product := next((p for p in products if p.slug == 'patreon'), None):
-        amount = _get_price(patreon_product, ticket_category)
+        amount = _get_price(patreon_product, discount_assigned)
     else:
         amount = sum(
-            _get_price(p, ticket_category) * products_data[p.id].quantity
+            _get_price(p, discount_assigned) * products_data[p.id].quantity
             for p in products
         )
 

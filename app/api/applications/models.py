@@ -66,7 +66,7 @@ class Application(Base):
 
     _status = Column('status', String)
     ticket_category = Column(String)  # standard, discounted
-    discount_assigned = Column(String)
+    _discount_assigned = Column('discount_assigned', String)
 
     payments: Mapped[List['Payment']] = relationship(
         'Payment', back_populates='application'
@@ -98,6 +98,12 @@ class Application(Base):
     @info_not_shared.setter
     def info_not_shared(self, value: Optional[Union[str, list[str]]]) -> None:
         self._info_not_shared = ','.join(value) if isinstance(value, list) else value
+
+    @property
+    def discount_assigned(self) -> Optional[int]:
+        if not self._discount_assigned:
+            return None
+        return int(self._discount_assigned)
 
     def get_status(self) -> Optional[str]:
         """Compute the effective status based on validation rules"""
