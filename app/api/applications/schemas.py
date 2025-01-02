@@ -65,7 +65,7 @@ class ApplicationBaseCommon(BaseModel):
     scholarship_details: Optional[str] = None
     scholarship_video_url: Optional[str] = None
 
-    status: Optional[UserSettableStatus] = None
+    status: Optional[ApplicationStatus] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
