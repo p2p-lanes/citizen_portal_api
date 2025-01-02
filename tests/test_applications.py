@@ -171,3 +171,41 @@ def test_info_not_shared(client, auth_headers, test_application):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data['info_not_shared'] == update_data['info_not_shared']
+
+
+def test_create_application_with_invalid_status(client, auth_headers, test_application):
+    test_application['status'] = 'accepted'
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Test with a valid status
+    test_application['status'] = 'draft'
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()['status'] == 'draft'
+
+
+def test_update_application_with_invalid_status(client, auth_headers, test_application):
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    application_id = response.json()['id']
+
+    test_application['status'] = 'accepted'
+    response = client.put(
+        f'/applications/{application_id}', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Test with a valid status
+    test_application['status'] = 'in review'
+    response = client.put(
+        f'/applications/{application_id}', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == 'in review'

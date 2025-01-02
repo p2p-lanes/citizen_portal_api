@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -7,11 +8,23 @@ from app.api.applications.attendees.schemas import Attendee
 from app.api.products.schemas import Product
 
 
+class ApplicationStatus(str, Enum):
+    DRAFT = 'draft'
+    IN_REVIEW = 'in review'
+    REJECTED = 'rejected'
+    ACCEPTED = 'accepted'
+
+
+class UserSettableStatus(str, Enum):
+    DRAFT = ApplicationStatus.DRAFT.value
+    IN_REVIEW = ApplicationStatus.IN_REVIEW.value
+
+
 class ApplicationFilter(BaseModel):
     email: Optional[str] = None
     citizen_id: Optional[int] = None
     popup_city_id: Optional[int] = None
-    status: Optional[str] = None
+    status: Optional[ApplicationStatus] = None
 
 
 class ApplicationBaseCommon(BaseModel):
@@ -52,7 +65,7 @@ class ApplicationBaseCommon(BaseModel):
     scholarship_details: Optional[str] = None
     scholarship_video_url: Optional[str] = None
 
-    status: Optional[str] = None
+    status: Optional[UserSettableStatus] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -64,12 +77,13 @@ class ApplicationBase(ApplicationBaseCommon):
 
 
 class ApplicationCreate(ApplicationBase):
-    pass
+    status: Optional[UserSettableStatus] = None
 
 
 class ApplicationUpdate(ApplicationBaseCommon):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    status: Optional[UserSettableStatus] = None
 
 
 class InternalApplicationCreate(ApplicationBase):

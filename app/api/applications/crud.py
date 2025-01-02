@@ -40,13 +40,7 @@ class CRUDApplication(
         email = citizen.primary_email
         obj = schemas.InternalApplicationCreate(**obj.model_dump(), email=email)
 
-        if obj.status and obj.status not in ['draft', 'in review']:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Invalid status',
-            )
-
-        if obj.status and obj.status != 'draft':
+        if obj.status and obj.status != schemas.ApplicationStatus.DRAFT:
             send_application_received_mail(receiver_mail=email)
 
         application = super().create(db, obj)
@@ -67,13 +61,7 @@ class CRUDApplication(
     ) -> models.Application:
         application = super().update(db, id, obj, user)
 
-        if obj.status and obj.status not in ['draft', 'in review']:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Invalid status',
-            )
-
-        if obj.status != 'draft':
+        if obj.status != schemas.ApplicationStatus.DRAFT:
             send_application_received_mail(receiver_mail=application.email)
             sent_mails = application.sent_mails or ''
             sent_mails = ','.join(sent_mails.split(',') + ['application-recieved'])
