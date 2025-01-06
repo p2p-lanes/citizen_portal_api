@@ -18,9 +18,6 @@ class CRUDApplication(
     def _check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
         return db_obj.citizen_id == user.citizen_id
 
-    def get_by_email(self, db: Session, email: str) -> Optional[models.Application]:
-        return db.query(self.model).filter(self.model.email == email).first()
-
     def create(
         self,
         db: Session,

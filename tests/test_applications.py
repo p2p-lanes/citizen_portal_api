@@ -64,6 +64,32 @@ def test_get_application_by_id_success(client, test_application):
     assert data['citizen_id'] == citizen_id
 
 
+def test_get_application_from_other_citizen(client, test_application):
+    citizen_id = test_application['citizen_id']
+    create_response = client.post(
+        '/applications/',
+        json=test_application,
+        headers=get_auth_headers_for_citizen(citizen_id),
+    )
+    application_id = create_response.json()['id']
+
+    response = client.get(
+        f'/applications/{application_id}',
+        headers=get_auth_headers_for_citizen(citizen_id + 1),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_create_application_for_other_citizen(client, test_application):
+    citizen_id = test_application['citizen_id']
+    response = client.post(
+        '/applications/',
+        json=test_application,
+        headers=get_auth_headers_for_citizen(citizen_id + 1),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 def test_update_application_success(client, auth_headers, test_application):
     # First create an application
     create_response = client.post(
@@ -80,8 +106,7 @@ def test_update_application_success(client, auth_headers, test_application):
     assert data['first_name'] == 'Updated'
 
 
-@pytest.mark.asyncio
-async def test_create_attendee_success(client, auth_headers, test_application):
+def test_create_attendee_success(client, auth_headers, test_application):
     # First create an application
     create_response = client.post(
         '/applications/', json=test_application, headers=auth_headers
@@ -108,6 +133,196 @@ async def test_create_attendee_success(client, auth_headers, test_application):
     assert created_attendee['name'] == attendee_data['name']
     assert created_attendee['category'] == attendee_data['category']
     assert created_attendee['email'] == attendee_data['email']
+
+
+def test_create_existing_attendee_spouse(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'spouse',
+        'email': 'spouse@example.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'spouse',
+        'email': 'spouse2@example.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()['detail'] == 'Attendee spouse already exists'
+
+
+def test_create_existing_attendee_by_email(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'kid',
+        'email': 'kid@example.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    err_msg = f'Attendee {attendee_data["email"]} already exists'
+    assert response.json()['detail'] == err_msg
+
+
+def test_update_attendee_success(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'kid',
+        'email': 'kid@test.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    attendee_id = response.json()['attendees'][1]['id']
+    update_data = {
+        'name': 'Updated Attendee',
+        'category': 'spouse',  # Can't change category
+    }
+    response = client.put(
+        f'/applications/{application_id}/attendees/{attendee_id}',
+        json=update_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    updated_attendee = next(a for a in data['attendees'] if a['id'] == attendee_id)
+    assert updated_attendee['name'] == 'Updated Attendee'
+    assert updated_attendee['category'] == attendee_data['category']  # unchanged
+    assert updated_attendee['email'] == attendee_data['email']
+
+
+def test_update_attendee_existing_email(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    email1 = 'kid@test.com'
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'kid',
+        'email': email1,
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    attendee_data['email'] = 'kid2@test.com'
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    attendees = response.json()['attendees']
+    kid2_id = next(a['id'] for a in attendees if a['email'] == attendee_data['email'])
+
+    response = client.put(
+        f'/applications/{application_id}/attendees/{kid2_id}',
+        json={'email': email1},
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    err_msg = f'Attendee {email1} already exists'
+    assert response.json()['detail'] == err_msg
+
+
+def test_delete_attendee_success(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'kid',
+        'email': 'kid@test.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    attendee_id = response.json()['attendees'][1]['id']
+
+    response = client.delete(
+        f'/applications/{application_id}/attendees/{attendee_id}',
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+
+def test_delete_main_attendee(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+    attendee_id = create_response.json()['attendees'][0]['id']
+
+    response = client.delete(
+        f'/applications/{application_id}/attendees/{attendee_id}',
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()['detail'] == 'Cannot delete main attendee'
+
+
+def test_delete_attendee_not_found(client, auth_headers, test_application):
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    response = client.delete(
+        f'/applications/{application_id}/attendees/999',
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()['detail'] == 'Attendee not found'
 
 
 def test_get_applications_for_different_citizens(
