@@ -6,7 +6,7 @@ from typing import Any, Callable
 import requests
 
 from app.api.email_logs.crud import email_log
-from app.api.email_logs.schemas import EmailLogCreate
+from app.api.email_logs.schemas import EmailLogCreate, EmailStatus
 from app.core.database import SessionLocal
 
 from .config import Environment, settings
@@ -72,7 +72,7 @@ def log_email_send(func: Callable) -> Callable:
         **kwargs: Any,
     ) -> Any:
         db = SessionLocal()
-        status = 'failed'
+        status = EmailStatus.FAILED
         error_message = None
 
         try:
@@ -83,7 +83,7 @@ def log_email_send(func: Callable) -> Callable:
                 params=params,
                 **kwargs,
             )
-            status = 'success'
+            status = EmailStatus.SUCCESS
             return response_data
         except Exception as e:
             error_message = str(e)

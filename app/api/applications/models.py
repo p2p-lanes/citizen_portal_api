@@ -61,8 +61,6 @@ class Application(Base):
     scholarship_details = Column(String)
     scholarship_video_url = Column(String)
 
-    _sent_mails = Column('sent_mails', String, nullable=False, default='')
-
     _status = Column('status', String)
     ticket_category = Column(String)  # standard, discounted
     _discount_assigned = Column('discount_assigned', String)
@@ -87,16 +85,6 @@ class Application(Base):
     updated_by = Column(String)
 
     __mapper_args__ = {'exclude_properties': ['citizen', 'popup_city']}
-
-    @property
-    def sent_mails(self) -> list[str]:
-        if not self._sent_mails:
-            return []
-        return [i.strip() for i in self._sent_mails.split(',') if i.strip()]
-
-    @sent_mails.setter
-    def sent_mails(self, value: Optional[Union[str, list[str]]]) -> None:
-        self._sent_mails = ','.join(value) if isinstance(value, list) else value
 
     @property
     def info_not_shared(self) -> Optional[list[str]]:

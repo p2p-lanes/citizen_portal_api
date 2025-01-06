@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.applications.models import Application
+from app.api.email_logs.models import EmailLog
+from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter
 from app.api.webhooks import schemas
@@ -19,7 +20,7 @@ async def send_email_webhook(
     webhook_payload: schemas.WebhookPayload,
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
-    unique: bool = Query(False, description='Verify if the email is unique'),
+    unique: bool = Query(True, description='Verify if the email is unique'),
     db: Session = Depends(get_db),
 ):
     if not webhook_payload.data.rows:
@@ -42,18 +43,19 @@ async def send_email_webhook(
         if 'ticketing_url' not in params:
             params['ticketing_url'] = settings.FRONTEND_URL
 
-        application = None
-        if webhook_payload.data.table_name == 'applications':
-            application = (
-                db.query(Application).filter(Application.id == row['id']).first()
+        if unique:
+            email_log = (
+                db.query(EmailLog)
+                .filter(
+                    EmailLog.receiver_email == row['email'],
+                    EmailLog.template == template,
+                    EmailLog.status == EmailStatus.SUCCESS,
+                )
+                .first()
             )
-            if not application:
-                logger.info('Application not found')
+            if email_log:
+                logger.info('Email already sent')
                 continue
-
-        if unique and template in application.sent_mails:
-            logger.info('Email already sent')
-            continue
 
         send_mail(
             receiver_mail=row['email'],
@@ -61,9 +63,6 @@ async def send_email_webhook(
             params=params,
         )
         processed_ids.append(row['id'])
-        if application:
-            application.sent_mails = application.sent_mails + [template]
-            db.commit()
 
     return {'message': 'Email sent successfully'}
 
