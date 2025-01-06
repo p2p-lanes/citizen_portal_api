@@ -63,9 +63,7 @@ class CRUDApplication(
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
             send_application_received_mail(receiver_mail=application.email)
-            sent_mails = application.sent_mails or ''
-            sent_mails = ','.join(sent_mails.split(',') + ['application-recieved'])
-            application.sent_mails = sent_mails
+            application.sent_mails = application.sent_mails + ['application-recieved']
             db.commit()
             db.refresh(application)
         return application

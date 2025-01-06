@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
@@ -20,6 +19,7 @@ async def send_email_webhook(
     webhook_payload: schemas.WebhookPayload,
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
+    unique: bool = Query(False, description='Verify if the email is unique'),
     db: Session = Depends(get_db),
 ):
     if not webhook_payload.data.rows:
@@ -42,30 +42,27 @@ async def send_email_webhook(
         if 'ticketing_url' not in params:
             params['ticketing_url'] = settings.FRONTEND_URL
 
+        application = None
+        if webhook_payload.data.table_name == 'applications':
+            application = (
+                db.query(Application).filter(Application.id == row['id']).first()
+            )
+            if not application:
+                logger.info('Application not found')
+                continue
+
+        if unique and template in application.sent_mails:
+            logger.info('Email already sent')
+            continue
+
         send_mail(
             receiver_mail=row['email'],
             template=template,
             params=params,
         )
         processed_ids.append(row['id'])
-
-    if processed_ids:
-        if webhook_payload.data.table_name == 'applications':
-            db.query(Application).filter(Application.id.in_(processed_ids)).update(
-                {
-                    Application.sent_mails: case(
-                        (
-                            or_(
-                                Application.sent_mails.is_(None),
-                                Application.sent_mails == '',
-                            ),
-                            template,
-                        ),
-                        else_=Application.sent_mails + ',' + template,
-                    )
-                },
-                synchronize_session=False,
-            )
+        if application:
+            application.sent_mails = application.sent_mails + [template]
             db.commit()
 
     return {'message': 'Email sent successfully'}
