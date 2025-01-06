@@ -229,9 +229,10 @@ def test_application_status_validation(
     application_id = response.json()['id']
 
     # Test 1: Can't be ACCEPTED without ticket category
-    db_session.query(Application).filter(Application.id == application_id).update(
-        {'status': ApplicationStatus.ACCEPTED.value}
+    application = (
+        db_session.query(Application).filter(Application.id == application_id).first()
     )
+    application.status = ApplicationStatus.ACCEPTED.value
     db_session.commit()
 
     response = client.get(f'/applications/{application_id}', headers=auth_headers)
@@ -241,12 +242,11 @@ def test_application_status_validation(
     assert response.json()['discount_assigned'] is None
 
     # Test 2: Can be ACCEPTED with STANDARD ticket
-    db_session.query(Application).filter(Application.id == application_id).update(
-        {
-            'status': ApplicationStatus.ACCEPTED,
-            'ticket_category': TicketCategory.STANDARD,
-        }
+    application = (
+        db_session.query(Application).filter(Application.id == application_id).first()
     )
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.ticket_category = TicketCategory.STANDARD.value
     db_session.commit()
 
     response = client.get(f'/applications/{application_id}', headers=auth_headers)
@@ -256,13 +256,12 @@ def test_application_status_validation(
     assert response.json()['discount_assigned'] is None
 
     # Test 3: Can't be ACCEPTED with DISCOUNTED ticket without discount assigned
-    db_session.query(Application).filter(Application.id == application_id).update(
-        {
-            'status': ApplicationStatus.ACCEPTED,
-            'ticket_category': TicketCategory.DISCOUNTED,
-            'discount_assigned': None,
-        }
+    application = (
+        db_session.query(Application).filter(Application.id == application_id).first()
     )
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.ticket_category = TicketCategory.DISCOUNTED.value
+    application.discount_assigned = None
     db_session.commit()
 
     response = client.get(f'/applications/{application_id}', headers=auth_headers)
@@ -272,13 +271,12 @@ def test_application_status_validation(
     assert response.json()['discount_assigned'] is None
 
     # Test 4: Can be ACCEPTED with DISCOUNTED ticket and discount assigned
-    db_session.query(Application).filter(Application.id == application_id).update(
-        {
-            'status': ApplicationStatus.ACCEPTED,
-            'ticket_category': TicketCategory.DISCOUNTED,
-            'discount_assigned': '10',
-        }
+    application = (
+        db_session.query(Application).filter(Application.id == application_id).first()
     )
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.ticket_category = TicketCategory.DISCOUNTED.value
+    application.discount_assigned = '10'
     db_session.commit()
 
     response = client.get(f'/applications/{application_id}', headers=auth_headers)

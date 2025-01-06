@@ -105,6 +105,10 @@ class Application(Base):
             return None
         return int(self._discount_assigned)
 
+    @discount_assigned.setter
+    def discount_assigned(self, value: Optional[int]) -> None:
+        self._discount_assigned = str(value) if value is not None else None
+
     def get_status(self) -> Optional[str]:
         """Compute the effective status based on validation rules"""
         if not self._status or self._status != ApplicationStatus.ACCEPTED.value:
