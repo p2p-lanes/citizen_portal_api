@@ -42,30 +42,34 @@ def create_payment(
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.slug == 'patreon' for p in application_products)
 
+    price_zero_payment = InternalPaymentCreate(
+        products=obj.products,
+        application_id=application.id,
+        external_id=None,
+        status='approved',
+        amount=0,
+        currency='USD',
+        checkout_url=None,
+    )
+    if already_patreon:
+        return price_zero_payment
+
     ticket_category = application.ticket_category
     discount_assigned = (
         application.discount_assigned
         if ticket_category == TicketCategory.DISCOUNTED.value
         else 0
     )
-    if already_patreon or discount_assigned == 100:
-        return InternalPaymentCreate(
-            products=obj.products,
-            application_id=application.id,
-            external_id=None,
-            status='approved',
-            amount=0,
-            currency='USD',
-            checkout_url=None,
-        )
 
-    if patreon_product := next((p for p in products if p.slug == 'patreon'), None):
-        amount = _get_price(patreon_product, discount_assigned)
-    else:
-        amount = sum(
-            _get_price(p, discount_assigned) * products_data[p.id].quantity
-            for p in products
-        )
+    amount = 0
+    for p in products:
+        amount += _get_price(p, discount_assigned) * products_data[p.id].quantity
+        if p.slug == 'patreon':
+            amount = _get_price(p, discount_assigned=0)
+            break
+
+    if amount == 0:
+        return price_zero_payment
 
     reference = {
         'email': application.email,
