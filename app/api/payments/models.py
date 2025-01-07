@@ -52,6 +52,7 @@ class Payment(Base):
     status = Column(String)
     amount = Column(Float)
     currency = Column(String)
+    source = Column(String)
     checkout_url = Column(String)
 
     application: Mapped['Application'] = relationship(
