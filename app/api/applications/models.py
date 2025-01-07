@@ -53,11 +53,11 @@ class Application(Base):
     kids_info = Column(String)
 
     # Builder information
-    builder_boolean = Column(Boolean)
+    builder_boolean = Column(Boolean, nullable=False, default=False)
     builder_description = Column(String)
 
     # Scholarship information
-    scholarship_request = Column(Boolean)
+    scholarship_request = Column(Boolean, nullable=False, default=False)
     scholarship_details = Column(String)
     scholarship_video_url = Column(String)
 
