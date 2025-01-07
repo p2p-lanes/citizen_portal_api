@@ -1,7 +1,13 @@
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
+
+
+class PaymentSource(str, Enum):
+    SIMPLEFI = 'SimpleFI'
+    STRIPE = 'Stripe'
 
 
 class PaymentBase(BaseModel):
@@ -9,6 +15,7 @@ class PaymentBase(BaseModel):
     external_id: Optional[str] = None
     status: Optional[str] = None
     amount: Optional[float] = None
+    source: Optional[PaymentSource] = None
     currency: Optional[str] = None
     checkout_url: Optional[str] = None
 
@@ -40,6 +47,7 @@ class InternalPaymentCreate(PaymentCreate, PaymentBase):
 class PaymentUpdate(BaseModel):
     status: Optional[str] = None
     currency: Optional[str] = None
+    source: Optional[PaymentSource] = None
 
 
 class Payment(PaymentBase):

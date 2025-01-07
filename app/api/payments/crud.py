@@ -7,6 +7,7 @@ from app.api.applications.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.payments import models, schemas
+from app.api.payments.schemas import PaymentSource
 from app.api.products.models import Product
 from app.core import payments_utils
 from app.core.logger import logger
@@ -132,6 +133,9 @@ class CRUDPayment(
         payment_update = schemas.PaymentUpdate(
             status='approved',
             currency=currency,
+            source=PaymentSource.STRIPE
+            if currency == 'USD'
+            else PaymentSource.SIMPLEFI,
         )
         updated_payment = self.update(db, payment.id, payment_update, user)
 
