@@ -121,7 +121,7 @@ def send_mail(
         'X-Postmark-Server-Token': settings.POSTMARK_API_TOKEN,
     }
     data = {
-        'From': 'Edge City <no-reply@edgecity.live>',
+        'From': 'Edge City <edgeportal@edgecity.live>',
         'To': receiver_mail,
         'TemplateAlias': template,
         'TemplateModel': params,
