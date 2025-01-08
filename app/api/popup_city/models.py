@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from app.core.database import Base
 
@@ -23,6 +24,7 @@ class PopUpCity(Base):
     end_date = Column(DateTime)
     clickable_in_portal = Column(Boolean, nullable=True, default=False)
     visible_in_portal = Column(Boolean, nullable=True, default=False)
+    requires_approval = Column(Boolean, nullable=False, default=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

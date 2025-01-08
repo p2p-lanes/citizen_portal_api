@@ -125,6 +125,7 @@ def test_popup_city(db_session):
         location='Test Location',
         visible_in_portal=True,
         clickable_in_portal=True,
+        requires_approval=True,
     )
     db_session.add(popup)
     db_session.commit()

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.api.applications.attendees.models import Attendee
     from app.api.citizens.models import Citizen
     from app.api.payments.models import Payment
+    from app.api.popup_city.models import PopUpCity
 
 
 class Application(Base):
@@ -77,7 +78,7 @@ class Application(Base):
         'Citizen', back_populates='applications', lazy='joined'
     )
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
-    popup_city = relationship('PopUpCity', lazy='noload')
+    popup_city: Mapped['PopUpCity'] = relationship('PopUpCity', lazy='joined')
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

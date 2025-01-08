@@ -8,6 +8,7 @@ from app.api.applications.attendees import schemas as attendees_schemas
 from app.api.applications.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
+from app.api.popup_city.models import PopUpCity
 from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
 
@@ -38,7 +39,14 @@ class CRUDApplication(
         obj = schemas.InternalApplicationCreate(**obj.model_dump(), email=email)
 
         if obj.status and obj.status != schemas.ApplicationStatus.DRAFT:
-            send_application_received_mail(receiver_mail=email)
+            popup_city = (
+                db.query(PopUpCity).filter(PopUpCity.id == obj.popup_city_id).first()
+            )
+            if popup_city.requires_approval:
+                send_application_received_mail(receiver_mail=email)
+            elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
+                obj.status = schemas.ApplicationStatus.ACCEPTED
+                obj.ticket_category = schemas.TicketCategory.STANDARD
 
         application = super().create(db, obj)
         attendee = attendees_schemas.AttendeeCreate(
@@ -57,9 +65,15 @@ class CRUDApplication(
         user: TokenData,
     ) -> models.Application:
         application = super().update(db, id, obj, user)
+        requires_approval = application.popup_city.requires_approval
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
-            send_application_received_mail(receiver_mail=application.email)
+            if requires_approval:
+                send_application_received_mail(receiver_mail=application.email)
+            elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
+                application.status = schemas.ApplicationStatus.ACCEPTED
+                application.ticket_category = schemas.TicketCategory.STANDARD
+                db.commit()
 
         return application
 

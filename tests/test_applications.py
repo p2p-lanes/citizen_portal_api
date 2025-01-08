@@ -1,5 +1,6 @@
 from fastapi import status
 
+from app.api.applications.schemas import ApplicationStatus, TicketCategory
 from tests.conftest import get_auth_headers_for_citizen
 
 
@@ -13,6 +14,53 @@ def test_create_application_success(client, auth_headers, test_application):
     assert data['last_name'] == test_application['last_name']
     assert data['citizen_id'] == test_application['citizen_id']
     assert data['popup_city_id'] == test_application['popup_city_id']
+
+
+def test_create_application_auto_approves_when_approval_not_required(
+    client, auth_headers, test_application, db_session
+):
+    from app.api.popup_city.models import PopUpCity
+
+    popup_city = db_session.get(PopUpCity, test_application['popup_city_id'])
+    popup_city.requires_approval = False
+    db_session.commit()
+
+    test_application['status'] = ApplicationStatus.IN_REVIEW.value
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data['status'] == ApplicationStatus.ACCEPTED.value
+    assert data['ticket_category'] == TicketCategory.STANDARD.value
+
+
+def test_update_application_auto_approves_when_approval_not_required(
+    client, auth_headers, test_application, db_session
+):
+    from app.api.popup_city.models import PopUpCity
+
+    popup_city = db_session.get(PopUpCity, test_application['popup_city_id'])
+    popup_city.requires_approval = False
+    db_session.commit()
+
+    test_application['status'] = ApplicationStatus.DRAFT.value
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data['status'] == ApplicationStatus.DRAFT.value
+    application_id = data['id']
+
+    to_update = {'status': ApplicationStatus.IN_REVIEW.value}
+    response = client.put(
+        f'/applications/{application_id}', json=to_update, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data['status'] == ApplicationStatus.ACCEPTED.value
+    assert data['ticket_category'] == TicketCategory.STANDARD.value
 
 
 def test_create_application_unauthorized(client, test_application):
@@ -419,7 +467,6 @@ def test_application_status_validation(
     client, auth_headers, test_application, db_session
 ):
     from app.api.applications.models import Application
-    from app.api.applications.schemas import ApplicationStatus, TicketCategory
 
     # First create a basic application
     test_application['status'] = ApplicationStatus.IN_REVIEW.value

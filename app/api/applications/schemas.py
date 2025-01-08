@@ -93,6 +93,7 @@ class ApplicationUpdate(ApplicationBaseCommon):
 
 class InternalApplicationCreate(ApplicationBase):
     email: str
+    ticket_category: Optional[TicketCategory] = None
 
     @field_validator('email')
     @classmethod
