@@ -131,7 +131,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """Update a record."""
         try:
             db_obj = self.get(db, id, user)  # This will raise 404 if not found
-            obj_data = obj.dict(exclude_unset=True)
+            obj_data = obj.model_dump(exclude_unset=True)
 
             for field, value in obj_data.items():
                 setattr(db_obj, field, value)
