@@ -94,7 +94,7 @@ def test_create_payment_success(
 ):
     from app.api.applications.models import Application
 
-    application = db_session.query(Application).get(test_payment_data['application_id'])
+    application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
     application.ticket_category = TicketCategory.STANDARD.value
     db_session.commit()
@@ -136,7 +136,7 @@ def test_get_payments(
     # First create a payment
     from app.api.applications.models import Application
 
-    application = db_session.query(Application).get(test_payment_data['application_id'])
+    application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
     application.ticket_category = TicketCategory.STANDARD.value
     db_session.commit()
@@ -165,7 +165,7 @@ def test_get_payment_by_id(
     # First create a payment
     from app.api.applications.models import Application
 
-    application = db_session.query(Application).get(test_payment_data['application_id'])
+    application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
     application.ticket_category = TicketCategory.STANDARD.value
     db_session.commit()
@@ -192,7 +192,7 @@ def test_get_payment_other_citizen(
     # First create a payment
     from app.api.applications.models import Application
 
-    application = db_session.query(Application).get(test_payment_data['application_id'])
+    application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
     application.ticket_category = TicketCategory.STANDARD.value
     db_session.commit()
@@ -220,7 +220,7 @@ def test_simplefi_webhook_payment_approval(
     # First create a payment
     from app.api.applications.models import Application
 
-    application = db_session.query(Application).get(test_payment_data['application_id'])
+    application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
     application.ticket_category = TicketCategory.STANDARD.value
     db_session.commit()
