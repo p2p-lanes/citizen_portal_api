@@ -250,7 +250,7 @@ def test_simplefi_webhook_payment_approval(
                 'payments': [],
             },
             'new_payment': {
-                'coin': 'USD',
+                'coin': 'ETH',
                 'hash': 'test_hash',
                 'amount': payment['amount'],
                 'paid_at': '2024-01-01T00:00:00Z',
@@ -264,4 +264,97 @@ def test_simplefi_webhook_payment_approval(
     # Verify payment was approved
     payment_response = client.get(f'/payments/{payment["id"]}', headers=auth_headers)
     assert payment_response.json()['status'] == 'approved'
-    assert payment_response.json()['source'] == PaymentSource.STRIPE.value
+    assert payment_response.json()['source'] == PaymentSource.SIMPLEFI.value
+
+
+def test_simplefi_webhook_payment_expired(
+    client,
+    auth_headers,
+    test_payment_data,
+    test_product,
+    mock_create_payment,
+    mock_simplefi_response,
+    db_session,
+):
+    # First create a payment
+    from app.api.applications.models import Application
+
+    application = db_session.get(Application, test_payment_data['application_id'])
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.ticket_category = TicketCategory.STANDARD.value
+    db_session.commit()
+
+    create_response = client.post(
+        '/payments/', json=test_payment_data, headers=auth_headers
+    )
+    payment = create_response.json()
+
+    webhook_data = {
+        'id': 'test_id',
+        'event_type': 'new_payment',
+        'entity_type': 'payment_request',
+        'entity_id': payment['external_id'],
+        'data': {
+            'payment_request': {
+                'id': mock_simplefi_response['id'],
+                'order_id': 1,
+                'amount': 100.0,
+                'amount_paid': 100.0,
+                'currency': 'USD',
+                'reference': {},
+                'status': 'expired',
+                'status_detail': 'not_paid',
+                'transactions': [],
+                'card_payment': None,
+                'payments': [],
+            },
+            'new_payment': {
+                'coin': 'USD',
+                'hash': 'test_hash',
+                'amount': payment['amount'],
+                'paid_at': '2024-01-01T00:00:00Z',
+            },
+        },
+    }
+
+    response = client.post('/webhooks/simplefi', json=webhook_data)
+    assert response.status_code == status.HTTP_200_OK
+
+    # Verify payment was expired
+    payment_response = client.get(f'/payments/{payment["id"]}', headers=auth_headers)
+    assert payment_response.json()['status'] == 'expired'
+
+
+def test_simplefi_webhook_invalid_event_type(client, mock_simplefi_response):
+    webhook_data = {
+        'id': 'test_id',
+        'event_type': 'invalid_event_type',
+        'entity_type': 'payment_request',
+        'entity_id': '123',
+        'data': {
+            'payment_request': {
+                'id': mock_simplefi_response['id'],
+                'order_id': 1,
+                'amount': 100.0,
+                'amount_paid': 100.0,
+                'currency': 'USD',
+                'reference': {},
+                'status': 'expired',
+                'status_detail': 'not_paid',
+                'transactions': [],
+                'card_payment': None,
+                'payments': [],
+            },
+            'new_payment': {
+                'coin': 'USD',
+                'hash': 'test_hash',
+                'amount': 100.0,
+                'paid_at': '2024-01-01T00:00:00Z',
+            },
+        },
+    }
+
+    response = client.post('/webhooks/simplefi', json=webhook_data)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    err_msg = 'Event type is not new_payment or new_card_payment'
+    assert response.json()['detail'] == err_msg

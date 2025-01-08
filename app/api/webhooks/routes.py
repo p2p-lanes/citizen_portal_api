@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
-from app.api.payments.schemas import PaymentFilter
+from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
@@ -79,14 +79,20 @@ async def simplefi_webhook(
     )
     if event_type not in ['new_payment', 'new_card_payment']:
         logger.info('Event type is not new_payment or new_card_payment. Skipping...')
-        return {'message': 'Event type is not new_payment or new_card_payment'}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Event type is not new_payment or new_card_payment',
+        )
 
     payments = payment_crud.find(
         db, filters=PaymentFilter(external_id=payment_request_id)
     )
     if not payments:
         logger.info('Payment not found')
-        return {'message': 'Payment not found'}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Payment not found',
+        )
 
     payment = payments[0]
     payment_request_status = webhook_payload.data.payment_request.status
@@ -103,7 +109,6 @@ async def simplefi_webhook(
     if payment_request_status == 'approved':
         payment_crud.approve_payment(db, payment, currency=currency, user=user)
     else:
-        logger.info('Payment status is not approved. Skipping...')
-        return {'message': 'Payment status is not approved'}
+        payment_crud.update(db, payment.id, PaymentUpdate(status='expired'), user)
 
     return {'message': 'Payment status updated successfully'}
