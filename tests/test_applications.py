@@ -1,17 +1,6 @@
-import pytest
 from fastapi import status
 
 from tests.conftest import get_auth_headers_for_citizen
-
-
-@pytest.fixture
-def test_application(test_citizen, test_popup_city):
-    return {
-        'first_name': 'Test',
-        'last_name': 'User',
-        'citizen_id': test_citizen.id,
-        'popup_city_id': test_popup_city.id,
-    }
 
 
 def test_create_application_success(client, auth_headers, test_application):

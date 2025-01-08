@@ -129,3 +129,14 @@ def test_popup_city(db_session):
     db_session.add(popup)
     db_session.commit()
     return popup
+
+
+@pytest.fixture
+def test_application(test_citizen, test_popup_city):
+    """Creates a test application data dictionary"""
+    return {
+        'first_name': 'Test',
+        'last_name': 'User',
+        'citizen_id': test_citizen.id,
+        'popup_city_id': test_popup_city.id,
+    }
