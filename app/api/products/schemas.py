@@ -15,7 +15,8 @@ class ProductBase(BaseModel):
     attendee_category: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    is_active: Optional[bool] = True
+    is_active: bool = True
+    exclusive: bool = False
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

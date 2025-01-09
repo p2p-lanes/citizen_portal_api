@@ -31,7 +31,8 @@ class Product(Base):
     attendee_category = Column(String)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    exclusive = Column(Boolean, nullable=False, default=False)
 
     attendees: Mapped[List['Attendee']] = relationship(
         'Attendee',
