@@ -267,6 +267,7 @@ def test_update_attendee_success(client, auth_headers, test_application):
     attendee_id = response.json()['attendees'][1]['id']
     update_data = {
         'name': 'Updated Attendee',
+        'email': attendee_data['email'],
         'category': 'spouse',  # Can't change category
     }
     response = client.put(
@@ -277,9 +278,9 @@ def test_update_attendee_success(client, auth_headers, test_application):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     updated_attendee = next(a for a in data['attendees'] if a['id'] == attendee_id)
-    assert updated_attendee['name'] == 'Updated Attendee'
+    assert updated_attendee['name'] == update_data['name']
     assert updated_attendee['category'] == attendee_data['category']  # unchanged
-    assert updated_attendee['email'] == attendee_data['email']
+    assert updated_attendee['email'] == update_data['email']
 
 
 def test_update_attendee_existing_email(client, auth_headers, test_application):

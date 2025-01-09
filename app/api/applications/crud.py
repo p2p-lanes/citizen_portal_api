@@ -128,7 +128,9 @@ class CRUDApplication(
         user: TokenData,
     ) -> models.Application:
         application = self.get(db, application_id, user)
-        existing_emails = [a.email for a in application.attendees if a.email]
+        existing_emails = [
+            a.email for a in application.attendees if a.email and a.id != attendee_id
+        ]
         if attendee.email and attendee.email in existing_emails:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
