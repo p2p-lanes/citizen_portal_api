@@ -65,15 +65,18 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.rollback()
             orig = str(e.orig)
             detail = 'Integrity error'
-            if orig and orig.find('DETAIL') != -1:
-                detail = orig.split('DETAIL: ')[1].split('\n')[0].strip()
+            if isinstance(e.orig, psycopg2.errors.UniqueViolation) and 'DETAIL' in orig:
+                error_detail = orig.split('DETAIL: ')[1].split('\n')[0].strip()
+                if '(' in error_detail and ')' in error_detail:
+                    keys = error_detail.split('(')[1].split(')')[0]
+                    detail = f'It already exists a resource with this {keys}'
             logger.error('Integrity error: %s', detail)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=detail,
             )
         except Exception as e:
-            logger.error('Error creating %s: %s', self.model.__name__, str(e))
+            logger.error('SQL error creating %s: %s', self.model.__name__, str(e))
             db.rollback()
             raise e
 
