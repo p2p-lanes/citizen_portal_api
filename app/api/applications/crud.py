@@ -159,5 +159,50 @@ class CRUDApplication(
         attendees_crud.delete(db, attendee_id, user)
         return application
 
+    def get_attendees_directory(
+        self,
+        db: Session,
+        popup_city_id: int,
+        user: TokenData,
+    ) -> List[attendees_schemas.Attendee]:
+        filters = schemas.ApplicationFilter(popup_city_id=popup_city_id)
+        skip = 0
+        limit = 100
+        attendees = []
+        for application in self.find(
+            db,
+            skip=skip,
+            limit=limit,
+            filters=filters,
+        ):
+            a = {
+                'first_name': application.first_name,
+                'last_name': application.last_name,
+                'email': application.email,
+                'telegram': application.telegram,
+                'brings_kids': application.brings_kids,
+            }
+            main_attendee = next(
+                (a for a in application.attendees if a.category == 'main')
+            )
+            check_in = None
+            check_out = None
+            for p in main_attendee.products:
+                if not check_in or (p.start_date and p.start_date < check_in):
+                    check_in = p.start_date
+                if not check_out or (p.end_date and p.end_date > check_out):
+                    check_out = p.end_date
+            a['check_in'] = check_in
+            a['check_out'] = check_out
+
+            if application.info_not_shared:
+                for f in application.info_not_shared:
+                    a[f] = '*'
+
+            attendees.append(a)
+            skip += limit
+
+        return attendees
+
 
 application = CRUDApplication(models.Application)

@@ -40,6 +40,19 @@ def get_applications(
     )
 
 
+@router.get('/attendees_directory/{popup_city_id}')
+def get_attendees_directory(
+    popup_city_id: int,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return application_crud.get_attendees_directory(
+        db=db,
+        popup_city_id=popup_city_id,
+        user=current_user,
+    )
+
+
 @router.get('/{application_id}', response_model=schemas.Application)
 def get_application(
     application_id: int,
