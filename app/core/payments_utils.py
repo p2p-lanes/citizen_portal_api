@@ -64,7 +64,7 @@ def create_payment(
     amount = 0
     for p in products:
         amount += _get_price(p, discount_assigned) * products_data[p.id].quantity
-        if p.category == 'patreon':
+        if p.category in ['patreon', 'supporter']:
             amount = _get_price(p, discount_assigned=0)
             break
 
