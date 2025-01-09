@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -111,3 +111,17 @@ class Application(InternalApplicationCreate):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+HIDDEN_VALUE = '*'
+
+
+class AttendeesDirectory(BaseModel):
+    first_name: Union[str, Literal['*']]
+    last_name: Union[str, Literal['*']]
+    email: Union[str, Literal['*']]
+    telegram: Union[str, Literal['*']]
+    brings_kids: Union[bool, Literal['*']]
+    role: Union[str, Literal['*']]
+    organization: Union[str, Literal['*']]
+    participation: Union[list[bool], Literal['*']]

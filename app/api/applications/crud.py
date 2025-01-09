@@ -175,29 +175,32 @@ class CRUDApplication(
             limit=limit,
             filters=filters,
         ):
+            main_attendee = next(
+                (a for a in application.attendees if a.category == 'main')
+            )
+            if not main_attendee.products:
+                continue
+
+            TOTAL_WEEKS = 4
+            participation = [False] * TOTAL_WEEKS
+            for p in main_attendee.products:
+                if p.slug.startswith('week') and p.slug[len('week') :].isnumeric():
+                    participation[int(p.slug[len('week') :]) - 1] = True
+
             a = {
                 'first_name': application.first_name,
                 'last_name': application.last_name,
                 'email': application.email,
                 'telegram': application.telegram,
                 'brings_kids': application.brings_kids,
+                'role': application.role,
+                'organization': application.organization,
+                'participation': participation,
             }
-            main_attendee = next(
-                (a for a in application.attendees if a.category == 'main')
-            )
-            check_in = None
-            check_out = None
-            for p in main_attendee.products:
-                if not check_in or (p.start_date and p.start_date < check_in):
-                    check_in = p.start_date
-                if not check_out or (p.end_date and p.end_date > check_out):
-                    check_out = p.end_date
-            a['check_in'] = check_in
-            a['check_out'] = check_out
 
             if application.info_not_shared:
                 for f in application.info_not_shared:
-                    a[f] = '*'
+                    a[f] = schemas.HIDDEN_VALUE
 
             attendees.append(a)
             skip += limit
