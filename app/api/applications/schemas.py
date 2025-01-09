@@ -117,11 +117,11 @@ HIDDEN_VALUE = '*'
 
 
 class AttendeesDirectory(BaseModel):
-    first_name: Union[str, Literal['*']]
-    last_name: Union[str, Literal['*']]
-    email: Union[str, Literal['*']]
-    telegram: Union[str, Literal['*']]
-    brings_kids: Union[bool, Literal['*']]
-    role: Union[str, Literal['*']]
-    organization: Union[str, Literal['*']]
-    participation: Union[list[bool], Literal['*']]
+    first_name: Union[Optional[str], Literal['*']]
+    last_name: Union[Optional[str], Literal['*']]
+    email: Union[Optional[str], Literal['*']]
+    telegram: Union[Optional[str], Literal['*']]
+    brings_kids: Union[Optional[bool], Literal['*']]
+    role: Union[Optional[str], Literal['*']]
+    organization: Union[Optional[str], Literal['*']]
+    participation: Union[Optional[list[bool]], Literal['*']]
