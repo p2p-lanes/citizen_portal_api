@@ -1,7 +1,15 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, relationship, synonym
 
 from app.api.applications.schemas import ApplicationStatus, TicketCategory
@@ -86,6 +94,10 @@ class Application(Base):
     updated_by = Column(String)
 
     __mapper_args__ = {'exclude_properties': ['citizen', 'popup_city']}
+
+    __table_args__ = (
+        UniqueConstraint('citizen_id', 'popup_city_id', name='uix_citizen_popup'),
+    )
 
     @property
     def info_not_shared(self) -> Optional[list[str]]:

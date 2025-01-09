@@ -63,6 +63,20 @@ def test_update_application_auto_approves_when_approval_not_required(
     assert data['ticket_category'] == TicketCategory.STANDARD.value
 
 
+def test_create_application_duplicate_popup_city(
+    client, auth_headers, test_application
+):
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT
+
+
 def test_create_application_unauthorized(client, test_application):
     response = client.post('/applications/', json=test_application)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
