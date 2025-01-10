@@ -1,7 +1,7 @@
 import urllib.parse
 from datetime import timedelta
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import requests
 
@@ -14,7 +14,12 @@ from .logger import logger
 from .utils import encode
 
 
-def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: int):
+def _generate_authenticate_url(
+    receiver_mail: str,
+    spice: str,
+    citizen_id: int,
+    popup_slug: Optional[str] = None,
+):
     url = urllib.parse.urljoin(
         settings.BACKEND_URL,
         f'citizens/login?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
@@ -27,7 +32,12 @@ def _generate_authenticate_url(receiver_mail: str, spice: str, citizen_id: int):
         },
         expires_delta=timedelta(hours=3),
     )
-    return urllib.parse.urljoin(settings.FRONTEND_URL, f'/auth?token_url={token_url}')
+    auth_url = urllib.parse.urljoin(
+        settings.FRONTEND_URL, f'/auth?token_url={token_url}'
+    )
+    if popup_slug:
+        auth_url += f'&popup_slug={popup_slug}'
+    return auth_url
 
 
 def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
@@ -41,6 +51,23 @@ def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
         template=template,
         params=params,
     )
+
+
+def send_application_accepted_sa_mail(
+    receiver_mail: str,
+    spice: str,
+    citizen_id: int,
+    first_name: str,
+    popup_slug: str,
+):
+    ticketing_url = _generate_authenticate_url(
+        receiver_mail, spice, citizen_id, popup_slug=popup_slug
+    )
+    params = {
+        'first_name': first_name,
+        'ticketing_url': ticketing_url,
+    }
+    return send_mail(receiver_mail, template='application-approved-sa', params=params)
 
 
 def send_application_received_mail(receiver_mail: str):

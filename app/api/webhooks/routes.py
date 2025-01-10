@@ -1,15 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.citizens.crud import create_spice
+from app.api.citizens.models import Citizen
 from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
+from app.api.popup_city.models import PopUpCity
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
-from app.core.mail import send_mail
+from app.core.mail import send_application_accepted_sa_mail, send_mail
 from app.core.security import TokenData
 
 router = APIRouter()
@@ -21,6 +24,7 @@ async def send_email_webhook(
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
     unique: bool = Query(True, description='Verify if the email is unique'),
+    include_token: bool = Query(False, description='Include token in the email'),
     db: Session = Depends(get_db),
 ):
     if not webhook_payload.data.rows:
@@ -57,11 +61,28 @@ async def send_email_webhook(
                 logger.info('Email already sent')
                 continue
 
-        send_mail(
-            receiver_mail=row['email'],
-            template=template,
-            params=params,
-        )
+        citizen = db.get(Citizen, row['citizen_id'])
+        if citizen and include_token and template == 'application-approved-sa':
+            logger.info('Citizen %s', citizen.id)
+            if not citizen.spice:
+                citizen.spice = create_spice()
+                db.commit()
+
+            popup = db.get(PopUpCity, row['popup_city_id'])
+            send_application_accepted_sa_mail(
+                receiver_mail=row['email'],
+                spice=citizen.spice,
+                citizen_id=citizen.id,
+                first_name=citizen.first_name,
+                popup_slug=popup.slug,
+            )
+        else:
+            send_mail(
+                receiver_mail=row['email'],
+                template=template,
+                params=params,
+            )
+
         processed_ids.append(row['id'])
 
     return {'message': 'Email sent successfully'}
