@@ -58,6 +58,7 @@ async def send_email_webhook(
             .first()
         )
         if email_template:
+            logger.info('Email template found %s', email_template.template)
             template = email_template.template
 
         if unique:
@@ -74,8 +75,8 @@ async def send_email_webhook(
                 logger.info('Email already sent')
                 continue
 
-        citizen = db.get(Citizen, row['citizen_id'])
-        if citizen and include_token and template == 'application-approved-sa':
+        if include_token and template == 'application-approved-sa':
+            citizen = application.citizen
             logger.info('Citizen %s', citizen.id)
             if not citizen.spice:
                 citizen.spice = create_spice()
