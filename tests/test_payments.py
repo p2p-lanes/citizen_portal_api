@@ -287,6 +287,7 @@ def test_simplefi_webhook_payment_expired(
     create_response = client.post(
         '/payments/', json=test_payment_data, headers=auth_headers
     )
+    assert create_response.status_code == status.HTTP_200_OK
     payment = create_response.json()
 
     webhook_data = {

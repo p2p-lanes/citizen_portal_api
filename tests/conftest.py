@@ -126,6 +126,7 @@ def test_popup_city(db_session):
         visible_in_portal=True,
         clickable_in_portal=True,
         requires_approval=True,
+        simplefi_api_key='test_api_key',
     )
     db_session.add(popup)
     db_session.commit()
