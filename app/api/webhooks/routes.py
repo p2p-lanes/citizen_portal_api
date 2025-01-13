@@ -58,14 +58,14 @@ async def send_email_webhook(
         )
         if email_template:
             logger.info('Email template found %s', email_template.template)
-            template = email_template.template
+            _template = email_template.template
 
         if unique:
             email_log = (
                 db.query(EmailLog)
                 .filter(
                     EmailLog.receiver_email == row['email'],
-                    EmailLog.template == template,
+                    EmailLog.template == _template,
                     EmailLog.status == EmailStatus.SUCCESS,
                 )
                 .first()
@@ -74,7 +74,8 @@ async def send_email_webhook(
                 logger.info('Email already sent')
                 continue
 
-        if include_token and template == 'application-approved-sa':
+        application_approved = template.startswith('application-approved')
+        if not application.popup_city.requires_approval and application_approved:
             citizen = application.citizen
             logger.info('Citizen %s', citizen.id)
             if not citizen.spice:
@@ -91,7 +92,7 @@ async def send_email_webhook(
         else:
             send_mail(
                 receiver_mail=row['email'],
-                template=template,
+                template=_template,
                 params=params,
             )
 
