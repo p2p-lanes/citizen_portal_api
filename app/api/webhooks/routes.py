@@ -5,9 +5,9 @@ from app.api.citizens.crud import create_spice
 from app.api.citizens.models import Citizen
 from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
-from app.api.popup_city.models import PopUpCity
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
+from app.api.popup_city.models import EmailTemplate, PopUpCity
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
@@ -60,6 +60,18 @@ async def send_email_webhook(
             if email_log:
                 logger.info('Email already sent')
                 continue
+
+        popup_city_id = row['popup_city_id']
+        email_template = (
+            db.query(EmailTemplate)
+            .filter(
+                EmailTemplate.popup_city_id == popup_city_id,
+                EmailTemplate.event == template,
+            )
+            .first()
+        )
+        if email_template:
+            template = email_template.template
 
         citizen = db.get(Citizen, row['citizen_id'])
         if citizen and include_token and template == 'application-approved-sa':

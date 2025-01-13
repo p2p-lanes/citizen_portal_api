@@ -80,13 +80,18 @@ def send_application_received_mail(receiver_mail: str):
 
 
 def send_payment_confirmed_mail(
-    receiver_mail: str, first_name: str, ticket_list: list[str]
+    receiver_mail: str,
+    first_name: str,
+    ticket_list: list[str],
+    template: Optional[str] = None,
 ):
     params = {
         'first_name': first_name,
         'ticket_list': ' - '.join(ticket_list),
     }
-    return send_mail(receiver_mail, template='payment-confirmed', params=params)
+    if not template:
+        template = 'payment-confirmed'
+    return send_mail(receiver_mail, template=template, params=params)
 
 
 def log_email_send(func: Callable) -> Callable:

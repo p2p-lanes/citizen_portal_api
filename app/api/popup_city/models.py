@@ -1,8 +1,19 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 
 from app.core.database import Base
+
+
+class EmailTemplate(Base):
+    __tablename__ = 'popup_email_templates'
+
+    id = Column(Integer, primary_key=True)
+    popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
+    event = Column(String, nullable=False)
+    template = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class PopUpCity(Base):
