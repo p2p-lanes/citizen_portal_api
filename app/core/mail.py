@@ -36,7 +36,7 @@ def _generate_authenticate_url(
         settings.FRONTEND_URL, f'/auth?token_url={token_url}'
     )
     if popup_slug:
-        auth_url += f'&popup_slug={popup_slug}'
+        auth_url += f'&popup={popup_slug}'
     return auth_url
 
 
