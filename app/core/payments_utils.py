@@ -93,7 +93,16 @@ def create_payment(
         ],
     }
 
-    payment_request = simplefi.create_payment(amount, reference=reference)
+    if not (api_key := application.popup_city.simplefi_api_key):
+        raise HTTPException(
+            status_code=400, detail='Popup city does not have a Simplefi API key'
+        )
+
+    payment_request = simplefi.create_payment(
+        amount,
+        reference=reference,
+        simplefi_api_key=api_key,
+    )
 
     return InternalPaymentCreate(
         products=obj.products,

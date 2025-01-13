@@ -37,6 +37,7 @@ class PopUpCity(Base):
     visible_in_portal = Column(Boolean, nullable=True, default=False)
     requires_approval = Column(Boolean, nullable=False, default=True)
     portal_order = Column(Float, nullable=False, default=0)
+    simplefi_api_key = Column(String)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
