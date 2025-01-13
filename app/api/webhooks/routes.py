@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.applications.models import Application
 from app.api.citizens.crud import create_spice
 from app.api.citizens.models import Citizen
 from app.api.email_logs.models import EmailLog
@@ -47,11 +48,11 @@ async def send_email_webhook(
         if 'ticketing_url' not in params:
             params['ticketing_url'] = settings.FRONTEND_URL
 
-        popup_city_id = row['popup_city_id']
+        application = db.get(Application, row['id'])
         email_template = (
             db.query(EmailTemplate)
             .filter(
-                EmailTemplate.popup_city_id == popup_city_id,
+                EmailTemplate.popup_city_id == application.popup_city_id,
                 EmailTemplate.event == template,
             )
             .first()
