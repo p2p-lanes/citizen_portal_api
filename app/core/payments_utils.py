@@ -61,12 +61,20 @@ def create_payment(
         else 0
     )
 
-    amount = 0
-    for p in products:
-        amount += _get_price(p, discount_assigned) * products_data[p.id].quantity
-        if p.category in ['patreon', 'supporter']:
-            amount = _get_price(p, discount_assigned=0)
-            break
+    if patreon := next((p for p in products if p.category == 'patreon'), None):
+        amount = _get_price(patreon, discount_assigned=0)
+    else:
+        amounts = {}
+        for p in products:
+            pdata = products_data[p.id]
+            attendee_id = pdata.attendee_id
+            _amount = _get_price(p, discount_assigned) * pdata.quantity
+            amounts[attendee_id] = (
+                _amount + amounts.get(attendee_id, 0)
+                if p.category != 'supporter'
+                else _get_price(p, discount_assigned=0)
+            )
+        amount = sum(amounts.values())
 
     if amount == 0:
         return price_zero_payment
