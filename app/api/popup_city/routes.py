@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.popup_city import schemas
@@ -14,9 +14,17 @@ def get_popup_cities(
     current_user: TokenData = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100,
+    sort_by: str = Query(default='portal_order', description='Field to sort by'),
+    sort_order: str = Query(default='asc', pattern='^(asc|desc)$'),
     db: Session = Depends(get_db),
 ):
-    return popup_city_crud.find(db=db, skip=skip, limit=limit)
+    return popup_city_crud.find(
+        db=db,
+        skip=skip,
+        limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
 
 
 @router.get('/{popup_city_id}', response_model=schemas.PopUpCity)
