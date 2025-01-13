@@ -7,12 +7,12 @@ from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
-from app.api.popup_city.models import EmailTemplate, PopUpCity
+from app.api.popup_city.models import EmailTemplate
 from app.api.webhooks import schemas
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
-from app.core.mail import send_application_accepted_sa_mail, send_mail
+from app.core.mail import send_application_accepted_with_ticketing_url, send_mail
 from app.core.security import TokenData
 
 router = APIRouter()
@@ -24,7 +24,6 @@ async def send_email_webhook(
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
     unique: bool = Query(True, description='Verify if the email is unique'),
-    include_token: bool = Query(False, description='Include token in the email'),
     db: Session = Depends(get_db),
 ):
     if not webhook_payload.data.rows:
@@ -75,19 +74,20 @@ async def send_email_webhook(
                 continue
 
         application_approved = template.startswith('application-approved')
-        if not application.popup_city.requires_approval and application_approved:
+        if application_approved:
             citizen = application.citizen
             logger.info('Citizen %s', citizen.id)
             if not citizen.spice:
                 citizen.spice = create_spice()
                 db.commit()
 
-            send_application_accepted_sa_mail(
+            send_application_accepted_with_ticketing_url(
                 receiver_mail=row['email'],
                 spice=citizen.spice,
                 citizen_id=citizen.id,
                 first_name=citizen.first_name,
                 popup_slug=application.popup_city.slug,
+                template=_template,
             )
         else:
             send_mail(

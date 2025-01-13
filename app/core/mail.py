@@ -53,12 +53,13 @@ def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
     )
 
 
-def send_application_accepted_sa_mail(
+def send_application_accepted_with_ticketing_url(
     receiver_mail: str,
     spice: str,
     citizen_id: int,
     first_name: str,
     popup_slug: str,
+    template: str,
 ):
     ticketing_url = _generate_authenticate_url(
         receiver_mail, spice, citizen_id, popup_slug=popup_slug
@@ -67,7 +68,7 @@ def send_application_accepted_sa_mail(
         'first_name': first_name,
         'ticketing_url': ticketing_url,
     }
-    return send_mail(receiver_mail, template='application-approved-sa', params=params)
+    return send_mail(receiver_mail, template=template, params=params)
 
 
 def send_application_received_mail(receiver_mail: str):
