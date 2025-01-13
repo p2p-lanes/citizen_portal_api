@@ -47,6 +47,18 @@ async def send_email_webhook(
         if 'ticketing_url' not in params:
             params['ticketing_url'] = settings.FRONTEND_URL
 
+        popup_city_id = row['popup_city_id']
+        email_template = (
+            db.query(EmailTemplate)
+            .filter(
+                EmailTemplate.popup_city_id == popup_city_id,
+                EmailTemplate.event == template,
+            )
+            .first()
+        )
+        if email_template:
+            template = email_template.template
+
         if unique:
             email_log = (
                 db.query(EmailLog)
@@ -60,18 +72,6 @@ async def send_email_webhook(
             if email_log:
                 logger.info('Email already sent')
                 continue
-
-        popup_city_id = row['popup_city_id']
-        email_template = (
-            db.query(EmailTemplate)
-            .filter(
-                EmailTemplate.popup_city_id == popup_city_id,
-                EmailTemplate.event == template,
-            )
-            .first()
-        )
-        if email_template:
-            template = email_template.template
 
         citizen = db.get(Citizen, row['citizen_id'])
         if citizen and include_token and template == 'application-approved-sa':
