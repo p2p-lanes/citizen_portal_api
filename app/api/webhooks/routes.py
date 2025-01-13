@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
 from app.api.citizens.crud import create_spice
-from app.api.citizens.models import Citizen
 from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
@@ -82,13 +81,12 @@ async def send_email_webhook(
                 citizen.spice = create_spice()
                 db.commit()
 
-            popup = db.get(PopUpCity, row['popup_city_id'])
             send_application_accepted_sa_mail(
                 receiver_mail=row['email'],
                 spice=citizen.spice,
                 citizen_id=citizen.id,
                 first_name=citizen.first_name,
-                popup_slug=popup.slug,
+                popup_slug=application.popup_city.slug,
             )
         else:
             send_mail(
