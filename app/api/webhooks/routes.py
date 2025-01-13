@@ -55,6 +55,7 @@ async def send_email_webhook(
             )
             .first()
         )
+        _template = template
         if email_template:
             logger.info('Email template found %s', email_template.template)
             _template = email_template.template
