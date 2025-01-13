@@ -86,7 +86,7 @@ async def send_email_webhook(
                 receiver_mail=row['email'],
                 spice=citizen.spice,
                 citizen_id=citizen.id,
-                first_name=citizen.first_name,
+                first_name=application.first_name,
                 popup_slug=application.popup_city.slug,
                 template=_template,
             )
