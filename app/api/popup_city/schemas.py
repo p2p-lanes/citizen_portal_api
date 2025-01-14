@@ -9,6 +9,7 @@ class PopUpCityBase(BaseModel):
     slug: str
     tagline: Optional[str] = None
     location: Optional[str] = None
+    passes_description: Optional[str] = None
     image_url: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None

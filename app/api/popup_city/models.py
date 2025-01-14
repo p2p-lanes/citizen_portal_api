@@ -30,6 +30,7 @@ class PopUpCity(Base):
     slug = Column(String, index=True, nullable=False, unique=True)
     tagline = Column(String)
     location = Column(String)
+    passes_description = Column(String)
     image_url = Column(String)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
