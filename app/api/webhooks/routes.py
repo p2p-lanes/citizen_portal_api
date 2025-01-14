@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,7 @@ from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.popup_city.models import EmailTemplate
 from app.api.webhooks import schemas
+from app.core.cache import WebhookCache
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
@@ -16,6 +19,7 @@ from app.core.mail import send_application_accepted_with_ticketing_url, send_mai
 from app.core.security import TokenData
 
 router = APIRouter()
+webhook_cache = WebhookCache(expiry=timedelta(minutes=5))
 
 
 @router.post('/send_email', status_code=status.HTTP_200_OK)
@@ -109,6 +113,12 @@ async def simplefi_webhook(
 ):
     payment_request_id = webhook_payload.data.payment_request.id
     event_type = webhook_payload.event_type
+
+    fingerprint = f'simplefi:{payment_request_id}:{event_type}'
+    if not webhook_cache.add(fingerprint):
+        logger.info('Webhook already processed. Skipping...')
+        return {'message': 'Webhook already processed'}
+
     logger.info(
         'Payment request id: %s, event type: %s', payment_request_id, event_type
     )
