@@ -166,7 +166,7 @@ class CRUDPayment(
             template = email_template.template
         send_payment_confirmed_mail(
             receiver_mail=payment.application.citizen.primary_email,
-            first_name=payment.application.citizen.first_name,
+            first_name=payment.application.first_name,
             ticket_list=ticket_list,
             template=template,
         )
