@@ -32,6 +32,9 @@ class Settings:
     BACKEND_URL: str = os.getenv('BACKEND_URL')
     FRONTEND_URL: str = os.getenv('FRONTEND_URL')
     SIMPLEFI_API_URL: str = os.getenv('SIMPLEFI_API_URL')
+    NOCODB_URL: str = os.getenv('NOCODB_URL')
+    NOCODB_TOKEN: str = os.getenv('NOCODB_TOKEN')
+    NOCODB_WEBHOOK_SECRET: str = os.getenv('NOCODB_WEBHOOK_SECRET')
 
 
 settings = Settings()

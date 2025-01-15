@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+import requests
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -20,6 +21,48 @@ from app.core.security import TokenData
 
 router = APIRouter()
 webhook_cache = WebhookCache(expiry=timedelta(minutes=5))
+
+
+@router.post('/update_status', status_code=status.HTTP_200_OK)
+async def update_status_webhook(
+    webhook_payload: schemas.WebhookPayload,
+    secret: str = Query(..., description='Secret'),
+):
+    logger.info('POST /update_status')
+    if secret != settings.NOCODB_WEBHOOK_SECRET:
+        logger.info('Secret is not valid. Skipping...')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Secret is not valid',
+        )
+
+    if webhook_payload.data.table_name != 'applications':
+        logger.info('Table name is not applications. Skipping...')
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Table name is not applications',
+        )
+
+    table_id = webhook_payload.data.table_id
+    url = f'{settings.NOCODB_URL}/api/v2/tables/{table_id}/records'
+    headers = {
+        'accept': 'application/json',
+        'xc-token': settings.NOCODB_TOKEN,
+        'Content-Type': 'application/json',
+    }
+    for row in webhook_payload.data.rows:
+        if not row.get('calculated_status'):
+            logger.info('No calculated status. Skipping...')
+            continue
+
+        data = {'id': row['id'], 'status': row['calculated_status']}
+        logger.info('update_status data: %s', data)
+        response = requests.patch(url, headers=headers, json=data)
+        logger.info('update_status status code: %s', response.status_code)
+        logger.info('update_status response: %s', response.json())
+
+    logger.info('update_status finished')
+    return {'message': 'Status updated successfully'}
 
 
 @router.post('/send_email', status_code=status.HTTP_200_OK)
