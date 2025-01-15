@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 
 import requests
@@ -29,7 +30,14 @@ async def update_status_webhook(
     webhook_payload: schemas.WebhookPayload,
     secret: str = Header(..., description='Secret'),
     db: Session = Depends(get_db),
+    webhook_cache: WebhookCache = Depends(get_webhook_cache),
 ):
+    rows_str = json.dumps([row.model_dump() for row in webhook_payload.data.rows])
+    fingerprint = f'update_status:{webhook_payload.data.table_id}:{rows_str}'
+    if not webhook_cache.add(fingerprint):
+        logger.info('Webhook already processed. Skipping...')
+        return {'message': 'Webhook already processed'}
+
     logger.info('POST /update_status')
     if secret != settings.NOCODB_WEBHOOK_SECRET:
         logger.info('Secret is not valid. Skipping...')
