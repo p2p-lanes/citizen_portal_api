@@ -51,11 +51,11 @@ async def update_status_webhook(
         'Content-Type': 'application/json',
     }
     for row in webhook_payload.data.rows:
-        if not row.get('calculated_status'):
+        if not (calculated_status := row.model_dump().get('calculated_status')):
             logger.info('No calculated status. Skipping...')
             continue
 
-        data = {'id': row['id'], 'status': row['calculated_status']}
+        data = {'id': row.id, 'status': calculated_status}
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
         logger.info('update_status status code: %s', response.status_code)
