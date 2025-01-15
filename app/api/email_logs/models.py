@@ -1,8 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy import event
-from app.core.database import Base
-from app.core.database import SessionLocal
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, event
+
+from app.core.database import Base, SessionLocal
 
 
 class EmailLog(Base):
@@ -18,8 +18,11 @@ class EmailLog(Base):
     receiver_email = Column(String, nullable=False, index=True)
     template = Column(String, nullable=False)
     params = Column(String)  # JSON string of parameters
-    status = Column(String)  # success, failed
+    status = Column(String)  # success, failed, scheduled, canceled
+    send_at = Column(DateTime, nullable=True)
     error_message = Column(String, nullable=True)
+    entity_type = Column(String, nullable=True)
+    entity_id = Column(Integer, nullable=True)
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), index=True)
 

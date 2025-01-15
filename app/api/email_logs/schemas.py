@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 class EmailStatus(str, Enum):
     SUCCESS = 'success'
     FAILED = 'failed'
+    SCHEDULED = 'scheduled'
+    CANCELLED = 'cancelled'
 
 
 class EmailLogFilter(BaseModel):
@@ -29,6 +31,9 @@ class EmailLogBase(BaseModel):
     template: str
     params: dict
     status: EmailStatus
+    send_at: Optional[datetime] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[int] = None
     error_message: Optional[str] = None
     created_at: Optional[datetime] = None
 

@@ -169,6 +169,7 @@ class CRUDPayment(
             first_name=payment.application.first_name,
             ticket_list=ticket_list,
             template=template,
+            application_id=payment.application_id,
         )
 
         logger.info('Payment %s approved', payment.id)

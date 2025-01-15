@@ -1,22 +1,25 @@
+from datetime import datetime, timedelta
+
 import requests
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
 from app.api.citizens.crud import create_spice
+from app.api.email_logs.crud import email_log
 from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
 from app.api.popup_city.models import EmailTemplate
 from app.api.webhooks import schemas
+from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.cache import WebhookCache
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
 from app.core.mail import send_application_accepted_with_ticketing_url, send_mail
 from app.core.security import TokenData
-from app.api.webhooks.dependencies import get_webhook_cache
 
 router = APIRouter()
 
@@ -25,6 +28,7 @@ router = APIRouter()
 async def update_status_webhook(
     webhook_payload: schemas.WebhookPayload,
     secret: str = Header(..., description='Secret'),
+    db: Session = Depends(get_db),
 ):
     logger.info('POST /update_status')
     if secret != settings.NOCODB_WEBHOOK_SECRET:
@@ -52,13 +56,20 @@ async def update_status_webhook(
         row_dict = row.model_dump()
         calculated_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
-        if not calculated_status:
-            logger.info('No calculated status. Skipping...')
-            continue
+        submitted_date = row_dict.get('submitted_date')
 
         if current_status == calculated_status:
             logger.info('Status is the same as calculated status. Skipping...')
             continue
+
+        if not calculated_status:
+            calculated_status = 'in_review' if submitted_date else 'draft'
+
+        email_log.cancel_scheduled_emails(
+            db,
+            entity_type='application',
+            entity_id=row.id,
+        )
 
         data = {'id': row.id, 'status': calculated_status}
         logger.info('update_status data: %s', data)
@@ -76,6 +87,7 @@ async def send_email_webhook(
     template: str = Query(..., description='Email template name'),
     fields: str = Query(..., description='Template fields'),
     unique: bool = Query(True, description='Verify if the email is unique'),
+    delay: int = Query(0, description='Delay in minutes'),
     db: Session = Depends(get_db),
 ):
     if not webhook_payload.data.rows:
@@ -87,6 +99,7 @@ async def send_email_webhook(
 
     logger.info('Sending email %s to %s rows', template, len(webhook_payload.data.rows))
     logger.info('Fields: %s', fields)
+    send_at = datetime.utcnow() + timedelta(minutes=delay) if delay else None
 
     for row in webhook_payload.data.rows:
         row = row.model_dump()
@@ -141,12 +154,17 @@ async def send_email_webhook(
                 first_name=application.first_name,
                 popup_slug=application.popup_city.slug,
                 template=_template,
+                send_at=send_at,
+                application_id=application.id,
             )
         else:
             send_mail(
                 receiver_mail=row['email'],
                 template=_template,
                 params=params,
+                send_at=send_at,
+                entity_type='application',
+                entity_id=application.id,
             )
 
         processed_ids.append(row['id'])
