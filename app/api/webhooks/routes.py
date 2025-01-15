@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
@@ -26,7 +26,7 @@ webhook_cache = WebhookCache(expiry=timedelta(minutes=5))
 @router.post('/update_status', status_code=status.HTTP_200_OK)
 async def update_status_webhook(
     webhook_payload: schemas.WebhookPayload,
-    secret: str = Query(..., description='Secret'),
+    secret: str = Header(..., description='Secret'),
 ):
     logger.info('POST /update_status')
     if secret != settings.NOCODB_WEBHOOK_SECRET:
