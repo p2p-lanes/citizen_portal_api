@@ -89,6 +89,7 @@ class ApplicationUpdate(ApplicationBaseCommon):
 
 class InternalApplicationCreate(ApplicationBase):
     email: str
+    submitted_at: Optional[datetime] = None
 
     @field_validator('email')
     @classmethod

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -36,7 +37,16 @@ class CRUDApplication(
         if not citizen:
             raise HTTPException(status_code=404, detail='Citizen not found')
         email = citizen.primary_email
-        obj = schemas.InternalApplicationCreate(**obj.model_dump(), email=email)
+        submitted_at = (
+            datetime.utcnow()
+            if obj.status == schemas.ApplicationStatus.IN_REVIEW
+            else None
+        )
+        obj = schemas.InternalApplicationCreate(
+            **obj.model_dump(),
+            email=email,
+            submitted_at=submitted_at,
+        )
 
         if obj.status and obj.status != schemas.ApplicationStatus.DRAFT:
             popup_city = (
@@ -67,11 +77,14 @@ class CRUDApplication(
         requires_approval = application.popup_city.requires_approval
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
+            if application.submitted_at is None and obj.status == schemas.ApplicationStatus.IN_REVIEW:
+                application.submitted_at = datetime.utcnow()
+
             if requires_approval:
                 send_application_received_mail(receiver_mail=application.email)
             elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 application.status = schemas.ApplicationStatus.ACCEPTED
-                db.commit()
+            db.commit()
 
         return application
 

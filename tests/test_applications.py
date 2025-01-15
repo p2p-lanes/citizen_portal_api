@@ -14,6 +14,7 @@ def test_create_application_success(client, auth_headers, test_application):
     assert data['last_name'] == test_application['last_name']
     assert data['citizen_id'] == test_application['citizen_id']
     assert data['popup_city_id'] == test_application['popup_city_id']
+    assert data['submitted_at'] is None
 
 
 def test_create_application_auto_approves_when_approval_not_required(
@@ -33,6 +34,7 @@ def test_create_application_auto_approves_when_approval_not_required(
     data = response.json()
     assert data['status'] == ApplicationStatus.ACCEPTED.value
     assert data['discount_assigned'] is None
+    assert data['submitted_at'] is not None
 
 
 def test_update_application_auto_approves_when_approval_not_required(
