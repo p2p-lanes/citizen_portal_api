@@ -53,12 +53,12 @@ async def update_status_webhook(
     for row in webhook_payload.data.rows:
         row_dict = row.model_dump()
         calculated_status = row_dict.get('calculated_status')
-        status = row_dict.get('status')
+        current_status = row_dict.get('status')
         if not calculated_status:
             logger.info('No calculated status. Skipping...')
             continue
 
-        if status == calculated_status:
+        if current_status == calculated_status:
             logger.info('Status is the same as calculated status. Skipping...')
             continue
 
