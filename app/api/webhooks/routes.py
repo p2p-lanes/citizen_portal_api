@@ -56,14 +56,14 @@ async def update_status_webhook(
         row_dict = row.model_dump()
         calculated_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
-        submitted_date = row_dict.get('submitted_date')
+        submitted_at = row_dict.get('submitted_at')
 
         if current_status == calculated_status:
             logger.info('Status is the same as calculated status. Skipping...')
             continue
 
         if not calculated_status:
-            calculated_status = 'in_review' if submitted_date else 'draft'
+            calculated_status = 'in_review' if submitted_at else 'draft'
 
         email_log.cancel_scheduled_emails(
             db,
@@ -129,7 +129,8 @@ async def send_email_webhook(
             email_log = (
                 db.query(EmailLog)
                 .filter(
-                    EmailLog.receiver_email == row['email'],
+                    EmailLog.entity_id == application.id,
+                    EmailLog.entity_type == 'application',
                     EmailLog.template == _template,
                     EmailLog.status == EmailStatus.SUCCESS,
                 )

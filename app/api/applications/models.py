@@ -71,6 +71,8 @@ class Application(Base):
     scholarship_details = Column(String)
     scholarship_video_url = Column(String)
 
+    submitted_at = Column(DateTime, nullable=True)
+
     _status = Column('status', String)
     _discount_assigned = Column('discount_assigned', String)
 
