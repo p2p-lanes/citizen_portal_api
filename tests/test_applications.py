@@ -1,6 +1,6 @@
 from fastapi import status
 
-from app.api.applications.schemas import ApplicationStatus, TicketCategory
+from app.api.applications.schemas import ApplicationStatus
 from tests.conftest import get_auth_headers_for_citizen
 
 
@@ -32,7 +32,7 @@ def test_create_application_auto_approves_when_approval_not_required(
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data['status'] == ApplicationStatus.ACCEPTED.value
-    assert data['ticket_category'] == TicketCategory.STANDARD.value
+    assert data['discount_assigned'] is None
 
 
 def test_update_application_auto_approves_when_approval_not_required(
@@ -60,7 +60,7 @@ def test_update_application_auto_approves_when_approval_not_required(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data['status'] == ApplicationStatus.ACCEPTED.value
-    assert data['ticket_category'] == TicketCategory.STANDARD.value
+    assert data['discount_assigned'] is None
 
 
 def test_create_application_duplicate_popup_city(
@@ -485,16 +485,17 @@ def test_application_status_validation(
 
     # First create a basic application
     test_application['status'] = ApplicationStatus.IN_REVIEW.value
+    test_application['scholarship_request'] = True
     response = client.post(
         '/applications/', json=test_application, headers=auth_headers
     )
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()['status'] == test_application['status']
-    assert response.json()['ticket_category'] is None
     assert response.json()['discount_assigned'] is None
+    assert response.json()['scholarship_request'] is True
     application_id = response.json()['id']
 
-    # Test 1: Can't be ACCEPTED without ticket category
+    # Test 1: Can't be ACCEPTED without discount assigned if scholarship request is True
     application = (
         db_session.query(Application).filter(Application.id == application_id).first()
     )
@@ -504,49 +505,33 @@ def test_application_status_validation(
     response = client.get(f'/applications/{application_id}', headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['status'] == ApplicationStatus.IN_REVIEW.value
-    assert response.json()['ticket_category'] is None
     assert response.json()['discount_assigned'] is None
+    assert response.json()['scholarship_request'] is True
 
-    # Test 2: Can be ACCEPTED with STANDARD ticket
+    # Test 2: Can be ACCEPTED with discount assigned
     application = (
         db_session.query(Application).filter(Application.id == application_id).first()
     )
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
-    db_session.commit()
-
-    response = client.get(f'/applications/{application_id}', headers=auth_headers)
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()['status'] == ApplicationStatus.ACCEPTED.value
-    assert response.json()['ticket_category'] == TicketCategory.STANDARD.value
-    assert response.json()['discount_assigned'] is None
-
-    # Test 3: Can't be ACCEPTED with DISCOUNTED ticket without discount assigned
-    application = (
-        db_session.query(Application).filter(Application.id == application_id).first()
-    )
-    application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.DISCOUNTED.value
-    application.discount_assigned = None
-    db_session.commit()
-
-    response = client.get(f'/applications/{application_id}', headers=auth_headers)
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()['status'] == ApplicationStatus.IN_REVIEW.value
-    assert response.json()['ticket_category'] == TicketCategory.DISCOUNTED.value
-    assert response.json()['discount_assigned'] is None
-
-    # Test 4: Can be ACCEPTED with DISCOUNTED ticket and discount assigned
-    application = (
-        db_session.query(Application).filter(Application.id == application_id).first()
-    )
-    application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.DISCOUNTED.value
     application.discount_assigned = '10'
     db_session.commit()
 
     response = client.get(f'/applications/{application_id}', headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['status'] == ApplicationStatus.ACCEPTED.value
-    assert response.json()['ticket_category'] == TicketCategory.DISCOUNTED.value
     assert response.json()['discount_assigned'] == 10
+
+    # Test 3: Can be ACCEPTED without discount assigned if scholarship request is False
+    application = (
+        db_session.query(Application).filter(Application.id == application_id).first()
+    )
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.discount_assigned = None
+    application.scholarship_request = False
+    db_session.commit()
+
+    response = client.get(f'/applications/{application_id}', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == ApplicationStatus.ACCEPTED.value
+    assert response.json()['discount_assigned'] is None
+    assert response.json()['scholarship_request'] is False

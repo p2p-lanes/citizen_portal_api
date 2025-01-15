@@ -46,7 +46,6 @@ class CRUDApplication(
                 send_application_received_mail(receiver_mail=email)
             elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 obj.status = schemas.ApplicationStatus.ACCEPTED
-                obj.ticket_category = schemas.TicketCategory.STANDARD
 
         application = super().create(db, obj)
         attendee = attendees_schemas.AttendeeCreate(
@@ -72,7 +71,6 @@ class CRUDApplication(
                 send_application_received_mail(receiver_mail=application.email)
             elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 application.status = schemas.ApplicationStatus.ACCEPTED
-                application.ticket_category = schemas.TicketCategory.STANDARD
                 db.commit()
 
         return application
@@ -161,12 +159,7 @@ class CRUDApplication(
         attendees_crud.delete(db, attendee_id, user)
         return application
 
-    def get_attendees_directory(
-        self,
-        db: Session,
-        popup_city_id: int,
-        user: TokenData,
-    ) -> List[attendees_schemas.Attendee]:
+    def get_attendees_directory(self, db: Session, popup_city_id: int, user: TokenData):
         filters = schemas.ApplicationFilter(popup_city_id=popup_city_id)
         skip = 0
         limit = 100
@@ -183,11 +176,12 @@ class CRUDApplication(
             if not main_attendee.products:
                 continue
 
-            TOTAL_WEEKS = 4
-            participation = [False] * TOTAL_WEEKS
+            check_in, check_out = None, None
             for p in main_attendee.products:
-                if p.slug.startswith('week') and p.slug[len('week') :].isnumeric():
-                    participation[int(p.slug[len('week') :]) - 1] = True
+                if not check_in or (p.start_date and p.start_date < check_in):
+                    check_in = p.start_date
+                if not check_out or (p.end_date and p.end_date > check_out):
+                    check_out = p.end_date
 
             a = {
                 'first_name': application.first_name,
@@ -197,7 +191,8 @@ class CRUDApplication(
                 'brings_kids': application.brings_kids,
                 'role': application.role,
                 'organization': application.organization,
-                'participation': participation,
+                'check_in': check_in,
+                'check_out': check_out,
             }
 
             if application.info_not_shared:

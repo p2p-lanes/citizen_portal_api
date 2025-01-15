@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import requests
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -18,9 +16,9 @@ from app.core.database import get_db
 from app.core.logger import logger
 from app.core.mail import send_application_accepted_with_ticketing_url, send_mail
 from app.core.security import TokenData
+from app.api.webhooks.dependencies import get_webhook_cache
 
 router = APIRouter()
-webhook_cache = WebhookCache(expiry=timedelta(minutes=5))
 
 
 @router.post('/update_status', status_code=status.HTTP_200_OK)
@@ -160,6 +158,7 @@ async def send_email_webhook(
 async def simplefi_webhook(
     webhook_payload: schemas.SimplefiWebhookPayload,
     db: Session = Depends(get_db),
+    webhook_cache: WebhookCache = Depends(get_webhook_cache),
 ):
     payment_request_id = webhook_payload.data.payment_request.id
     event_type = webhook_payload.event_type

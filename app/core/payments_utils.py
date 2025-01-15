@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as application_crud
-from app.api.applications.schemas import ApplicationStatus, TicketCategory
+from app.api.applications.schemas import ApplicationStatus
 from app.api.payments import schemas
 from app.api.payments.schemas import InternalPaymentCreate
 from app.api.products.crud import product as product_crud
@@ -54,12 +54,7 @@ def create_payment(
     if already_patreon:
         return price_zero_payment
 
-    ticket_category = application.ticket_category
-    discount_assigned = (
-        application.discount_assigned
-        if ticket_category == TicketCategory.DISCOUNTED.value
-        else 0
-    )
+    discount_assigned = application.discount_assigned or 0
 
     if patreon := next((p for p in products if p.category == 'patreon'), None):
         amount = _get_price(patreon, discount_assigned=0)

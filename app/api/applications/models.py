@@ -12,7 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, relationship, synonym
 
-from app.api.applications.schemas import ApplicationStatus, TicketCategory
+from app.api.applications.schemas import ApplicationStatus
 from app.core.database import Base
 
 if TYPE_CHECKING:
@@ -72,7 +72,6 @@ class Application(Base):
     scholarship_video_url = Column(String)
 
     _status = Column('status', String)
-    ticket_category = Column(String)  # standard, discounted
     _discount_assigned = Column('discount_assigned', String)
 
     payments: Mapped[List['Payment']] = relationship(
@@ -125,13 +124,7 @@ class Application(Base):
         if not self._status or self._status != ApplicationStatus.ACCEPTED.value:
             return self._status
 
-        if not self.ticket_category:
-            return ApplicationStatus.IN_REVIEW.value
-
-        if (
-            self.ticket_category == TicketCategory.DISCOUNTED.value
-            and not self.discount_assigned
-        ):
+        if self.scholarship_request and self.discount_assigned is None:
             return ApplicationStatus.IN_REVIEW.value
 
         return ApplicationStatus.ACCEPTED.value

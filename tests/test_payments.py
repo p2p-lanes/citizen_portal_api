@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import status
 
-from app.api.applications.schemas import ApplicationStatus, TicketCategory
+from app.api.applications.schemas import ApplicationStatus
 from app.api.payments.schemas import PaymentSource
 from tests.conftest import get_auth_headers_for_citizen
 
@@ -96,7 +96,8 @@ def test_create_payment_success(
 
     application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
+    application.scholarship_request = False
+    application.discount_assigned = None
     db_session.commit()
 
     response = client.post('/payments/', json=test_payment_data, headers=auth_headers)
@@ -138,7 +139,8 @@ def test_get_payments(
 
     application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
+    application.scholarship_request = False
+    application.discount_assigned = None
     db_session.commit()
 
     create_response = client.post(
@@ -167,7 +169,8 @@ def test_get_payment_by_id(
 
     application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
+    application.scholarship_request = False
+    application.discount_assigned = None
     db_session.commit()
 
     create_response = client.post(
@@ -194,7 +197,8 @@ def test_get_payment_other_citizen(
 
     application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
+    application.scholarship_request = False
+    application.discount_assigned = None
     db_session.commit()
 
     create_response = client.post(
@@ -215,6 +219,7 @@ def test_simplefi_webhook_payment_approval(
     test_product,
     mock_create_payment,
     mock_simplefi_response,
+    mock_webhook_cache,
     db_session,
 ):
     # First create a payment
@@ -222,7 +227,8 @@ def test_simplefi_webhook_payment_approval(
 
     application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
+    application.scholarship_request = False
+    application.discount_assigned = None
     db_session.commit()
 
     create_response = client.post(
@@ -274,6 +280,7 @@ def test_simplefi_webhook_payment_expired(
     test_product,
     mock_create_payment,
     mock_simplefi_response,
+    mock_webhook_cache,
     db_session,
 ):
     # First create a payment
@@ -281,7 +288,8 @@ def test_simplefi_webhook_payment_expired(
 
     application = db_session.get(Application, test_payment_data['application_id'])
     application.status = ApplicationStatus.ACCEPTED.value
-    application.ticket_category = TicketCategory.STANDARD.value
+    application.scholarship_request = False
+    application.discount_assigned = None
     db_session.commit()
 
     create_response = client.post(
@@ -326,7 +334,11 @@ def test_simplefi_webhook_payment_expired(
     assert payment_response.json()['status'] == 'expired'
 
 
-def test_simplefi_webhook_invalid_event_type(client, mock_simplefi_response):
+def test_simplefi_webhook_invalid_event_type(
+    client,
+    mock_simplefi_response,
+    mock_webhook_cache,
+):
     webhook_data = {
         'id': 'test_id',
         'event_type': 'invalid_event_type',

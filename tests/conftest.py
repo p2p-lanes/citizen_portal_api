@@ -1,4 +1,5 @@
 import asyncio
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.citizens.models import Citizen
 from app.api.popup_city.models import PopUpCity
+from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.config import Environment, settings
 from app.core.database import Base, get_db
 from app.core.security import create_access_token
@@ -142,3 +144,12 @@ def test_application(test_citizen, test_popup_city):
         'citizen_id': test_citizen.id,
         'popup_city_id': test_popup_city.id,
     }
+
+
+@pytest.fixture
+def mock_webhook_cache():
+    mock_cache = Mock()
+    mock_cache.add.return_value = True  # Always treat webhooks as new
+    app.dependency_overrides[get_webhook_cache] = lambda: mock_cache
+    yield mock_cache
+    app.dependency_overrides.clear()

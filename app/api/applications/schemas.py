@@ -20,11 +20,6 @@ class UserSettableStatus(str, Enum):
     IN_REVIEW = ApplicationStatus.IN_REVIEW.value
 
 
-class TicketCategory(str, Enum):
-    STANDARD = 'standard'
-    DISCOUNTED = 'discounted'
-
-
 class ApplicationFilter(BaseModel):
     email: Optional[str] = None
     citizen_id: Optional[int] = None
@@ -94,7 +89,6 @@ class ApplicationUpdate(ApplicationBaseCommon):
 
 class InternalApplicationCreate(ApplicationBase):
     email: str
-    ticket_category: Optional[TicketCategory] = None
 
     @field_validator('email')
     @classmethod
@@ -105,7 +99,6 @@ class InternalApplicationCreate(ApplicationBase):
 class Application(InternalApplicationCreate):
     id: int
     attendees: Optional[list[Attendee]] = None
-    ticket_category: Optional[TicketCategory] = None
     discount_assigned: Optional[int] = None
     products: Optional[list[Product]] = None
 
