@@ -46,7 +46,13 @@ class CRUDCitizen(
         send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
         return citizen
 
-    def authenticate(self, db: Session, *, email: str) -> models.Citizen:
+    def authenticate(
+        self,
+        db: Session,
+        *,
+        email: str,
+        popup_slug: Optional[str] = None,
+    ) -> models.Citizen:
         citizen = self.get_by_email(db, email)
         spice = create_spice()
         if not citizen:
@@ -58,7 +64,7 @@ class CRUDCitizen(
         citizen.spice = spice
         db.commit()
         db.refresh(citizen)
-        send_login_mail(email, citizen.spice, citizen.id)
+        send_login_mail(email, citizen.spice, citizen.id, popup_slug)
         return {'message': 'Mail sent successfully'}
 
     def login(

@@ -55,9 +55,17 @@ def send_mail(
     )
 
 
-def send_login_mail(receiver_mail: str, spice: str, citizen_id: int):
+def send_login_mail(
+    receiver_mail: str,
+    spice: str,
+    citizen_id: int,
+    popup_slug: Optional[str] = None,
+):
+    authenticate_url = _generate_authenticate_url(
+        receiver_mail, spice, citizen_id, popup_slug
+    )
     params = {
-        'the_url': _generate_authenticate_url(receiver_mail, spice, citizen_id),
+        'the_url': authenticate_url,
         'email': receiver_mail,
     }
     template = 'auth-citizen-portal'

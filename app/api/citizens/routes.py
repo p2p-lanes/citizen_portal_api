@@ -22,7 +22,7 @@ def authenticate(
     data: schemas.Authenticate,
     db: Session = Depends(get_db),
 ):
-    return citizen_crud.authenticate(db=db, email=data.email)
+    return citizen_crud.authenticate(db=db, email=data.email, popup_slug=data.popup_slug)
 
 
 @router.post('/login')

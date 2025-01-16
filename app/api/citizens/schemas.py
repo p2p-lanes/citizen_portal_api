@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 class Authenticate(BaseModel):
     email: str
+    popup_slug: Optional[str] = None
 
     model_config = ConfigDict(
         str_strip_whitespace=True,
