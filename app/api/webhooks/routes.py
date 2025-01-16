@@ -12,7 +12,7 @@ from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
-from app.api.popup_city.models import EmailTemplate
+from app.api.popup_city.crud import popup_city
 from app.api.webhooks import schemas
 from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.cache import WebhookCache
@@ -122,18 +122,8 @@ async def send_email_webhook(
             params['ticketing_url'] = settings.FRONTEND_URL
 
         application = db.get(Application, row['id'])
-        email_template = (
-            db.query(EmailTemplate)
-            .filter(
-                EmailTemplate.popup_city_id == application.popup_city_id,
-                EmailTemplate.event == template,
-            )
-            .first()
-        )
-        _template = template
-        if email_template:
-            logger.info('Email template found %s', email_template.template)
-            _template = email_template.template
+        popup_city_id = application.popup_city_id
+        _template = popup_city.get_email_template(db, popup_city_id, template)
 
         if unique:
             email_log = (

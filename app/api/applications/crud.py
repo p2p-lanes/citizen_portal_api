@@ -9,6 +9,7 @@ from app.api.applications.attendees import schemas as attendees_schemas
 from app.api.applications.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
+from app.api.popup_city.crud import popup_city
 from app.api.popup_city.models import PopUpCity
 from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
@@ -49,11 +50,15 @@ class CRUDApplication(
         )
 
         if obj.status and obj.status != schemas.ApplicationStatus.DRAFT:
-            popup_city = (
-                db.query(PopUpCity).filter(PopUpCity.id == obj.popup_city_id).first()
-            )
-            if popup_city.requires_approval:
-                send_application_received_mail(receiver_mail=email)
+            popup_city_id = obj.popup_city_id
+            requires_approval = (
+                db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
+            ).requires_approval
+            if requires_approval:
+                _template = popup_city.get_email_template(
+                    db, popup_city_id, 'application-received'
+                )
+                send_application_received_mail(receiver_mail=email, template=_template)
             elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 obj.status = schemas.ApplicationStatus.ACCEPTED
 
@@ -77,7 +82,10 @@ class CRUDApplication(
         requires_approval = application.popup_city.requires_approval
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
-            if application.submitted_at is None and obj.status == schemas.ApplicationStatus.IN_REVIEW:
+            if (
+                application.submitted_at is None
+                and obj.status == schemas.ApplicationStatus.IN_REVIEW
+            ):
                 application.submitted_at = datetime.utcnow()
 
             if requires_approval:

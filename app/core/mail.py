@@ -111,15 +111,18 @@ def send_application_received_mail(
     *,
     send_at: Optional[datetime] = None,
     application_id: Optional[int] = None,
+    template: Optional[str] = None,
 ):
     submission_form_url = urllib.parse.urljoin(settings.FRONTEND_URL, 'portal')
     params = {
         'submission_form_url': submission_form_url,
         'email': receiver_mail,
     }
+    if not template:
+        template = 'application-received'
     return send_mail(
         receiver_mail,
-        template='application-received',
+        template=template,
         params=params,
         send_at=send_at,
         entity_type='application',
