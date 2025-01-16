@@ -75,12 +75,6 @@ async def update_status_webhook(
                 ApplicationStatus.IN_REVIEW if submitted_at else ApplicationStatus.DRAFT
             )
 
-        email_log.cancel_scheduled_emails(
-            db,
-            entity_type='application',
-            entity_id=row.id,
-        )
-
         data = {'id': row.id, 'status': calculated_status}
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
@@ -126,7 +120,7 @@ async def send_email_webhook(
         _template = popup_city.get_email_template(db, popup_city_id, template)
 
         if unique:
-            email_log = (
+            exists_email_log = (
                 db.query(EmailLog)
                 .filter(
                     EmailLog.entity_id == application.id,
@@ -136,9 +130,18 @@ async def send_email_webhook(
                 )
                 .first()
             )
-            if email_log:
+            if exists_email_log:
                 logger.info('Email already sent')
                 continue
+
+        if send_at:
+            # Cancel any existing scheduled emails since only one can be active per application
+            logger.info('Cancelling scheduled emails')
+            email_log.cancel_scheduled_emails(
+                db,
+                entity_type='application',
+                entity_id=row.id,
+            )
 
         application_approved = template.startswith('application-approved')
         if application_approved:
