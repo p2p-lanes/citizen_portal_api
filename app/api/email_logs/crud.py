@@ -106,16 +106,33 @@ class CRUDEmailLog(
             .filter(self.model.status == EmailStatus.SCHEDULED)
             .all()
         )
+        logger.info('Found %s scheduled emails', len(scheduled_emails))
+
         for email in scheduled_emails:
-            if email.send_at < datetime.now():
-                params = json.loads(email.params)
-                _send_mail(
-                    receiver_mail=email.receiver_email,
-                    template=email.template,
-                    params=params,
-                )
-                email.status = EmailStatus.SUCCESS
-                db.commit()
+            logger.info('Processing email %s, send_at: %s', email.id, email.send_at)
+            if email.send_at < datetime.utcnow():
+                try:
+                    params = json.loads(email.params)
+                    _send_mail(
+                        receiver_mail=email.receiver_email,
+                        template=email.template,
+                        params=params,
+                    )
+                    email.status = EmailStatus.SUCCESS
+                    email.error_message = None
+                except Exception as e:
+                    logger.error('Failed to send email %s: %s', email.id, str(e))
+                    email.status = EmailStatus.FAILED
+                    email.error_message = str(e)
+                finally:
+                    # Commit changes for each email individually
+                    try:
+                        db.commit()
+                    except Exception as db_error:
+                        logger.error(
+                            'Failed to update email log %s: %s', email.id, str(db_error)
+                        )
+                        db.rollback()
 
     def cancel_scheduled_emails(self, db: Session, entity_type: str, entity_id: int):
         db.query(self.model).filter(
