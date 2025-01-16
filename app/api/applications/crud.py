@@ -97,7 +97,12 @@ class CRUDApplication(
                 send_application_received_mail(
                     receiver_mail=application.email, template=_template
                 )
-            elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
+            elif (
+                obj.status == schemas.ApplicationStatus.IN_REVIEW
+                and not obj.is_renter
+                and not obj.builder_boolean
+                and not obj.scholarship_request
+            ):
                 application.status = schemas.ApplicationStatus.ACCEPTED
             db.commit()
 
