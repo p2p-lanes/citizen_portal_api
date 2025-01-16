@@ -89,7 +89,13 @@ class CRUDApplication(
                 application.submitted_at = datetime.utcnow()
 
             if requires_approval:
-                send_application_received_mail(receiver_mail=application.email)
+                popup_city_id = application.popup_city_id
+                _template = popup_city.get_email_template(
+                    db, popup_city_id, 'application-received'
+                )
+                send_application_received_mail(
+                    receiver_mail=application.email, template=_template
+                )
             elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 application.status = schemas.ApplicationStatus.ACCEPTED
             db.commit()
