@@ -50,8 +50,20 @@ class PaymentUpdate(BaseModel):
     source: Optional[PaymentSource] = None
 
 
+class PaymentProductResponse(BaseModel):
+    product_id: int
+    attendee_id: int
+    quantity: int
+    product_name: str
+    product_description: Optional[str]
+    product_price: float
+    product_category: str
+    created_at: datetime
+
+
 class Payment(PaymentBase):
     id: int
+    products_snapshot: List[PaymentProductResponse]
 
     model_config = ConfigDict(
         from_attributes=True,
