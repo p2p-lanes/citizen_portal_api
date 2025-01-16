@@ -71,6 +71,12 @@ class Application(Base):
     scholarship_details = Column(String)
     scholarship_video_url = Column(String)
 
+    timour_review = Column(String)
+    janine_review = Column(String)
+    tela_review = Column(String)
+    sophie_review = Column(String)
+    devon_review = Column(String)
+
     submitted_at = Column(DateTime, nullable=True)
 
     _status = Column('status', String)
@@ -136,3 +142,10 @@ class Application(Base):
         self._status = value
 
     status = synonym('_status', descriptor=property(get_status, set_status))
+
+    def clean_reviews(self) -> None:
+        self.timour_review = None
+        self.janine_review = None
+        self.tela_review = None
+        self.sophie_review = None
+        self.devon_review = None

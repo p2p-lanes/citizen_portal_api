@@ -89,6 +89,7 @@ class CRUDApplication(
                 application.submitted_at = datetime.utcnow()
 
             if requires_approval:
+                application.clean_reviews()
                 popup_city_id = application.popup_city_id
                 _template = popup_city.get_email_template(
                     db, popup_city_id, 'application-received'
