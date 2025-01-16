@@ -61,6 +61,11 @@ async def update_status_webhook(
         'Content-Type': 'application/json',
     }
     for row in webhook_payload.data.rows:
+        application = db.get(Application, row.id)
+        if not application.popup_city.requires_approval:
+            logger.info('Popup city does not require approval. Skipping...')
+            continue
+
         row_dict = row.model_dump()
         calculated_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
