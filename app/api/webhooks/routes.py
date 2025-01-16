@@ -5,7 +5,7 @@ import requests
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.applications.models import Application
+from app.api.applications.models import Application, ApplicationStatus
 from app.api.citizens.crud import create_spice
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.models import EmailLog
@@ -71,7 +71,9 @@ async def update_status_webhook(
             continue
 
         if not calculated_status:
-            calculated_status = 'in_review' if submitted_at else 'draft'
+            calculated_status = (
+                ApplicationStatus.IN_REVIEW if submitted_at else ApplicationStatus.DRAFT
+            )
 
         email_log.cancel_scheduled_emails(
             db,
