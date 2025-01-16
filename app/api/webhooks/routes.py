@@ -75,6 +75,12 @@ async def update_status_webhook(
                 ApplicationStatus.IN_REVIEW if submitted_at else ApplicationStatus.DRAFT
             )
 
+        email_log.cancel_scheduled_emails(
+            db,
+            entity_type='application',
+            entity_id=row.id,
+        )
+
         data = {'id': row.id, 'status': calculated_status}
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
