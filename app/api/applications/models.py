@@ -62,6 +62,10 @@ class Application(Base):
     brings_kids = Column(Boolean)
     kids_info = Column(String)
 
+    # Renter information
+    is_renter = Column(Boolean, nullable=False, default=False)
+    booking_confirmation = Column(String)
+
     # Builder information
     builder_boolean = Column(Boolean, nullable=False, default=False)
     builder_description = Column(String)

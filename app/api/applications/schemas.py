@@ -50,6 +50,10 @@ class ApplicationBaseCommon(BaseModel):
     info_not_shared: Optional[list[str]] = None
     investor: Optional[bool] = None
 
+    # Renter information
+    is_renter: Optional[bool] = None
+    booking_confirmation: Optional[str] = None
+
     # Family information
     brings_spouse: Optional[bool] = None
     spouse_info: Optional[str] = None
