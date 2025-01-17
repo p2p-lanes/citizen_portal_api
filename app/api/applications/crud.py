@@ -41,7 +41,7 @@ def calculate_status(
                 schemas.ApplicationStatus.IN_REVIEW
                 if submitted_at
                 else schemas.ApplicationStatus.DRAFT
-            )
+            ), requested_a_discount
         return reviews_status, requested_a_discount
 
     # Does not require approval
