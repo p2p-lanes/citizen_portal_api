@@ -25,8 +25,8 @@ def _requested_a_discount(application: models.Application) -> bool:
 def calculate_status(
     application: Union[models.Application, schemas.Application],
     requires_approval: bool,
-    reviews_status: Optional[str] = None,
-) -> Tuple[str, bool]:
+    reviews_status: Optional[schemas.ApplicationStatus] = None,
+) -> Tuple[schemas.ApplicationStatus, bool]:
     submitted_at = application.submitted_at
     requested_a_discount = _requested_a_discount(application)
 
@@ -46,7 +46,7 @@ def calculate_status(
 
     # Does not require approval
     if not missing_discount:
-        return schemas.ApplicationStatus.ACCEPTED, requested_a_discount
+        return reviews_status, requested_a_discount
 
     return (
         schemas.ApplicationStatus.IN_REVIEW
