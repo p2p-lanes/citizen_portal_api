@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -13,6 +13,45 @@ from app.api.popup_city.crud import popup_city
 from app.api.popup_city.models import PopUpCity
 from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
+
+
+def _requested_a_discount(application: models.Application) -> bool:
+    if application.popup_city.requires_approval:
+        return application.scholarship_request
+
+    return application.is_renter or application.scholarship_request
+
+
+def calculate_status(
+    application: Union[models.Application, schemas.Application],
+    requires_approval: bool,
+    reviews_status: Optional[str] = None,
+) -> str:
+    submitted_at = application.submitted_at
+    if reviews_status == schemas.ApplicationStatus.REJECTED:
+        return schemas.ApplicationStatus.REJECTED
+
+    requested_a_discount = _requested_a_discount(application)
+    missing_discount = requested_a_discount and application.discount_assigned is None
+
+    if requires_approval:
+        if not reviews_status or missing_discount:
+            return (
+                schemas.ApplicationStatus.IN_REVIEW
+                if submitted_at
+                else schemas.ApplicationStatus.DRAFT
+            )
+        return reviews_status
+
+    # Does not require approval
+    if not missing_discount:
+        return schemas.ApplicationStatus.ACCEPTED
+
+    return (
+        schemas.ApplicationStatus.IN_REVIEW
+        if submitted_at
+        else schemas.ApplicationStatus.DRAFT
+    )
 
 
 class CRUDApplication(
@@ -49,18 +88,17 @@ class CRUDApplication(
             submitted_at=submitted_at,
         )
 
-        if obj.status and obj.status != schemas.ApplicationStatus.DRAFT:
+        if obj.status != schemas.ApplicationStatus.DRAFT:
             popup_city_id = obj.popup_city_id
             requires_approval = (
                 db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
             ).requires_approval
-            if requires_approval:
+            obj.status = calculate_status(obj, requires_approval=requires_approval)
+            if obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 _template = popup_city.get_email_template(
                     db, popup_city_id, 'application-received'
                 )
                 send_application_received_mail(receiver_mail=email, template=_template)
-            elif obj.status == schemas.ApplicationStatus.IN_REVIEW:
-                obj.status = schemas.ApplicationStatus.ACCEPTED
 
         application = super().create(db, obj)
         attendee = attendees_schemas.AttendeeCreate(
@@ -81,30 +119,21 @@ class CRUDApplication(
         application = super().update(db, id, obj, user)
         requires_approval = application.popup_city.requires_approval
 
-        if obj.status != schemas.ApplicationStatus.DRAFT:
-            if (
-                application.submitted_at is None
-                and obj.status == schemas.ApplicationStatus.IN_REVIEW
-            ):
+        if obj.status == schemas.ApplicationStatus.IN_REVIEW:
+            if application.submitted_at is None:
                 application.submitted_at = datetime.utcnow()
 
-            if requires_approval:
-                application.clean_reviews()
-                popup_city_id = application.popup_city_id
+            application.clean_reviews()
+            application.status = calculate_status(
+                application, requires_approval=requires_approval
+            )
+            if application.status == schemas.ApplicationStatus.IN_REVIEW:
                 _template = popup_city.get_email_template(
-                    db, popup_city_id, 'application-received'
+                    db, application.popup_city_id, 'application-received'
                 )
                 send_application_received_mail(
                     receiver_mail=application.email, template=_template
                 )
-            elif (
-                obj.status == schemas.ApplicationStatus.IN_REVIEW
-                and not obj.is_renter
-                and not obj.builder_boolean
-                and not obj.scholarship_request
-            ):
-                application.status = schemas.ApplicationStatus.ACCEPTED
-            db.commit()
 
         return application
 

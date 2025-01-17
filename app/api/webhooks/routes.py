@@ -5,7 +5,8 @@ import requests
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.applications.models import Application, ApplicationStatus
+from app.api.applications.crud import calculate_status
+from app.api.applications.models import Application
 from app.api.citizens.crud import create_spice
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.models import EmailLog
@@ -62,23 +63,20 @@ async def update_status_webhook(
     }
     for row in webhook_payload.data.rows:
         application = db.get(Application, row.id)
-        if not application.popup_city.requires_approval:
-            logger.info('Popup city does not require approval. Skipping...')
-            continue
 
         row_dict = row.model_dump()
-        calculated_status = row_dict.get('calculated_status')
+        reviews_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
-        submitted_at = row_dict.get('submitted_at')
+
+        calculated_status = calculate_status(
+            application,
+            requires_approval=application.popup_city.requires_approval,
+            reviews_status=reviews_status,
+        )
 
         if current_status == calculated_status:
             logger.info('Status is the same as calculated status. Skipping...')
             continue
-
-        if not calculated_status:
-            calculated_status = (
-                ApplicationStatus.IN_REVIEW if submitted_at else ApplicationStatus.DRAFT
-            )
 
         email_log.cancel_scheduled_emails(
             db,
