@@ -42,6 +42,7 @@ class ApplicationBaseCommon(BaseModel):
     duration: Optional[str] = None
     video_url: Optional[str] = None
     payment_capacity: Optional[str] = None
+    github_profile: Optional[str] = None
 
     hackathon_interest: Optional[bool] = None
     host_session: Optional[str] = None

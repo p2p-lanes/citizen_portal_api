@@ -47,6 +47,7 @@ class Application(Base):
     duration = Column(String)
     video_url = Column(String)
     payment_capacity = Column(String)
+    github_profile = Column(String)
 
     hackathon_interest = Column(Boolean)
     host_session = Column(String)
