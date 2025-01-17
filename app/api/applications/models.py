@@ -84,6 +84,7 @@ class Application(Base):
 
     submitted_at = Column(DateTime, nullable=True)
 
+    requested_discount = Column(Boolean, nullable=False, default=False)
     _status = Column('status', String)
     _discount_assigned = Column('discount_assigned', String)
 

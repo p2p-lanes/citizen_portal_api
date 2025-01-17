@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -26,12 +26,13 @@ def calculate_status(
     application: Union[models.Application, schemas.Application],
     requires_approval: bool,
     reviews_status: Optional[str] = None,
-) -> str:
+) -> Tuple[str, bool]:
     submitted_at = application.submitted_at
-    if reviews_status == schemas.ApplicationStatus.REJECTED:
-        return schemas.ApplicationStatus.REJECTED
-
     requested_a_discount = _requested_a_discount(application)
+
+    if reviews_status == schemas.ApplicationStatus.REJECTED:
+        return schemas.ApplicationStatus.REJECTED, requested_a_discount
+
     missing_discount = requested_a_discount and application.discount_assigned is None
 
     if requires_approval:
@@ -41,17 +42,17 @@ def calculate_status(
                 if submitted_at
                 else schemas.ApplicationStatus.DRAFT
             )
-        return reviews_status
+        return reviews_status, requested_a_discount
 
     # Does not require approval
     if not missing_discount:
-        return schemas.ApplicationStatus.ACCEPTED
+        return schemas.ApplicationStatus.ACCEPTED, requested_a_discount
 
     return (
         schemas.ApplicationStatus.IN_REVIEW
         if submitted_at
         else schemas.ApplicationStatus.DRAFT
-    )
+    ), requested_a_discount
 
 
 class CRUDApplication(
@@ -93,7 +94,9 @@ class CRUDApplication(
             requires_approval = (
                 db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
             ).requires_approval
-            obj.status = calculate_status(obj, requires_approval=requires_approval)
+            obj.status, obj.requested_discount = calculate_status(
+                obj, requires_approval=requires_approval
+            )
             if obj.status == schemas.ApplicationStatus.IN_REVIEW:
                 _template = popup_city.get_email_template(
                     db, popup_city_id, 'application-received'
@@ -124,7 +127,7 @@ class CRUDApplication(
                 application.submitted_at = datetime.utcnow()
 
             application.clean_reviews()
-            application.status = calculate_status(
+            application.status, application.requested_discount = calculate_status(
                 application, requires_approval=requires_approval
             )
             if application.status == schemas.ApplicationStatus.IN_REVIEW:
@@ -134,6 +137,8 @@ class CRUDApplication(
                 send_application_received_mail(
                     receiver_mail=application.email, template=_template
                 )
+        else:
+            application.requested_discount = _requested_a_discount(application)
 
         return application
 

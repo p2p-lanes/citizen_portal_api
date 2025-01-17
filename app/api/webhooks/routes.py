@@ -68,7 +68,7 @@ async def update_status_webhook(
         reviews_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
 
-        calculated_status = calculate_status(
+        calculated_status, _ = calculate_status(
             application,
             requires_approval=application.popup_city.requires_approval,
             reviews_status=reviews_status,
