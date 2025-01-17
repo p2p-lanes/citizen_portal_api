@@ -68,7 +68,7 @@ async def update_status_webhook(
         reviews_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
 
-        calculated_status, _ = calculate_status(
+        calculated_status, requested_discount = calculate_status(
             application,
             requires_approval=application.popup_city.requires_approval,
             reviews_status=reviews_status,
@@ -84,7 +84,11 @@ async def update_status_webhook(
             entity_id=row.id,
         )
 
-        data = {'id': row.id, 'status': calculated_status}
+        data = {
+            'id': row.id,
+            'status': calculated_status,
+            'requested_discount': requested_discount,
+        }
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
         logger.info('update_status status code: %s', response.status_code)
