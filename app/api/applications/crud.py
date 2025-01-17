@@ -34,25 +34,17 @@ def calculate_status(
         return schemas.ApplicationStatus.REJECTED, requested_a_discount
 
     missing_discount = requested_a_discount and application.discount_assigned is None
+    if not requires_approval and not missing_discount:
+        return schemas.ApplicationStatus.ACCEPTED, requested_a_discount
 
-    if requires_approval:
-        if not reviews_status or missing_discount:
-            return (
-                schemas.ApplicationStatus.IN_REVIEW
-                if submitted_at
-                else schemas.ApplicationStatus.DRAFT
-            ), requested_a_discount
-        return reviews_status, requested_a_discount
+    if not reviews_status or missing_discount:
+        return (
+            schemas.ApplicationStatus.IN_REVIEW
+            if submitted_at
+            else schemas.ApplicationStatus.DRAFT
+        ), requested_a_discount
 
-    # Does not require approval
-    if not missing_discount:
-        return reviews_status, requested_a_discount
-
-    return (
-        schemas.ApplicationStatus.IN_REVIEW
-        if submitted_at
-        else schemas.ApplicationStatus.DRAFT
-    ), requested_a_discount
+    return reviews_status, requested_a_discount
 
 
 class CRUDApplication(
