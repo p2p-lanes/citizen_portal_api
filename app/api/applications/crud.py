@@ -140,6 +140,9 @@ class CRUDApplication(
         else:
             application.requested_discount = _requested_a_discount(application)
 
+        db.add(application)
+        db.commit()
+        db.refresh(application)
         return application
 
     def find(
