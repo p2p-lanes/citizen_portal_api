@@ -93,8 +93,8 @@ class CRUDApplication(
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
             popup_city_id = obj.popup_city_id
-            popup_city = db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
-            requires_approval = popup_city.requires_approval if popup_city else False
+            popup_city_instance = db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
+            requires_approval = popup_city_instance.requires_approval if popup_city_instance else False
 
             obj.status, obj.requested_discount = calculate_status(
                 obj, requires_approval=requires_approval
