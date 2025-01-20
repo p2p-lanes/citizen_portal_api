@@ -15,10 +15,9 @@ from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
 
 
-def _requested_a_discount(application: models.Application) -> bool:
-    if application.popup_city.requires_approval:
+def _requested_a_discount(application: models.Application, requires_approval: bool) -> bool:
+    if requires_approval:
         return application.scholarship_request
-
     return application.is_renter or application.scholarship_request
 
 
@@ -28,7 +27,7 @@ def calculate_status(
     reviews_status: Optional[schemas.ApplicationStatus] = None,
 ) -> Tuple[schemas.ApplicationStatus, bool]:
     submitted_at = application.submitted_at
-    requested_a_discount = _requested_a_discount(application)
+    requested_a_discount = _requested_a_discount(application, requires_approval)
 
     if reviews_status == schemas.ApplicationStatus.REJECTED:
         return schemas.ApplicationStatus.REJECTED, requested_a_discount
@@ -83,9 +82,11 @@ class CRUDApplication(
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
             popup_city_id = obj.popup_city_id
-            requires_approval = (
-                db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
-            ).requires_approval
+
+            popup_city = db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
+            requires_approval = popup_city.requires_approval if popup_city else False
+          
+
             obj.status, obj.requested_discount = calculate_status(
                 obj, requires_approval=requires_approval
             )
