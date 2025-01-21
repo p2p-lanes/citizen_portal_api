@@ -125,4 +125,4 @@ class AttendeesDirectory(BaseModel):
     brings_kids: Union[Optional[bool], Literal['*']]
     role: Union[Optional[str], Literal['*']]
     organization: Union[Optional[str], Literal['*']]
-    participation: Union[Optional[list[bool]], Literal['*']]
+    participation: Union[Optional[list[Product]], Literal['*']]
