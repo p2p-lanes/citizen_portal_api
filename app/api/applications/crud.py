@@ -267,6 +267,7 @@ class CRUDApplication(
                 'brings_kids': application.brings_kids,
                 'role': application.role,
                 'organization': application.organization,
+                'participation': main_attendee.products,
                 'check_in': check_in,
                 'check_out': check_out,
             }
