@@ -37,12 +37,10 @@ def calculate_status(
     submitted_at = application.submitted_at
     requested_a_discount = _requested_a_discount(application, requires_approval)
 
-    discount_assigned = getattr(application, 'discount_assigned', None)
-
     if reviews_status == schemas.ApplicationStatus.REJECTED:
         return schemas.ApplicationStatus.REJECTED, requested_a_discount
 
-    missing_discount = requested_a_discount and discount_assigned is None
+    missing_discount = requested_a_discount and application.discount_assigned is None
     if not requires_approval and not requested_a_discount:
         return schemas.ApplicationStatus.ACCEPTED, requested_a_discount
 
@@ -73,9 +71,9 @@ class CRUDApplication(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Not authorized to create application for another citizen',
             )
-        citizen = (
-            db.query(CitizenModel).filter(CitizenModel.id == obj.citizen_id).first()
-        )
+
+        citizen_id = obj.citizen_id
+        citizen = db.query(CitizenModel).filter(CitizenModel.id == citizen_id).first()
         if not citizen:
             raise HTTPException(status_code=404, detail='Citizen not found')
         email = citizen.primary_email
