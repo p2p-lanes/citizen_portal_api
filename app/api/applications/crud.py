@@ -16,20 +16,17 @@ from app.core.security import TokenData
 
 
 def _requested_a_discount(
-    application: Union[models.Application, schemas.Application], requires_approval: bool
+    application: Union[models.Application, schemas.Application],
+    requires_approval: bool,
 ) -> bool:
     """
-    Determina si se ha solicitado un descuento en función del estado de la aplicación.
-    Se adapta tanto a modelos de BD (`models.Application`) como a esquemas (`schemas.Application`).
+    Determines if a discount has been requested based on the application state.
+    Works with both database models (`models.Application`) and schemas (`schemas.Application`).
     """
     if requires_approval:
         return application.scholarship_request
 
-    # Para evitar errores, aseguramos que `is_renter` y `scholarship_request` existen antes de acceder
-    is_renter = getattr(application, "is_renter", False)
-    scholarship_request = getattr(application, "scholarship_request", False)
-
-    return is_renter or scholarship_request
+    return application.is_renter or application.scholarship_request
 
 
 def calculate_status(
@@ -40,7 +37,7 @@ def calculate_status(
     submitted_at = application.submitted_at
     requested_a_discount = _requested_a_discount(application, requires_approval)
 
-    discount_assigned = getattr(application, "discount_assigned", None)
+    discount_assigned = getattr(application, 'discount_assigned', None)
 
     if reviews_status == schemas.ApplicationStatus.REJECTED:
         return schemas.ApplicationStatus.REJECTED, requested_a_discount
@@ -76,7 +73,9 @@ class CRUDApplication(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Not authorized to create application for another citizen',
             )
-        citizen = db.query(CitizenModel).filter(CitizenModel.id == obj.citizen_id).first()
+        citizen = (
+            db.query(CitizenModel).filter(CitizenModel.id == obj.citizen_id).first()
+        )
         if not citizen:
             raise HTTPException(status_code=404, detail='Citizen not found')
         email = citizen.primary_email
@@ -93,8 +92,8 @@ class CRUDApplication(
 
         if obj.status != schemas.ApplicationStatus.DRAFT:
             popup_city_id = obj.popup_city_id
-            popup_city_instance = db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
-            requires_approval = popup_city_instance.requires_approval if popup_city_instance else False
+            popup = db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
+            requires_approval = popup.requires_approval if popup else False
 
             obj.status, obj.requested_discount = calculate_status(
                 obj, requires_approval=requires_approval
@@ -116,7 +115,6 @@ class CRUDApplication(
         self.create_attendee(db, application.id, attendee, user)
 
         return application
-
 
     def update(
         self,
@@ -144,7 +142,9 @@ class CRUDApplication(
                     receiver_mail=application.email, template=_template
                 )
         else:
-            application.requested_discount = _requested_a_discount(application)
+            application.requested_discount = _requested_a_discount(
+                application, requires_approval
+            )
 
         db.add(application)
         db.commit()
