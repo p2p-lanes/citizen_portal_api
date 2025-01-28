@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -143,4 +144,7 @@ def main():
 
 
 if __name__ == '__main__':
+    logger.info('Starting reminder email process')
     main()
+    logger.info('Reminder email process completed')
+    time.sleep(10)
