@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 
 from app.core.database import Base
+from app.core.utils import current_time
 
 
 class EmailTemplate(Base):
@@ -13,8 +12,8 @@ class EmailTemplate(Base):
     event = Column(String, nullable=False)
     template = Column(String, nullable=False)
     frequency = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)
 
 
 class PopUpCity(Base):
@@ -41,7 +40,7 @@ class PopUpCity(Base):
     portal_order = Column(Float, nullable=False, default=0)
     simplefi_api_key = Column(String)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)
     created_by = Column(String)
     updated_by = Column(String)

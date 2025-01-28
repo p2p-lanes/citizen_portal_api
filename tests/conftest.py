@@ -153,3 +153,15 @@ def mock_webhook_cache():
     app.dependency_overrides[get_webhook_cache] = lambda: mock_cache
     yield mock_cache
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def mock_email_template(monkeypatch):
+    """Mock the get_email_template function to avoid template lookup errors"""
+    from app.api.popup_city.crud import popup_city as popup_city_crud
+
+    def mock_get_template(template, *args, **kwargs):
+        return template
+
+    monkeypatch.setattr(popup_city_crud, 'get_email_template', mock_get_template)
+    return mock_get_template

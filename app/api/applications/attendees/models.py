@@ -1,10 +1,10 @@
-from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
+from app.core.utils import current_time
 
 if TYPE_CHECKING:
     from app.api.applications.models import Application
@@ -54,5 +54,5 @@ class Attendee(Base):
         'PaymentProduct', back_populates='attendee'
     )
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)

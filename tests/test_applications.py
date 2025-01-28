@@ -458,7 +458,9 @@ def test_create_application_with_invalid_status(client, auth_headers, test_appli
     assert response.json()['status'] == 'draft'
 
 
-def test_update_application_with_invalid_status(client, auth_headers, test_application):
+def test_update_application_with_invalid_status(
+    client, auth_headers, test_application, mock_email_template
+):
     response = client.post(
         '/applications/', json=test_application, headers=auth_headers
     )
@@ -481,7 +483,7 @@ def test_update_application_with_invalid_status(client, auth_headers, test_appli
 
 
 def test_application_status_validation(
-    client, auth_headers, test_application, db_session
+    client, auth_headers, test_application, db_session, mock_email_template
 ):
     from app.api.applications.models import Application
 

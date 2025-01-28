@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, event
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.core.utils import current_time
 
 
 class Citizen(Base):
@@ -24,8 +23,8 @@ class Citizen(Base):
     spice = Column(String)
     applications = relationship('Application', back_populates='citizen')
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)
     created_by = Column(String)
     updated_by = Column(String)
 

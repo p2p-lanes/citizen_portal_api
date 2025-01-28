@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.core.logger import logger
+from app.core.utils import current_time
 
 # Constants
 ALGORITHM = 'HS256'
@@ -30,7 +31,7 @@ class TokenData(BaseModel):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
-        to_encode.update({'exp': datetime.utcnow() + expires_delta})
+        to_encode.update({'exp': current_time() + expires_delta})
 
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

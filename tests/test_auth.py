@@ -1,4 +1,10 @@
+from datetime import timedelta
+
 from fastapi import status
+from jose import jwt
+
+from app.core.config import settings
+from app.core.utils import current_time
 
 
 def test_invalid_token(client):
@@ -9,17 +15,11 @@ def test_invalid_token(client):
 
 
 def test_expired_token(client):
-    from datetime import datetime, timedelta
-
-    from jose import jwt
-
-    from app.core.config import settings
-
     expired_token = jwt.encode(
         {
             'citizen_id': 1,
             'email': 'test@example.com',
-            'exp': datetime.utcnow() - timedelta(minutes=1),
+            'exp': current_time() - timedelta(minutes=1),
         },
         settings.SECRET_KEY,
         algorithm='HS256',

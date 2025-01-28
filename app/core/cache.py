@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from threading import Lock
 from typing import Dict, Tuple
 
+from app.core.utils import current_time
+
 
 class WebhookCache:
     def __init__(self, expiry: timedelta = timedelta(hours=24)):
@@ -24,16 +26,15 @@ class WebhookCache:
             self._clean_expired()
             if fingerprint in self._cache:
                 return False
-            self._cache[fingerprint] = datetime.utcnow()
+            self._cache[fingerprint] = current_time()
             return True
 
     def _clean_expired(self) -> None:
         """Remove expired fingerprints - already protected by lock in public methods"""
-        current_time = datetime.utcnow()
         expired = [
             k
             for k, timestamp in self._cache.items()
-            if current_time - timestamp > self._expiry
+            if current_time() - timestamp > self._expiry
         ]
         for key in expired:
             del self._cache[key]

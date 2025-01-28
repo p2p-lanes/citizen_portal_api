@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import requests
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
@@ -23,6 +23,7 @@ from app.core.database import get_db
 from app.core.logger import logger
 from app.core.mail import send_application_accepted_with_ticketing_url, send_mail
 from app.core.security import TokenData
+from app.core.utils import current_time
 
 router = APIRouter()
 
@@ -94,7 +95,7 @@ async def update_status_webhook(
             calculated_status == ApplicationStatus.ACCEPTED
             and application.accepted_at is None
         ):
-            data['accepted_at'] = datetime.utcnow().isoformat()
+            data['accepted_at'] = current_time().isoformat()
 
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
@@ -123,7 +124,7 @@ async def send_email_webhook(
 
     logger.info('Sending email %s to %s rows', template, len(webhook_payload.data.rows))
     logger.info('Fields: %s', fields)
-    send_at = datetime.utcnow() + timedelta(minutes=delay) if delay else None
+    send_at = current_time() + timedelta(minutes=delay) if delay else None
 
     for row in webhook_payload.data.rows:
         row = row.model_dump()

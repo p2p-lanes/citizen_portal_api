@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, event
 
 from app.core.database import Base, SessionLocal
+from app.core.utils import current_time
 
 
 class EmailLog(Base):
@@ -26,8 +25,8 @@ class EmailLog(Base):
 
     citizen_id = Column(Integer, ForeignKey('citizens.id'), index=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)
     created_by = Column(String)
     updated_by = Column(String)
 

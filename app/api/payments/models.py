@@ -1,10 +1,10 @@
-from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
+from app.core.utils import current_time
 
 if TYPE_CHECKING:
     from app.api.applications.attendees.models import Attendee
@@ -24,7 +24,7 @@ class PaymentProduct(Base):
     product_description = Column(String, nullable=True)
     product_price = Column(Float)
     product_category = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
 
     attendee: Mapped['Attendee'] = relationship(
         'Attendee', back_populates='payment_products'
@@ -62,5 +62,5 @@ class Payment(Base):
         'PaymentProduct', back_populates='payment'
     )
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)

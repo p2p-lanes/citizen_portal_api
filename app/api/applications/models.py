@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from sqlalchemy import (
@@ -14,6 +13,7 @@ from sqlalchemy.orm import Mapped, relationship, synonym
 
 from app.api.applications.schemas import ApplicationStatus
 from app.core.database import Base
+from app.core.utils import current_time
 
 if TYPE_CHECKING:
     from app.api.applications.attendees.models import Attendee
@@ -103,8 +103,8 @@ class Application(Base):
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     popup_city: Mapped['PopUpCity'] = relationship('PopUpCity', lazy='joined')
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=current_time)
+    updated_at = Column(DateTime, default=current_time, onupdate=current_time)
     created_by = Column(String)
     updated_by = Column(String)
 

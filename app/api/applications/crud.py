@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException, status
@@ -13,6 +12,7 @@ from app.api.popup_city.crud import popup_city
 from app.api.popup_city.models import PopUpCity
 from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
+from app.core.utils import current_time
 
 
 def _requested_a_discount(
@@ -40,7 +40,8 @@ def calculate_status(
     if reviews_status == schemas.ApplicationStatus.REJECTED:
         return schemas.ApplicationStatus.REJECTED, requested_a_discount
 
-    missing_discount = requested_a_discount and application.discount_assigned is None
+    discount_assigned = getattr(application, 'discount_assigned', None)
+    missing_discount = requested_a_discount and discount_assigned is None
     if not requires_approval and not requested_a_discount:
         return schemas.ApplicationStatus.ACCEPTED, requested_a_discount
 
@@ -78,7 +79,7 @@ class CRUDApplication(
             raise HTTPException(status_code=404, detail='Citizen not found')
         email = citizen.primary_email
         submitted_at = (
-            datetime.utcnow()
+            current_time()
             if obj.status == schemas.ApplicationStatus.IN_REVIEW
             else None
         )
@@ -126,7 +127,7 @@ class CRUDApplication(
 
         if obj.status == schemas.ApplicationStatus.IN_REVIEW:
             if application.submitted_at is None:
-                application.submitted_at = datetime.utcnow()
+                application.submitted_at = current_time()
 
             application.clean_reviews()
             application.status, application.requested_discount = calculate_status(

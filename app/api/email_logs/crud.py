@@ -11,6 +11,7 @@ from app.api.email_logs.schemas import EmailLogCreate, EmailStatus
 from app.core.config import Environment, settings
 from app.core.database import SessionLocal
 from app.core.logger import logger
+from app.core.utils import current_time
 
 
 def _send_mail(
@@ -110,7 +111,7 @@ class CRUDEmailLog(
 
         for email in scheduled_emails:
             logger.info('Processing email %s, send_at: %s', email.id, email.send_at)
-            if email.send_at < datetime.utcnow():
+            if email.send_at < current_time():
                 try:
                     params = json.loads(email.params)
                     _send_mail(
