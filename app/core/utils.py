@@ -24,4 +24,4 @@ def encode(payload: dict, *, expires_delta: timedelta = None) -> str:
 
 
 def current_time() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
