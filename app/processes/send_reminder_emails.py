@@ -55,7 +55,16 @@ def process_application_reminders(
 ) -> None:
     used_frequencies = get_used_frequencies(db, application.id, email_template.template)
     from_date = get_reminder_start_date(application, email_template.template)
+    if email_template.template == ReminderTemplate.PURCHASE_REMINDER:
+        if any(payment.status == 'approved' for payment in application.payments):
+            logger.info('Application %s has a paid payment', application.id)
+            return
 
+    logger.info(
+        'Sending reminder emails for application %s, frequency %s',
+        application.id,
+        email_template.frequency,
+    )
     for frequency in email_template.frequency.split(','):
         freq_delta = _get_frequency_timedelta(frequency)
         if freq_delta in used_frequencies:
