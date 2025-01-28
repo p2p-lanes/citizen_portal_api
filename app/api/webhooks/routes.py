@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.applications.crud import calculate_status
 from app.api.applications.models import Application
+from app.api.applications.schemas import ApplicationStatus
 from app.api.citizens.crud import create_spice
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.models import EmailLog
@@ -89,6 +90,12 @@ async def update_status_webhook(
             'status': calculated_status,
             'requested_discount': requested_discount,
         }
+        if (
+            calculated_status == ApplicationStatus.ACCEPTED
+            and application.accepted_at is None
+        ):
+            data['accepted_at'] = datetime.utcnow()
+
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
         logger.info('update_status status code: %s', response.status_code)

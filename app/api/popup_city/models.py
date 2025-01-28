@@ -12,6 +12,7 @@ class EmailTemplate(Base):
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     event = Column(String, nullable=False)
     template = Column(String, nullable=False)
+    frequency = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

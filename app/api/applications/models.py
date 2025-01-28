@@ -83,6 +83,7 @@ class Application(Base):
     devon_review = Column(String)
 
     submitted_at = Column(DateTime, nullable=True)
+    accepted_at = Column(DateTime, nullable=True)
 
     requested_discount = Column(Boolean, nullable=False, default=False)
     _status = Column('status', String)

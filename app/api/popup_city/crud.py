@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -29,6 +29,16 @@ class CRUDPopUpCity(
             logger.info('Email template found %s', email_template.template)
             _template = email_template.template
         return _template
+
+    def get_reminder_templates(self, db: Session) -> List[models.EmailTemplate]:
+        return (
+            db.query(models.EmailTemplate)
+            .filter(
+                models.EmailTemplate.frequency.isnot(None),
+                models.EmailTemplate.frequency != '',
+            )
+            .all()
+        )
 
 
 popup_city = CRUDPopUpCity(models.PopUpCity)
