@@ -24,11 +24,12 @@ class CRUDPopUpCity(
             )
             .first()
         )
-        _template = template
-        if email_template:
-            logger.info('Email template found %s', email_template.template)
-            _template = email_template.template
-        return _template
+        if not email_template:
+            logger.error('Email template not found for %s', template)
+            raise ValueError(f'Email template not found for {template}')
+
+        logger.info('Email template found %s', email_template.template)
+        return email_template.template
 
     def get_reminder_templates(self, db: Session) -> List[models.EmailTemplate]:
         return (
