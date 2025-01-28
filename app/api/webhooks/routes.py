@@ -94,7 +94,7 @@ async def update_status_webhook(
             calculated_status == ApplicationStatus.ACCEPTED
             and application.accepted_at is None
         ):
-            data['accepted_at'] = datetime.utcnow()
+            data['accepted_at'] = datetime.utcnow().isoformat()
 
         logger.info('update_status data: %s', data)
         response = requests.patch(url, headers=headers, json=data)
