@@ -15,6 +15,7 @@ from app.api.payments.models import Payment, PaymentProduct
 from app.api.popup_city.crud import popup_city as popup_city_crud
 from app.api.popup_city.models import EmailTemplate
 from app.api.products.models import Product
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logger import logger
 
@@ -27,19 +28,26 @@ class ReminderTemplate(str, Enum):
 def _send_reminder_email(
     application: Application,
     email_template: EmailTemplate,
-    freq: timedelta,
+    freq: str,
 ):
+    params = {
+        'first_name': application.first_name,
+        'ticketing_url': settings.FRONTEND_URL,
+        'freq': freq,
+    }
     email_log_crud.send_mail(
         application.email,
         template=email_template.template,
-        params={'freq': freq},
+        params=params,
         entity_type='application',
         entity_id=application.id,
     )
 
 
 def _get_frequency_timedelta(f: str) -> timedelta:
-    if f.endswith('h'):
+    if f.endswith('m'):
+        return timedelta(minutes=int(f[:-1]))
+    elif f.endswith('h'):
         return timedelta(hours=int(f[:-1]))
     elif f.endswith('d'):
         return timedelta(days=int(f[:-1]))
@@ -72,7 +80,7 @@ def process_application_reminders(
             continue
 
         if is_reminder_due(from_date, freq_delta):
-            _send_reminder_email(application, email_template, freq_delta)
+            _send_reminder_email(application, email_template, frequency)
 
 
 def get_used_frequencies(
@@ -121,7 +129,7 @@ def is_reminder_due(from_date: datetime, frequency: timedelta) -> bool:
     """Check if a reminder is due within the next 24 hours."""
     current_time = datetime.utcnow()
     reminder_time = from_date + frequency
-    return current_time < reminder_time < current_time + timedelta(days=1)
+    return current_time - timedelta(hours=1) < reminder_time < current_time
 
 
 def send_reminder_email(db: Session, email_template: EmailTemplate):
@@ -149,7 +157,7 @@ def main():
                 'Sending reminder email for popup city %s',
                 template.popup_city_id,
             )
-            send_reminder_email(template)
+            send_reminder_email(db, template)
 
 
 if __name__ == '__main__':
