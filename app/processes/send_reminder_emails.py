@@ -18,6 +18,7 @@ from app.api.products.models import Product
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logger import logger
+from app.core.utils import current_time
 
 
 class ReminderTemplate(str, Enum):
@@ -127,9 +128,9 @@ def get_application_status(template: str) -> ApplicationStatus:
 
 def is_reminder_due(from_date: datetime, frequency: timedelta) -> bool:
     """Check if a reminder is due within the next 24 hours."""
-    current_time = datetime.utcnow()
+    _current_time = current_time()
     reminder_time = from_date + frequency
-    return current_time - timedelta(hours=1) < reminder_time < current_time
+    return _current_time - timedelta(hours=1) < reminder_time < _current_time
 
 
 def send_reminder_email(db: Session, email_template: EmailTemplate):
