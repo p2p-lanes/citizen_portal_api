@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -5,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.base_crud import CRUDBase
 from app.api.popup_city import models, schemas
 from app.core.logger import logger
+from app.core.utils import current_time
 
 
 class CRUDPopUpCity(
@@ -35,11 +37,15 @@ class CRUDPopUpCity(
         return email_template.template
 
     def get_reminder_templates(self, db: Session) -> List[models.EmailTemplate]:
+        week_from_now = current_time() + timedelta(days=7)
         return (
             db.query(models.EmailTemplate)
+            .join(models.PopUpCity)
             .filter(
                 models.EmailTemplate.frequency.isnot(None),
                 models.EmailTemplate.frequency != '',
+                models.PopUpCity.end_date.isnot(None),
+                models.PopUpCity.end_date > week_from_now,
             )
             .all()
         )
