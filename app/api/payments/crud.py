@@ -125,18 +125,19 @@ class CRUDPayment(
         *,
         user: TokenData,
         currency: Optional[str] = None,
+        rate: Optional[float] = None,
     ) -> models.Payment:
         """Handle payment approval and related operations."""
         if payment.status == 'approved':
             logger.info('Payment %s already approved', payment.id)
             return payment
 
+        source = PaymentSource.STRIPE if currency == 'USD' else PaymentSource.SIMPLEFI
         payment_update = schemas.PaymentUpdate(
             status='approved',
             currency=currency,
-            source=PaymentSource.STRIPE
-            if currency == 'USD'
-            else PaymentSource.SIMPLEFI,
+            rate=rate,
+            source=source,
         )
         updated_payment = self.update(db, payment.id, payment_update, user)
 

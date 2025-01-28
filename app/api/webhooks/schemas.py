@@ -31,11 +31,18 @@ class CardPaymentModel(BaseModel):
     coin: str = 'USD'
 
 
+class PriceDetailsModel(BaseModel):
+    currency: str
+    final_amount: float
+    rate: float
+
+
 class TransactionModel(BaseModel):
     id: str
     coin: str
     chain_id: int
     status: str
+    price_details: PriceDetailsModel
 
 
 class PaymentInfo(BaseModel):

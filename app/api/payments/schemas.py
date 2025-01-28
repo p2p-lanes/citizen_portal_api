@@ -17,6 +17,7 @@ class PaymentBase(BaseModel):
     amount: Optional[float] = None
     source: Optional[PaymentSource] = None
     currency: Optional[str] = None
+    rate: Optional[float] = None
     checkout_url: Optional[str] = None
 
     created_at: Optional[datetime] = None
@@ -48,6 +49,7 @@ class PaymentUpdate(BaseModel):
     status: Optional[str] = None
     currency: Optional[str] = None
     source: Optional[PaymentSource] = None
+    rate: Optional[float] = None
 
 
 class PaymentProductResponse(BaseModel):

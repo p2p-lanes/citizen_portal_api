@@ -239,12 +239,20 @@ async def simplefi_webhook(
         return {'message': 'Payment status is the same as payment request status'}
 
     currency = 'USD'
+    rate = 1
     if webhook_payload.data.new_payment:
         currency = webhook_payload.data.new_payment.coin
+        for t in webhook_payload.data.payment_request.transactions:
+            if t.coin == currency:
+                rate = t.price_details.rate
+                break
+
     user = TokenData(citizen_id=payment.application.citizen_id, email='')
 
     if payment_request_status == 'approved':
-        payment_crud.approve_payment(db, payment, currency=currency, user=user)
+        payment_crud.approve_payment(
+            db, payment, currency=currency, rate=rate, user=user
+        )
     else:
         payment_crud.update(db, payment.id, PaymentUpdate(status='expired'), user)
 
