@@ -25,8 +25,11 @@ class CRUDPopUpCity(
             .first()
         )
         if not email_template:
-            logger.error('Email template not found for %s', template)
-            raise ValueError(f'Email template not found for {template}')
+            error_message = (
+                f'Email template not found for {template} in popup city {popup_city_id}'
+            )
+            logger.error(error_message)
+            raise ValueError(error_message)
 
         logger.info('Email template found %s', email_template.template)
         return email_template.template
