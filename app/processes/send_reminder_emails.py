@@ -140,18 +140,26 @@ def is_reminder_due(from_date: datetime, frequency: timedelta) -> bool:
 
 def send_reminder_email(db: Session, email_template: EmailTemplate):
     popup_city_id = email_template.popup_city_id
-    applications = application_crud.find(
-        db,
-        filters=ApplicationFilter(
-            popup_city_id=popup_city_id,
-            status=get_application_status(email_template.template),
-        ),
-    )
-    logger.info(
-        f'Found {len(applications)} applications for popup city {popup_city_id}'
-    )
-    for application in applications:
-        process_application_reminders(db, application, email_template)
+    skip = 0
+    limit = 1000
+    while True:
+        applications = application_crud.find(
+            db,
+            filters=ApplicationFilter(
+                popup_city_id=popup_city_id,
+                status=get_application_status(email_template.template),
+            ),
+            skip=skip,
+            limit=limit,
+        )
+        logger.info(
+            f'Found {len(applications)} applications for popup city {popup_city_id}'
+        )
+        for application in applications:
+            process_application_reminders(db, application, email_template)
+        skip += limit
+        if len(applications) < limit:
+            break
 
 
 def main():
