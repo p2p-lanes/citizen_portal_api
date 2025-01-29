@@ -33,6 +33,7 @@ class PaymentProduct(BaseModel):
 class PaymentCreate(BaseModel):
     application_id: int
     products: List[PaymentProduct]
+    discount_code: Optional[str] = None
 
     @field_validator('products', mode='before')
     def validate_products(cls, v: List[PaymentProduct]) -> List[PaymentProduct]:

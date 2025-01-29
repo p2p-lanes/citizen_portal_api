@@ -1,0 +1,46 @@
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from app.api.base_crud import CRUDBase
+from app.api.discount_codes import models, schemas
+from app.core.utils import current_time
+
+
+class CRUDDiscountCode(
+    CRUDBase[models.DiscountCode, schemas.DiscountCode, schemas.DiscountCode]
+):
+    def get_by_code(self, db: Session, code: str, popup_city_id: int):
+        discount_code = (
+            db.query(models.DiscountCode)
+            .filter(
+                models.DiscountCode.code == code,
+                models.DiscountCode.popup_city_id == popup_city_id,
+            )
+            .first()
+        )
+        if not discount_code:
+            raise HTTPException(status_code=404, detail='Discount code not found')
+        if not discount_code.is_active:
+            raise HTTPException(status_code=404, detail='Discount code is not active')
+
+        if discount_code.start_date and discount_code.start_date > current_time():
+            raise HTTPException(
+                status_code=404, detail='Discount code has not started yet'
+            )
+
+        if discount_code.end_date and discount_code.end_date < current_time():
+            raise HTTPException(status_code=404, detail='Discount code has expired')
+
+        if (
+            discount_code.max_uses
+            and discount_code.current_uses >= discount_code.max_uses
+        ):
+            raise HTTPException(
+                status_code=404,
+                detail='Discount code has reached the maximum number of uses',
+            )
+
+        return discount_code
+
+
+discount_code = CRUDDiscountCode(models.DiscountCode)

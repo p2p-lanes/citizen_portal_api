@@ -1,9 +1,13 @@
+from typing import List
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as application_crud
 from app.api.applications.schemas import ApplicationStatus
+from app.api.discount_codes.crud import discount_code as discount_code_crud
 from app.api.payments import schemas
+from app.api.payments.models import PaymentProduct
 from app.api.payments.schemas import InternalPaymentCreate
 from app.api.products.crud import product as product_crud
 from app.api.products.models import Product
@@ -12,8 +16,35 @@ from app.core import simplefi
 from app.core.security import TokenData
 
 
-def _get_price(product: Product, discount_assigned: int) -> float:
-    return round(product.price * (1 - discount_assigned / 100), 2)
+def _get_price(product: Product, discount_value: float, discount_type: str) -> float:
+    if discount_type == 'percentage':
+        return round(product.price * (1 - discount_value / 100), 2)
+    elif discount_type == 'fixed':
+        return round(product.price - discount_value, 2)
+    return product.price
+
+
+def _calculate_price(
+    products: List[Product],
+    products_data: dict[int, PaymentProduct],
+    discount_value: float,
+    discount_type: str,
+) -> float:
+    if patreon := next((p for p in products if p.category == 'patreon'), None):
+        return _get_price(patreon, discount_assigned=0)
+
+    amounts = {}
+    for p in products:
+        pdata = products_data[p.id]
+        attendee_id = pdata.attendee_id
+        _amount = _get_price(p, discount_value, discount_type) * pdata.quantity
+        amounts[attendee_id] = (
+            _amount + amounts.get(attendee_id, 0)
+            if p.category != 'supporter'
+            else _get_price(p, discount_value=0, discount_type=discount_type)
+        )
+
+    return sum(amounts.values())
 
 
 def create_payment(
@@ -56,20 +87,25 @@ def create_payment(
 
     discount_assigned = application.discount_assigned or 0
 
-    if patreon := next((p for p in products if p.category == 'patreon'), None):
-        amount = _get_price(patreon, discount_assigned=0)
-    else:
-        amounts = {}
-        for p in products:
-            pdata = products_data[p.id]
-            attendee_id = pdata.attendee_id
-            _amount = _get_price(p, discount_assigned) * pdata.quantity
-            amounts[attendee_id] = (
-                _amount + amounts.get(attendee_id, 0)
-                if p.category != 'supporter'
-                else _get_price(p, discount_assigned=0)
-            )
-        amount = sum(amounts.values())
+    amount = _calculate_price(
+        products,
+        products_data,
+        discount_value=discount_assigned,
+        discount_type='percentage',
+    )
+    if obj.discount_code:
+        discount_code = discount_code_crud.get_by_code(
+            db,
+            code=obj.discount_code,
+            popup_city_id=application.popup_city_id,
+        )
+        amount2 = _calculate_price(
+            products,
+            products_data,
+            discount_value=discount_code.discount_value,
+            discount_type=discount_code.discount_type,
+        )
+        amount = min(amount, amount2)
 
     if amount == 0:
         return price_zero_payment
