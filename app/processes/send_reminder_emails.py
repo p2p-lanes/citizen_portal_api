@@ -111,10 +111,15 @@ def get_reminder_start_date(
     template: str,
 ) -> datetime:
     """Determine the start date for reminder calculations."""
+    base_date = datetime(2025, 1, 29, 0, 0)
     if template == ReminderTemplate.PURCHASE_REMINDER:
-        return application.accepted_at
+        if not application.accepted_at:
+            return base_date
+        return max(base_date, application.accepted_at)
     if template == ReminderTemplate.APPLICATION_IN_DRAFT:
-        return application.created_at
+        if not application.created_at:
+            return base_date
+        return max(base_date, application.created_at)
     raise ValueError(f'Invalid template: {template}')
 
 
