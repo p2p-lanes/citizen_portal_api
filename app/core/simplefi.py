@@ -1,3 +1,4 @@
+import urllib.parse
 from typing import Optional
 
 import requests
@@ -13,11 +14,13 @@ def create_payment(
     reference: Optional[dict] = None,
 ) -> dict:
     logger.info(f'Creating payment for amount: {amount}')
+    notification_url = urllib.parse.urljoin(settings.BACKEND_URL, 'webhooks/simplefi')
     body = {
         'amount': amount,
         'currency': 'USD',
         'reference': reference if reference else {},
         'memo': 'Citizen Portal Payment',
+        'notification_url': notification_url,
     }
     response = requests.post(
         f'{settings.SIMPLEFI_API_URL}/payment_requests',
