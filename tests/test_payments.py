@@ -42,25 +42,6 @@ def test_payment_data(test_application, client, auth_headers):
     }
 
 
-@pytest.fixture
-def test_product(db_session):
-    from app.api.products.models import Product
-
-    product = Product(
-        id=1,
-        name='Test Product',
-        slug='test-product',
-        description='Test Description',
-        price=100.0,
-        category='ticket',
-        popup_city_id=1,
-        is_active=True,
-    )
-    db_session.add(product)
-    db_session.commit()
-    return product
-
-
 def test_create_payment_unauthorized(client, test_payment_data):
     response = client.post('/payments/', json=test_payment_data)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

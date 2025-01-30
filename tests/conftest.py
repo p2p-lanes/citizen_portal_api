@@ -150,6 +150,25 @@ def test_application(test_citizen, test_popup_city):
 
 
 @pytest.fixture
+def test_product(db_session):
+    from app.api.products.models import Product
+
+    product = Product(
+        id=1,
+        name='Test Product',
+        slug='test-product',
+        description='Test Description',
+        price=100.0,
+        category='ticket',
+        popup_city_id=1,
+        is_active=True,
+    )
+    db_session.add(product)
+    db_session.commit()
+    return product
+
+
+@pytest.fixture
 def test_discount_code(db_session, test_popup_city):
     discount_code = DiscountCode(
         code='TEST10',

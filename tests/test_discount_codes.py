@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-import pytest
 from fastapi import status
 
 from app.core.utils import current_time
@@ -127,24 +126,6 @@ def test_get_discount_code_unauthorized(client, test_discount_code):
         params=params,
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
-@pytest.fixture
-def test_product(db_session, test_popup_city):
-    from app.api.products.models import Product
-
-    product = Product(
-        name='Test Product',
-        slug='test-product',
-        description='Test Description',
-        price=100.0,
-        category='ticket',
-        popup_city_id=test_popup_city.id,
-        is_active=True,
-    )
-    db_session.add(product)
-    db_session.commit()
-    return product
 
 
 def test_payment_with_discount_code(
