@@ -9,7 +9,7 @@ from app.core.security import TokenData, get_current_user
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.DiscountCode])
+@router.get('/', response_model=schemas.DiscountCode)
 def get_discount_code(
     current_user: TokenData = Depends(get_current_user),
     code: str = Query(),
