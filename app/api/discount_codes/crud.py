@@ -5,7 +5,6 @@ from app.api.base_crud import CRUDBase
 from app.api.discount_codes import models, schemas
 from app.core.utils import current_time
 
-
 class CRUDDiscountCode(
     CRUDBase[models.DiscountCode, schemas.DiscountCode, schemas.DiscountCode]
 ):
@@ -41,6 +40,11 @@ class CRUDDiscountCode(
             )
 
         return discount_code
+
+    def use_discount_code(self, db: Session, discount_code_id: int):
+        discount_code = self.get(db, discount_code_id, user=None)
+        discount_code.current_uses += 1
+        db.commit()
 
 
 discount_code = CRUDDiscountCode(models.DiscountCode)

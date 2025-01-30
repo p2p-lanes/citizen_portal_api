@@ -6,6 +6,7 @@ from sqlalchemy.orm import Query, Session
 from app.api.applications.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
+from app.api.discount_codes.crud import discount_code as discount_code_crud
 from app.api.payments import models, schemas
 from app.api.payments.schemas import PaymentSource
 from app.api.popup_city.models import EmailTemplate
@@ -99,6 +100,8 @@ class CRUDPayment(
 
         if db_payment.status == 'approved':
             self._add_products_to_attendees(db_payment)
+            if db_payment.discount_code_id is not None:
+                discount_code_crud.use_discount_code(db, db_payment.discount_code_id)
 
         db.commit()
         db.refresh(db_payment)
@@ -153,6 +156,9 @@ class CRUDPayment(
                 attendee = product_snapshot.attendee
                 ticket_list.append(f'{product_snapshot.product_name} ({attendee.name})')
             db.commit()
+
+        if payment.discount_code_id is not None:
+            discount_code_crud.use_discount_code(db, payment.discount_code_id)
 
         template = 'payment-confirmed'
         email_template = (

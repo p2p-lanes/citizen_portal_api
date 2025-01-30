@@ -43,7 +43,10 @@ class PaymentCreate(BaseModel):
 
 
 class InternalPaymentCreate(PaymentCreate, PaymentBase):
-    pass
+    discount_code_id: Optional[int] = None
+    discount_code: Optional[str] = None
+    discount_value: Optional[float] = None
+    discount_type: Optional[str] = None
 
 
 class PaymentUpdate(BaseModel):

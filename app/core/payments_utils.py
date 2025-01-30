@@ -31,7 +31,7 @@ def _calculate_price(
     discount_type: str,
 ) -> float:
     if patreon := next((p for p in products if p.category == 'patreon'), None):
-        return _get_price(patreon, discount_assigned=0)
+        return _get_price(patreon, discount_value=0, discount_type='percentage')
 
     amounts = {}
     for p in products:
@@ -73,42 +73,48 @@ def create_payment(
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.slug == 'patreon' for p in application_products)
 
-    price_zero_payment = InternalPaymentCreate(
+    response = InternalPaymentCreate(
         products=obj.products,
         application_id=application.id,
-        external_id=None,
-        status='approved',
-        amount=0,
         currency='USD',
-        checkout_url=None,
     )
+
     if already_patreon:
-        return price_zero_payment
+        response.status = 'approved'
+        response.amount = 0
+        return response
 
     discount_assigned = application.discount_assigned or 0
 
-    amount = _calculate_price(
+    response.amount = _calculate_price(
         products,
         products_data,
         discount_value=discount_assigned,
         discount_type='percentage',
     )
+
     if obj.discount_code:
         discount_code = discount_code_crud.get_by_code(
             db,
             code=obj.discount_code,
             popup_city_id=application.popup_city_id,
         )
-        amount2 = _calculate_price(
+        discounted_amount = _calculate_price(
             products,
             products_data,
             discount_value=discount_code.discount_value,
             discount_type=discount_code.discount_type,
         )
-        amount = min(amount, amount2)
+        if discounted_amount < response.amount:
+            response.amount = discounted_amount
+            response.discount_code_id = discount_code.id
+            response.discount_code = discount_code.code
+            response.discount_value = discount_code.discount_value
+            response.discount_type = discount_code.discount_type
 
-    if amount == 0:
-        return price_zero_payment
+    if response.amount == 0:
+        response.status = 'approved'
+        return response
 
     reference = {
         'email': application.email,
@@ -130,17 +136,13 @@ def create_payment(
         )
 
     payment_request = simplefi.create_payment(
-        amount,
+        response.amount,
         reference=reference,
         simplefi_api_key=api_key,
     )
 
-    return InternalPaymentCreate(
-        products=obj.products,
-        application_id=application.id,
-        external_id=payment_request['id'],
-        status=payment_request['status'],
-        amount=amount,
-        currency='USD',
-        checkout_url=payment_request['checkout_url'],
-    )
+    response.external_id = payment_request['id']
+    response.status = payment_request['status']
+    response.checkout_url = payment_request['checkout_url']
+
+    return response

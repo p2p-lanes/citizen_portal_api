@@ -1,5 +1,6 @@
 import asyncio
-from unittest.mock import Mock
+from datetime import timedelta
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,11 +9,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.citizens.models import Citizen
+from app.api.discount_codes.models import DiscountCode
 from app.api.popup_city.models import PopUpCity
 from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.config import Environment, settings
 from app.core.database import Base, get_db
 from app.core.security import create_access_token
+from app.core.utils import current_time
 from main import app
 
 
@@ -147,6 +150,24 @@ def test_application(test_citizen, test_popup_city):
 
 
 @pytest.fixture
+def test_discount_code(db_session, test_popup_city):
+    discount_code = DiscountCode(
+        code='TEST10',
+        popup_city_id=test_popup_city.id,
+        discount_type='percentage',
+        discount_value=10.0,
+        max_uses=100,
+        current_uses=0,
+        is_active=True,
+        start_date=current_time() - timedelta(days=1),
+        end_date=current_time() + timedelta(days=1),
+    )
+    db_session.add(discount_code)
+    db_session.commit()
+    return discount_code
+
+
+@pytest.fixture
 def mock_webhook_cache():
     mock_cache = Mock()
     mock_cache.add.return_value = True  # Always treat webhooks as new
@@ -165,3 +186,19 @@ def mock_email_template(monkeypatch):
 
     monkeypatch.setattr(popup_city_crud, 'get_email_template', mock_get_template)
     return mock_get_template
+
+
+@pytest.fixture
+def mock_create_payment(mock_simplefi_response):
+    with patch('app.core.simplefi.create_payment') as mock:
+        mock.return_value = mock_simplefi_response
+        yield mock
+
+
+@pytest.fixture
+def mock_simplefi_response():
+    return {
+        'id': 'test_payment_id',
+        'status': 'pending',
+        'checkout_url': 'https://test.checkout.url',
+    }
