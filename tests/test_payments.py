@@ -347,7 +347,6 @@ def test_use_discount_code(
 ):
     test_discount_code.current_uses = 0
     test_discount_code.max_uses = 1
-    test_discount_code.discount_type = 'percentage'
     test_discount_code.discount_value = 100
     db_session.commit()
 

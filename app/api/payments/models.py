@@ -58,7 +58,6 @@ class Payment(Base):
     discount_code_id = Column(Integer, ForeignKey('discount_codes.id'), nullable=True)
     discount_code = Column(String, nullable=True)
     discount_value = Column(Float, nullable=True)
-    discount_type = Column(String, nullable=True)
 
     application: Mapped['Application'] = relationship(
         'Application', back_populates='payments'

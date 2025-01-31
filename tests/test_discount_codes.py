@@ -18,7 +18,6 @@ def test_get_valid_discount_code(client, auth_headers, test_discount_code):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data['code'] == test_discount_code.code
-    assert data['discount_type'] == test_discount_code.discount_type
     assert data['discount_value'] == test_discount_code.discount_value
 
 

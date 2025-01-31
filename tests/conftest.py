@@ -173,7 +173,6 @@ def test_discount_code(db_session, test_popup_city):
     discount_code = DiscountCode(
         code='TEST10',
         popup_city_id=test_popup_city.id,
-        discount_type='percentage',
         discount_value=10.0,
         max_uses=100,
         current_uses=0,

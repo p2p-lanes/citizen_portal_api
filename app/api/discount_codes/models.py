@@ -28,7 +28,6 @@ class DiscountCode(Base):
     )
     code = Column(String, index=True)
     popup_city_id = Column(Integer, ForeignKey('popups.id'), index=True, nullable=False)
-    discount_type = Column(String)  # percentage or fixed
     discount_value = Column(Float)
     max_uses = Column(Integer)
     current_uses = Column(Integer, default=0)

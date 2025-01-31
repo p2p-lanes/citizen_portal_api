@@ -16,32 +16,26 @@ from app.core import simplefi
 from app.core.security import TokenData
 
 
-def _get_price(product: Product, discount_value: float, discount_type: str) -> float:
-    if discount_type == 'percentage':
-        return round(product.price * (1 - discount_value / 100), 2)
-    elif discount_type == 'fixed':
-        return round(product.price - discount_value, 2)
-    return product.price
-
+def _get_price(product: Product, discount_value: float) -> float:
+    return round(product.price * (1 - discount_value / 100), 2)
 
 def _calculate_price(
     products: List[Product],
     products_data: dict[int, PaymentProduct],
     discount_value: float,
-    discount_type: str,
 ) -> float:
     if patreon := next((p for p in products if p.category == 'patreon'), None):
-        return _get_price(patreon, discount_value=0, discount_type='percentage')
+        return _get_price(patreon, discount_value=0)
 
     amounts = {}
     for p in products:
         pdata = products_data[p.id]
         attendee_id = pdata.attendee_id
-        _amount = _get_price(p, discount_value, discount_type) * pdata.quantity
+        _amount = _get_price(p, discount_value) * pdata.quantity
         amounts[attendee_id] = (
             _amount + amounts.get(attendee_id, 0)
             if p.category != 'supporter'
-            else _get_price(p, discount_value=0, discount_type=discount_type)
+            else _get_price(p, discount_value=0)
         )
 
     return sum(amounts.values())
@@ -90,7 +84,6 @@ def create_payment(
         products,
         products_data,
         discount_value=discount_assigned,
-        discount_type='percentage',
     )
 
     if obj.discount_code:
@@ -103,14 +96,12 @@ def create_payment(
             products,
             products_data,
             discount_value=discount_code.discount_value,
-            discount_type=discount_code.discount_type,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
             response.discount_code_id = discount_code.id
             response.discount_code = discount_code.code
             response.discount_value = discount_code.discount_value
-            response.discount_type = discount_code.discount_type
 
     if response.amount == 0:
         response.status = 'approved'
