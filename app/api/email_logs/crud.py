@@ -1,5 +1,6 @@
 import json
-from datetime import datetime
+import urllib.parse
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 import requests
@@ -11,7 +12,33 @@ from app.api.email_logs.schemas import EmailLogCreate, EmailStatus
 from app.core.config import Environment, settings
 from app.core.database import SessionLocal
 from app.core.logger import logger
-from app.core.utils import current_time
+from app.core.utils import current_time, encode
+
+
+def _generate_authenticate_url(
+    receiver_mail: str,
+    spice: str,
+    citizen_id: int,
+    popup_slug: Optional[str] = None,
+):
+    url = urllib.parse.urljoin(
+        settings.BACKEND_URL,
+        f'citizens/login?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
+    )
+    token_url = encode(
+        {
+            'url': url,
+            'citizen_email': receiver_mail,
+            'citizen_id': citizen_id,
+        },
+        expires_delta=timedelta(hours=3),
+    )
+    auth_url = urllib.parse.urljoin(
+        settings.FRONTEND_URL, f'/auth?token_url={token_url}'
+    )
+    if popup_slug:
+        auth_url += f'&popup={popup_slug}'
+    return auth_url
 
 
 def _send_mail(
@@ -57,10 +84,18 @@ class CRUDEmailLog(
         send_at: Optional[datetime] = None,
         entity_type: Optional[str] = None,
         entity_id: Optional[int] = None,
+        spice: Optional[str] = None,
+        citizen_id: Optional[int] = None,
+        popup_slug: Optional[str] = None,
     ) -> dict:
         if send_at and not entity_type and not entity_id:
             raise ValueError(
                 'entity_type and entity_id are required if send_at is provided'
+            )
+
+        if spice and citizen_id and popup_slug:
+            params['ticketing_url'] = _generate_authenticate_url(
+                receiver_mail, spice, citizen_id, popup_slug
             )
 
         db = SessionLocal()

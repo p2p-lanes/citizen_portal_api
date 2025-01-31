@@ -38,12 +38,21 @@ class CRUDCitizen(
     def get_by_email(self, db: Session, email: str) -> Optional[models.Citizen]:
         return db.query(self.model).filter(self.model.primary_email == email).first()
 
-    def signup(self, db: Session, *, obj: schemas.CitizenCreate) -> models.Citizen:
+    def create(
+        self,
+        db: Session,
+        obj: schemas.CitizenCreate,
+        user: Optional[TokenData] = None,
+    ) -> models.Citizen:
         to_create = schemas.InternalCitizenCreate(
-            **obj.model_dump(), spice=create_spice()
+            **obj.model_dump(),
+            spice=create_spice(),
         )
-        citizen = self.create(db, to_create)
-        send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
+        return super().create(db, to_create, user)
+
+    def signup(self, db: Session, *, obj: schemas.CitizenCreate) -> models.Citizen:
+        citizen = self.create(db, obj)
+        send_login_mail(citizen.primary_email, citizen.spice, citizen.id)
         return citizen
 
     def authenticate(
@@ -54,16 +63,13 @@ class CRUDCitizen(
         popup_slug: Optional[str] = None,
     ) -> models.Citizen:
         citizen = self.get_by_email(db, email)
-        spice = create_spice()
         if not citizen:
-            to_create = schemas.InternalCitizenCreate(
-                primary_email=email,
-                spice=spice,
-            )
+            to_create = schemas.CitizenCreate(primary_email=email)
             citizen = self.create(db, to_create)
-        citizen.spice = spice
-        db.commit()
-        db.refresh(citizen)
+        else:
+            citizen.spice = create_spice()
+            db.commit()
+            db.refresh(citizen)
         send_login_mail(email, citizen.spice, citizen.id, popup_slug)
         return {'message': 'Mail sent successfully'}
 

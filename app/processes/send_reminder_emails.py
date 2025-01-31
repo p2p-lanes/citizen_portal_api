@@ -36,12 +36,16 @@ def _send_reminder_email(
         'ticketing_url': settings.FRONTEND_URL,
         'freq': freq,
     }
+
     email_log_crud.send_mail(
         application.email,
         template=email_template.template,
         params=params,
         entity_type='application',
         entity_id=application.id,
+        spice=application.citizen.spice,
+        citizen_id=application.citizen_id,
+        popup_slug=application.popup_city.slug,
     )
 
 
