@@ -5,6 +5,7 @@ from app.api.base_crud import CRUDBase
 from app.api.discount_codes import models, schemas
 from app.core.utils import current_time
 
+
 class CRUDDiscountCode(
     CRUDBase[models.DiscountCode, schemas.DiscountCode, schemas.DiscountCode]
 ):
@@ -30,10 +31,8 @@ class CRUDDiscountCode(
         if discount_code.end_date and discount_code.end_date < current_time():
             raise HTTPException(status_code=404, detail='Discount code has expired')
 
-        if (
-            discount_code.max_uses
-            and discount_code.current_uses >= discount_code.max_uses
-        ):
+        current_uses = discount_code.current_uses or 0
+        if discount_code.max_uses and current_uses >= discount_code.max_uses:
             raise HTTPException(
                 status_code=404,
                 detail='Discount code has reached the maximum number of uses',
@@ -43,7 +42,8 @@ class CRUDDiscountCode(
 
     def use_discount_code(self, db: Session, discount_code_id: int):
         discount_code = self.get(db, discount_code_id, user=None)
-        discount_code.current_uses += 1
+        current_uses = discount_code.current_uses or 0
+        discount_code.current_uses = current_uses + 1
         db.commit()
 
 
