@@ -19,7 +19,10 @@ class CRUDDiscountCode(
             .first()
         )
         if not discount_code:
-            raise HTTPException(status_code=404, detail='Discount code not found')
+            raise HTTPException(
+                status_code=404,
+                detail='Coupon code not found. Please, enter a valid coupon.',
+            )
         if not discount_code.is_active:
             raise HTTPException(status_code=404, detail='Discount code is not active')
 
