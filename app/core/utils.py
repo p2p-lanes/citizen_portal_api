@@ -1,4 +1,6 @@
 import json
+import random
+import string
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
@@ -25,3 +27,8 @@ def encode(payload: dict, *, expires_delta: timedelta = None) -> str:
 
 def current_time() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def create_spice() -> str:
+    char_pool = string.ascii_letters + string.digits
+    return ''.join(random.sample(char_pool, 12))

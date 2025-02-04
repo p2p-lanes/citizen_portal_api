@@ -1,53 +1,66 @@
 import json
-from datetime import datetime
+import urllib.parse
+from datetime import datetime, timedelta
 from typing import List, Optional
 
-import requests
 from sqlalchemy.orm import Session
 
+from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.email_logs import models, schemas
-from app.api.email_logs.schemas import EmailLogCreate, EmailStatus
-from app.core.config import Environment, settings
+from app.api.email_logs.schemas import EmailEvent, EmailLogCreate, EmailStatus
+from app.api.popup_city.models import PopUpCity
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logger import logger
-from app.core.utils import current_time
+from app.core.mail import send_mail
+from app.core.utils import create_spice, current_time, encode
 
 
-def _send_mail(
+def _generate_authenticate_url(
     receiver_mail: str,
-    *,
-    template: str,
-    params: dict,
+    spice: str,
+    citizen_id: int,
+    popup_slug: Optional[str] = None,
 ):
-    logger.info('sending %s email to %s', template, receiver_mail)
-    url = 'https://api.postmarkapp.com/email/withTemplate'
-    headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Postmark-Server-Token': settings.POSTMARK_API_TOKEN,
-    }
-    data = {
-        'From': f'{settings.EMAIL_FROM_NAME} <{settings.EMAIL_FROM_ADDRESS}>',
-        'To': receiver_mail,
-        'TemplateAlias': template,
-        'TemplateModel': params,
-    }
-    if settings.EMAIL_REPLY_TO:
-        data['ReplyTo'] = settings.EMAIL_REPLY_TO
-
-    if settings.ENVIRONMENT == Environment.TEST:
-        return {'status': EmailStatus.SUCCESS}
-
-    response = requests.post(url, json=data, headers=headers)
-    response.raise_for_status()
-
-    return {'status': EmailStatus.SUCCESS, 'response': response.json()}
+    url = urllib.parse.urljoin(
+        settings.BACKEND_URL,
+        f'citizens/login?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
+    )
+    token_url = encode(
+        {
+            'url': url,
+            'citizen_email': receiver_mail,
+            'citizen_id': citizen_id,
+        },
+        expires_delta=timedelta(hours=3),
+    )
+    auth_url = urllib.parse.urljoin(
+        settings.FRONTEND_URL, f'/auth?token_url={token_url}'
+    )
+    if popup_slug:
+        auth_url += f'&popup={popup_slug}'
+    return auth_url
 
 
 class CRUDEmailLog(
     CRUDBase[models.EmailLog, schemas.EmailLogCreate, schemas.EmailLogCreate]
 ):
+    def generate_authenticate_url(
+        self,
+        db: Session,
+        application: Application,
+    ) -> str:
+        citizen = application.citizen
+        logger.info('Citizen %s', citizen.id)
+        if not citizen.spice:
+            citizen.spice = create_spice()
+            db.commit()
+
+        email = application.email
+        popup_slug = application.popup_city.slug
+        return _generate_authenticate_url(email, citizen.spice, citizen.id, popup_slug)
+
     def get_by_email(self, db: Session, email: str) -> List[models.EmailLog]:
         return db.query(self.model).filter(self.model.receiver_email == email).all()
 
@@ -55,8 +68,9 @@ class CRUDEmailLog(
         self,
         receiver_mail: str,
         *,
-        template: str,
-        params: dict,
+        event: EmailEvent,
+        popup_city: PopUpCity,
+        params: Optional[dict] = None,
         send_at: Optional[datetime] = None,
         entity_type: Optional[str] = None,
         entity_id: Optional[int] = None,
@@ -69,14 +83,26 @@ class CRUDEmailLog(
         db = SessionLocal()
         status = EmailStatus.FAILED
         error_message = None
-
+        template = popup_city.get_email_template(event)
+        params = params or {}
+        params.update(
+            {
+                'popup_name': popup_city.name,
+                'web_url': popup_city.web_url,
+                'nsl_image': popup_city.nsl_image,
+                'contact_email': popup_city.contact_email,
+                'blog_url': popup_city.blog_url,
+                'twitter_url': popup_city.twitter_url,
+                'portal_url': settings.FRONTEND_URL,
+            }
+        )
         try:
             if send_at is not None:
                 logger.info('Scheduled email to be sent at %s', send_at)
                 status = EmailStatus.SCHEDULED
                 return {'status': status}
 
-            response_data = _send_mail(
+            response_data = send_mail(
                 receiver_mail,
                 template=template,
                 params=params,
@@ -90,6 +116,7 @@ class CRUDEmailLog(
             try:
                 email_log_data = EmailLogCreate(
                     receiver_email=receiver_mail,
+                    popup_city_id=popup_city.id,
                     template=template,
                     params=params,
                     status=status,
@@ -104,6 +131,25 @@ class CRUDEmailLog(
             finally:
                 db.close()
 
+    def send_login_mail(
+        self,
+        receiver_mail: str,
+        spice: str,
+        citizen_id: int,
+        popup_slug: Optional[str] = None,
+    ):
+        authenticate_url = _generate_authenticate_url(
+            receiver_mail, spice, citizen_id, popup_slug
+        )
+        params = {'the_url': authenticate_url}
+        return self.send_mail(
+            receiver_mail=receiver_mail,
+            event=EmailEvent.AUTH_CITIZEN_PORTAL,
+            params=params,
+            entity_type='citizen',
+            entity_id=citizen_id,
+        )
+
     def send_scheduled_mails(self, db: Session):
         scheduled_emails = (
             db.query(self.model)
@@ -117,7 +163,7 @@ class CRUDEmailLog(
             if email.send_at < current_time():
                 try:
                     params = json.loads(email.params)
-                    _send_mail(
+                    send_mail(
                         receiver_mail=email.receiver_email,
                         template=email.template,
                         params=params,

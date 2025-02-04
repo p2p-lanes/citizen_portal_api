@@ -1,5 +1,3 @@
-import random
-import string
 from typing import List, Optional
 
 from fastapi import HTTPException
@@ -7,13 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
 from app.api.citizens import models, schemas
-from app.core.mail import send_login_mail
+from app.api.email_logs.crud import email_log
 from app.core.security import TokenData
-
-
-def create_spice() -> str:
-    alla = string.ascii_letters + string.digits
-    return ''.join(random.sample(alla, 12))
+from app.core.utils import create_spice
 
 
 class CRUDCitizen(
@@ -43,7 +37,7 @@ class CRUDCitizen(
             **obj.model_dump(), spice=create_spice()
         )
         citizen = self.create(db, to_create)
-        send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
+        email_log.send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
         return citizen
 
     def authenticate(
@@ -64,7 +58,7 @@ class CRUDCitizen(
         citizen.spice = spice
         db.commit()
         db.refresh(citizen)
-        send_login_mail(email, citizen.spice, citizen.id, popup_slug)
+        email_log.send_login_mail(email, citizen.spice, citizen.id, popup_slug)
         return {'message': 'Mail sent successfully'}
 
     def login(
