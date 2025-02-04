@@ -62,10 +62,10 @@ class PopUpCity(Base):
     created_by = Column(String)
     updated_by = Column(String)
 
-    def get_email_template(self, event: EmailEvent) -> EmailTemplate:
-        for template in self.templates:
-            if template.event == event:
-                return template
+    def get_email_template(self, event: EmailEvent) -> str:
+        for t in self.templates:
+            if t.event == event:
+                return t.template
         raise ValueError(
             f'No template found for event: {event} (popup_city: {self.id} {self.name})'
         )
