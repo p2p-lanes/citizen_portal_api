@@ -119,7 +119,7 @@ class CRUDEmailLog(
             try:
                 email_log_data = EmailLogCreate(
                     receiver_email=receiver_mail,
-                    popup_city_id=popup_city.id,
+                    popup_city_id=popup_city.id if popup_city else None,
                     template=template,
                     params=params,
                     status=status,
