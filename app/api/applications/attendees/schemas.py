@@ -11,7 +11,7 @@ class AttendeeBase(BaseModel):
     name: str
     category: str
     email: Optional[str] = None
-
+    group_id: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -20,6 +20,7 @@ class AttendeeCreate(BaseModel):
     name: str
     category: str
     email: Optional[str] = None
+    group_id: Optional[int] = None
 
     @field_validator('email')
     @classmethod

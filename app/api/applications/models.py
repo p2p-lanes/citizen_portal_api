@@ -18,6 +18,7 @@ from app.core.utils import current_time
 if TYPE_CHECKING:
     from app.api.applications.attendees.models import Attendee
     from app.api.citizens.models import Citizen
+    from app.api.groups.models import Group
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity
 
@@ -102,6 +103,10 @@ class Application(Base):
     )
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     popup_city: Mapped['PopUpCity'] = relationship('PopUpCity', lazy='joined')
+    group_id = Column(Integer, ForeignKey('groups.id'), nullable=True)
+    group: Mapped['Group'] = relationship('Group', lazy='joined')
+
+    created_by_leader = Column(Boolean, nullable=False, default=False)
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)

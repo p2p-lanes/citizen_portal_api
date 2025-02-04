@@ -19,6 +19,7 @@ from app.core.security import TokenData
 def _get_price(product: Product, discount_value: float) -> float:
     return round(product.price * (1 - discount_value / 100), 2)
 
+
 def _calculate_price(
     products: List[Product],
     products_data: dict[int, PaymentProduct],
@@ -49,6 +50,11 @@ def create_payment(
     application = application_crud.get(db, obj.application_id, user)
     if application.status != ApplicationStatus.ACCEPTED.value:
         raise HTTPException(status_code=400, detail='Application is not accepted')
+
+    if not (simplefi_api_key := application.popup_city.simplefi_api_key):
+        raise HTTPException(
+            status_code=400, detail='Popup city does not have a Simplefi API key'
+        )
 
     product_ids = [p.product_id for p in obj.products]
     products_data = {p.product_id: p for p in obj.products}
@@ -86,6 +92,17 @@ def create_payment(
         discount_value=discount_assigned,
     )
 
+    group = application.citizen.get_group(application.popup_city_id)
+    if group:
+        discounted_amount = _calculate_price(
+            products,
+            products_data,
+            discount_value=group.discount_percentage,
+        )
+        if discounted_amount < response.amount:
+            response.amount = discounted_amount
+            response.group_id = group.id
+
     if obj.discount_code:
         discount_code = discount_code_crud.get_by_code(
             db,
@@ -121,15 +138,10 @@ def create_payment(
         ],
     }
 
-    if not (api_key := application.popup_city.simplefi_api_key):
-        raise HTTPException(
-            status_code=400, detail='Popup city does not have a Simplefi API key'
-        )
-
     payment_request = simplefi.create_payment(
         response.amount,
         reference=reference,
-        simplefi_api_key=api_key,
+        simplefi_api_key=simplefi_api_key,
     )
 
     response.external_id = payment_request['id']

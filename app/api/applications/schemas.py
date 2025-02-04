@@ -81,7 +81,7 @@ class ApplicationBaseCommon(BaseModel):
 class ApplicationBase(ApplicationBaseCommon):
     citizen_id: int
     popup_city_id: int
-
+    group_id: Optional[int] = None
 
 class ApplicationCreate(ApplicationBase):
     status: Optional[UserSettableStatus] = None

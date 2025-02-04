@@ -70,11 +70,16 @@ async def update_status_webhook(
         reviews_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
 
-        calculated_status, requested_discount = calculate_status(
-            application,
-            requires_approval=application.popup_city.requires_approval,
-            reviews_status=reviews_status,
-        )
+        group = application.citizen.get_group(application.popup_city_id)
+        if group:
+            calculated_status = ApplicationStatus.ACCEPTED
+            requested_discount = False
+        else:
+            calculated_status, requested_discount = calculate_status(
+                application,
+                requires_approval=application.popup_city.requires_approval,
+                reviews_status=reviews_status,
+            )
 
         if current_status == calculated_status:
             logger.info('Status is the same as calculated status. Skipping...')

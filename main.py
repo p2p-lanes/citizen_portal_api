@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.applications.routes import router as applications_router
 from app.api.citizens.routes import router as citizens_router
 from app.api.discount_codes.routes import router as discount_codes_router
+from app.api.groups.routes import router as groups_router
 from app.api.payments.routes import router as payments_router
 from app.api.popup_city.routes import router as popup_cities_router
 from app.api.products.routes import router as products_router
@@ -27,6 +28,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(applications_router, prefix='/applications', tags=['Applications'])
 app.include_router(citizens_router, prefix='/citizens', tags=['Citizens'])
 app.include_router(discount_codes_router, prefix='/discount-codes', tags=['Discount Codes'])
+app.include_router(groups_router, prefix='/groups', tags=['Groups'])
 app.include_router(payments_router, prefix='/payments', tags=['Payments'])
 app.include_router(popup_cities_router, prefix='/popups', tags=['Popups'])
 app.include_router(products_router, prefix='/products', tags=['Products'])

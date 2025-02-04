@@ -8,6 +8,8 @@ from app.api.applications.attendees import schemas as attendees_schemas
 from app.api.applications.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
+from app.api.groups import models as groups_models
+from app.api.groups.crud import group as groups_crud
 from app.api.popup_city.crud import popup_city
 from app.api.popup_city.models import PopUpCity
 from app.core.mail import send_application_received_mail
@@ -59,7 +61,20 @@ class CRUDApplication(
     CRUDBase[models.Application, schemas.ApplicationCreate, schemas.ApplicationCreate]
 ):
     def _check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
-        return db_obj.citizen_id == user.citizen_id
+        user_id = user.citizen_id
+        return db_obj.citizen_id == user_id or db_obj.group.is_leader(user_id)
+
+    def get_by_citizen_and_popup_city(
+        self, db: Session, citizen_id: int, popup_city_id: int
+    ) -> Optional[models.Application]:
+        return (
+            db.query(models.Application)
+            .filter(
+                models.Application.citizen_id == citizen_id,
+                models.Application.popup_city_id == popup_city_id,
+            )
+            .first()
+        )
 
     def create(
         self,
@@ -67,16 +82,26 @@ class CRUDApplication(
         obj: schemas.ApplicationCreate,
         user: TokenData,
     ) -> models.Application:
-        if obj.citizen_id != user.citizen_id:
+        citizen_id = obj.citizen_id
+        citizen = db.query(CitizenModel).filter(CitizenModel.id == citizen_id).first()
+        if not citizen:
+            raise HTTPException(status_code=404, detail='Citizen not found')
+
+        group = None
+        if obj.group_id:
+            group = groups_crud.get(db, obj.group_id, user)
+            if not group.is_leader(user.citizen_id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail='Not authorized to create application for another citizen',
+                )
+            obj.status = schemas.ApplicationStatus.ACCEPTED
+        elif obj.citizen_id != user.citizen_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Not authorized to create application for another citizen',
             )
 
-        citizen_id = obj.citizen_id
-        citizen = db.query(CitizenModel).filter(CitizenModel.id == citizen_id).first()
-        if not citizen:
-            raise HTTPException(status_code=404, detail='Citizen not found')
         email = citizen.primary_email
         submitted_at = (
             current_time()
@@ -89,7 +114,7 @@ class CRUDApplication(
             submitted_at=submitted_at,
         )
 
-        if obj.status != schemas.ApplicationStatus.DRAFT:
+        if obj.status != schemas.ApplicationStatus.DRAFT and not group:
             popup_city_id = obj.popup_city_id
             popup = db.query(PopUpCity).filter(PopUpCity.id == popup_city_id).first()
             requires_approval = popup.requires_approval if popup else False
@@ -110,6 +135,7 @@ class CRUDApplication(
             name=f'{obj.first_name} {obj.last_name}'.strip(),
             category='main',
             email=email,
+            group_id=group.id if group else None,
         )
         self.create_attendee(db, application.id, attendee, user)
 

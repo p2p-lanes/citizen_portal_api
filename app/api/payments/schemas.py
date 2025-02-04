@@ -46,6 +46,7 @@ class InternalPaymentCreate(PaymentCreate, PaymentBase):
     discount_code_id: Optional[int] = None
     discount_code: Optional[str] = None
     discount_value: Optional[float] = None
+    group_id: Optional[int] = None
 
 
 class PaymentUpdate(BaseModel):
