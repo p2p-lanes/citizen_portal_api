@@ -38,7 +38,8 @@ def _send_reminder_email(
     }
     email_log_crud.send_mail(
         application.email,
-        template=email_template.template,
+        event=email_template.template,
+        popup_city=application.popup_city,
         params=params,
         entity_type='application',
         entity_id=application.id,

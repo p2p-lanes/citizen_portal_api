@@ -58,7 +58,7 @@ def calculate_status(
 def _send_application_received_mail(application: models.Application):
     email_log.send_mail(
         receiver_mail=application.email,
-        event=EmailEvent.APPLICATION_RECEIVED,
+        event=EmailEvent.APPLICATION_RECEIVED.value,
         popup_city=application.popup_city,
         entity_type='application',
         entity_id=application.id,

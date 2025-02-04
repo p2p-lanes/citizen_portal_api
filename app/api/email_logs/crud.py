@@ -68,7 +68,7 @@ class CRUDEmailLog(
         self,
         receiver_mail: str,
         *,
-        event: EmailEvent,
+        event: str,
         popup_city: Optional[PopUpCity] = None,
         params: Optional[dict] = None,
         send_at: Optional[datetime] = None,
@@ -147,7 +147,7 @@ class CRUDEmailLog(
         params = {'the_url': authenticate_url}
         return self.send_mail(
             receiver_mail=receiver_mail,
-            event=EmailEvent.AUTH_CITIZEN_PORTAL,
+            event=EmailEvent.AUTH_CITIZEN_PORTAL.value,
             params=params,
             entity_type='citizen',
             entity_id=citizen_id,

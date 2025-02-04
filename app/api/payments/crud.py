@@ -160,7 +160,7 @@ class CRUDPayment(
         }
         email_log.send_mail(
             receiver_mail=payment.application.citizen.primary_email,
-            event=EmailEvent.PAYMENT_CONFIRMED,
+            event=EmailEvent.PAYMENT_CONFIRMED.value,
             params=params,
             popup_city=payment.application.popup_city,
             entity_type='payment',
