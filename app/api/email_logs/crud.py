@@ -28,11 +28,14 @@ def _send_mail(
         'X-Postmark-Server-Token': settings.POSTMARK_API_TOKEN,
     }
     data = {
-        'From': 'Edge City <edgeportal@edgecity.live>',
+        'From': f'{settings.EMAIL_FROM_NAME} <{settings.EMAIL_FROM_ADDRESS}>',
         'To': receiver_mail,
         'TemplateAlias': template,
         'TemplateModel': params,
     }
+    if settings.EMAIL_REPLY_TO:
+        data['ReplyTo'] = settings.EMAIL_REPLY_TO
+
     if settings.ENVIRONMENT == Environment.TEST:
         return {'status': EmailStatus.SUCCESS}
 
