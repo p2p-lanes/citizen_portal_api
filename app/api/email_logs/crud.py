@@ -69,7 +69,7 @@ class CRUDEmailLog(
         receiver_mail: str,
         *,
         event: EmailEvent,
-        popup_city: PopUpCity,
+        popup_city: Optional[PopUpCity] = None,
         params: Optional[dict] = None,
         send_at: Optional[datetime] = None,
         entity_type: Optional[str] = None,
@@ -83,19 +83,22 @@ class CRUDEmailLog(
         db = SessionLocal()
         status = EmailStatus.FAILED
         error_message = None
-        template = popup_city.get_email_template(event)
+        template = event
         params = params or {}
-        params.update(
-            {
-                'popup_name': popup_city.name,
-                'web_url': popup_city.web_url,
-                'nsl_image': popup_city.nsl_image,
-                'contact_email': popup_city.contact_email,
-                'blog_url': popup_city.blog_url,
-                'twitter_url': popup_city.twitter_url,
-                'portal_url': settings.FRONTEND_URL,
-            }
-        )
+        if popup_city:
+            template = popup_city.get_email_template(event)
+            params.update(
+                {
+                    'popup_name': popup_city.name,
+                    'web_url': popup_city.web_url,
+                    'nsl_image': popup_city.nsl_image,
+                    'contact_email': popup_city.contact_email,
+                    'blog_url': popup_city.blog_url,
+                    'twitter_url': popup_city.twitter_url,
+                }
+            )
+
+        params['portal_url'] = settings.FRONTEND_URL
         try:
             if send_at is not None:
                 logger.info('Scheduled email to be sent at %s', send_at)

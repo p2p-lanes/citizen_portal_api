@@ -19,6 +19,10 @@ class EmailTemplate(Base):
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
 
+    popup_city: Mapped['PopUpCity'] = relationship(
+        'PopUpCity', back_populates='templates'
+    )
+
 
 class PopUpCity(Base):
     __tablename__ = 'popups'

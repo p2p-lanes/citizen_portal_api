@@ -220,6 +220,7 @@ def test_simplefi_webhook_payment_approval(
     mock_create_payment,
     mock_simplefi_response,
     mock_webhook_cache,
+    mock_email_template,
     db_session,
 ):
     # First create a payment
