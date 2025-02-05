@@ -41,7 +41,7 @@ class PopUpCity(Base):
     passes_description = Column(String)
     image_url = Column(String)
     web_url = Column(String)
-    nsl_image = Column(String)
+    email_image = Column(String)
     contact_email = Column(String)
     blog_url = Column(String)
     twitter_url = Column(String)

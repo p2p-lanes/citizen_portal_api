@@ -91,7 +91,7 @@ class CRUDEmailLog(
                 {
                     'popup_name': popup_city.name,
                     'web_url': popup_city.web_url,
-                    'nsl_image': popup_city.nsl_image,
+                    'email_image': popup_city.email_image,
                     'contact_email': popup_city.contact_email,
                     'blog_url': popup_city.blog_url,
                     'twitter_url': popup_city.twitter_url,
