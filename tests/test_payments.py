@@ -336,18 +336,18 @@ def test_simplefi_webhook_invalid_event_type(
     assert response.json()['detail'] == err_msg
 
 
-def test_use_discount_code(
+def test_use_coupon_code(
     client,
     auth_headers,
-    test_discount_code,
+    test_coupon_code,
     test_payment_data,
     test_product,
     mock_create_payment,
     db_session,
 ):
-    test_discount_code.current_uses = 0
-    test_discount_code.max_uses = 1
-    test_discount_code.discount_value = 100
+    test_coupon_code.current_uses = 0
+    test_coupon_code.max_uses = 1
+    test_coupon_code.discount_value = 100
     db_session.commit()
 
     # First create a payment
@@ -359,12 +359,12 @@ def test_use_discount_code(
     application.discount_assigned = None
     db_session.commit()
 
-    assert application.popup_city_id == test_discount_code.popup_city_id
-    test_payment_data['discount_code'] = test_discount_code.code
+    assert application.popup_city_id == test_coupon_code.popup_city_id
+    test_payment_data['coupon_code'] = test_coupon_code.code
 
     response = client.post('/payments/', json=test_payment_data, headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['status'] == 'approved'
 
     # Verify discount code was used
-    assert test_discount_code.current_uses == 1
+    assert test_coupon_code.current_uses == 1

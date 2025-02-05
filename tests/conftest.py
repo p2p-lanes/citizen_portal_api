@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.citizens.models import Citizen
-from app.api.discount_codes.models import DiscountCode
+from app.api.coupon_codes.models import CouponCode
 from app.api.popup_city.models import PopUpCity
 from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.config import Environment, settings
@@ -169,8 +169,8 @@ def test_product(db_session):
 
 
 @pytest.fixture
-def test_discount_code(db_session, test_popup_city):
-    discount_code = DiscountCode(
+def test_coupon_code(db_session, test_popup_city):
+    coupon_code = CouponCode(
         code='TEST10',
         popup_city_id=test_popup_city.id,
         discount_value=10.0,
@@ -180,9 +180,9 @@ def test_discount_code(db_session, test_popup_city):
         start_date=current_time() - timedelta(days=1),
         end_date=current_time() + timedelta(days=1),
     )
-    db_session.add(discount_code)
+    db_session.add(coupon_code)
     db_session.commit()
-    return discount_code
+    return coupon_code
 
 
 @pytest.fixture

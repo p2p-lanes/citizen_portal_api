@@ -55,8 +55,8 @@ class Payment(Base):
     rate = Column(Float)
     source = Column(String)
     checkout_url = Column(String)
-    discount_code_id = Column(Integer, ForeignKey('discount_codes.id'), nullable=True)
-    discount_code = Column(String, nullable=True)
+    coupon_code_id = Column(Integer, ForeignKey('coupon_codes.id'), nullable=True)
+    coupon_code = Column(String, nullable=True)
     discount_value = Column(Float, nullable=True)
 
     application: Mapped['Application'] = relationship(

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
 
-class DiscountCode(BaseModel):
+class CouponCode(BaseModel):
     id: int
     code: str
     popup_city_id: int

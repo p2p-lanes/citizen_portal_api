@@ -51,17 +51,15 @@ async def test_authenticate_success(client):
 
 def test_login_success(client, db_session):
     # First create a citizen with known spice
-    from app.api.citizens.crud import citizen
-    from app.api.citizens.schemas import InternalCitizenCreate
+    from app.api.citizens.crud import citizen as citizen_crud
+    from app.api.citizens.schemas import CitizenCreate
 
-    test_spice = 'testspice123'
-    new_citizen = InternalCitizenCreate(
-        primary_email='test@example.com', spice=test_spice
-    )
-    citizen.create(db_session, new_citizen)
+    new_citizen = CitizenCreate(primary_email='test@example.com')
+    citizen = citizen_crud.create(db_session, new_citizen)
 
     response = client.post(
-        '/citizens/login', params={'email': 'test@example.com', 'spice': test_spice}
+        '/citizens/login',
+        params={'email': 'test@example.com', 'spice': citizen.spice},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -71,25 +69,26 @@ def test_login_success(client, db_session):
 
 def test_login_failure(client, db_session):
     # First create a citizen with known spice
-    from app.api.citizens.crud import citizen
-    from app.api.citizens.schemas import InternalCitizenCreate
+    from app.api.citizens.crud import citizen as citizen_crud
+    from app.api.citizens.schemas import CitizenCreate
 
-    valid_spice = 'testspice123'
+    new_citizen = CitizenCreate(primary_email='test@example.com')
+    citizen = citizen_crud.create(db_session, new_citizen)
+    valid_spice = citizen.spice
     invalid_spice = 'invalidspice123'
-    new_citizen = InternalCitizenCreate(
-        primary_email='test@example.com', spice=valid_spice
-    )
-    citizen.create(db_session, new_citizen)
+    assert valid_spice != invalid_spice
 
     response = client.post(
-        '/citizens/login', params={'email': 'test@example.com', 'spice': invalid_spice}
+        '/citizens/login',
+        params={'email': citizen.primary_email, 'spice': invalid_spice},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()['detail'] == 'Invalid spice'
 
     # Invalid email
     response = client.post(
-        '/citizens/login', params={'email': 'invalid@example.com', 'spice': valid_spice}
+        '/citizens/login',
+        params={'email': 'invalid@example.com', 'spice': valid_spice},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()['detail'] == 'Citizen not found'

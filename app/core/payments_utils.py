@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as application_crud
 from app.api.applications.schemas import ApplicationStatus
-from app.api.discount_codes.crud import discount_code as discount_code_crud
+from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.payments import schemas
 from app.api.payments.models import PaymentProduct
 from app.api.payments.schemas import InternalPaymentCreate
@@ -18,6 +18,7 @@ from app.core.security import TokenData
 
 def _get_price(product: Product, discount_value: float) -> float:
     return round(product.price * (1 - discount_value / 100), 2)
+
 
 def _calculate_price(
     products: List[Product],
@@ -86,22 +87,22 @@ def create_payment(
         discount_value=discount_assigned,
     )
 
-    if obj.discount_code:
-        discount_code = discount_code_crud.get_by_code(
+    if obj.coupon_code:
+        coupon_code = coupon_code_crud.get_by_code(
             db,
-            code=obj.discount_code,
+            code=obj.coupon_code,
             popup_city_id=application.popup_city_id,
         )
         discounted_amount = _calculate_price(
             products,
             products_data,
-            discount_value=discount_code.discount_value,
+            discount_value=coupon_code.discount_value,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
-            response.discount_code_id = discount_code.id
-            response.discount_code = discount_code.code
-            response.discount_value = discount_code.discount_value
+            response.coupon_code_id = coupon_code.id
+            response.coupon_code = coupon_code.code
+            response.discount_value = coupon_code.discount_value
 
     if response.amount == 0:
         response.status = 'approved'

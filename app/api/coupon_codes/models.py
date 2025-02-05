@@ -13,8 +13,8 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 
-class DiscountCode(Base):
-    __tablename__ = 'discount_codes'
+class CouponCode(Base):
+    __tablename__ = 'coupon_codes'
     __table_args__ = (
         UniqueConstraint('code', 'popup_city_id', name='uix_code_popup_city'),
     )
