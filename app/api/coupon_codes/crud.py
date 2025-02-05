@@ -13,7 +13,7 @@ class CRUDCouponCode(
         coupon_code = (
             db.query(models.CouponCode)
             .filter(
-                models.CouponCode.code == code,
+                models.CouponCode.code.ilike(code),
                 models.CouponCode.popup_city_id == popup_city_id,
             )
             .first()
