@@ -29,7 +29,7 @@ class CouponCode(Base):
     )
     code = Column(String, index=True)
     popup_city_id = Column(Integer, ForeignKey('popups.id'), index=True, nullable=False)
-    _discount_value = Column(String)
+    _discount_value = Column('discount_value', String)
     max_uses = Column(Integer)
     current_uses = Column(Integer, default=0)
     start_date = Column(DateTime)
