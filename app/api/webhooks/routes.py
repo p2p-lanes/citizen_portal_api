@@ -164,6 +164,7 @@ async def send_email_webhook(
         email_log.send_mail(
             receiver_mail=row['email'],
             event=event,
+            popup_city=application.popup_city,
             params=params,
             send_at=send_at,
             entity_type='application',
