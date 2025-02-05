@@ -106,7 +106,7 @@ async def update_status_webhook(
 @router.post('/send_email', status_code=status.HTTP_200_OK)
 async def send_email_webhook(
     webhook_payload: schemas.WebhookPayload,
-    event: str = Query(..., description='Email event', alias='template'),
+    event: str = Query(..., description='Email event'),
     fields: str = Query(..., description='Template fields'),
     unique: bool = Query(True, description='Verify if the email is unique'),
     delay: int = Query(0, description='Delay in minutes'),
