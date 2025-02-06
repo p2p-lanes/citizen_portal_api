@@ -150,10 +150,10 @@ def test_application(test_citizen, test_popup_city):
 
 
 @pytest.fixture
-def test_product(db_session):
+def test_products(db_session):
     from app.api.products.models import Product
 
-    product = Product(
+    product1 = Product(
         id=1,
         name='Test Product',
         slug='test-product',
@@ -163,9 +163,20 @@ def test_product(db_session):
         popup_city_id=1,
         is_active=True,
     )
-    db_session.add(product)
+    product2 = Product(
+        id=2,
+        name='Test Product 2',
+        slug='test-product-2',
+        description='Test Description 2',
+        price=200.0,
+        category='ticket',
+        popup_city_id=1,
+        is_active=True,
+    )
+    db_session.add(product1)
+    db_session.add(product2)
     db_session.commit()
-    return product
+    return product1, product2
 
 
 @pytest.fixture

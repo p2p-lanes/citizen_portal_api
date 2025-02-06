@@ -16,30 +16,33 @@ from app.core import simplefi
 from app.core.security import TokenData
 
 
-def _get_price(product: Product, discount_value: float) -> float:
-    return round(product.price * (1 - discount_value / 100), 2)
+def _get_discounted_price(price: float, discount_value: float) -> float:
+    return round(price * (1 - discount_value / 100), 2)
 
 
 def _calculate_price(
     products: List[Product],
     products_data: dict[int, PaymentProduct],
     discount_value: float,
+    credit: float,
 ) -> float:
     if patreon := next((p for p in products if p.category == 'patreon'), None):
-        return _get_price(patreon, discount_value=0)
+        return _get_discounted_price(patreon.price, discount_value=0), credit
 
-    amounts = {}
+    standard_amount = 0
+    supporter_amount = 0
     for p in products:
-        pdata = products_data[p.id]
-        attendee_id = pdata.attendee_id
-        _amount = _get_price(p, discount_value) * pdata.quantity
-        amounts[attendee_id] = (
-            _amount + amounts.get(attendee_id, 0)
-            if p.category != 'supporter'
-            else _get_price(p, discount_value=0)
-        )
+        quantity = products_data[p.id].quantity
+        if p.category == 'supporter':
+            supporter_amount += p.price * quantity
+        else:
+            standard_amount += p.price * quantity
 
-    return sum(amounts.values())
+    standard_amount = standard_amount - credit
+    if standard_amount > 0:
+        standard_amount = _get_discounted_price(standard_amount, discount_value)
+
+    return standard_amount + supporter_amount
 
 
 def create_payment(
@@ -50,6 +53,8 @@ def create_payment(
     application = application_crud.get(db, obj.application_id, user)
     if application.status != ApplicationStatus.ACCEPTED.value:
         raise HTTPException(status_code=400, detail='Application is not accepted')
+
+    credit = application.get_credit() if obj.edit_passes else 0
 
     product_ids = [p.product_id for p in obj.products]
     products_data = {p.product_id: p for p in obj.products}
@@ -85,6 +90,7 @@ def create_payment(
         products,
         products_data,
         discount_value=discount_assigned,
+        credit=credit,
     )
 
     if obj.coupon_code:
@@ -97,6 +103,7 @@ def create_payment(
             products,
             products_data,
             discount_value=coupon_code.discount_value,
+            credit=credit,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
@@ -104,8 +111,14 @@ def create_payment(
             response.coupon_code = coupon_code.code
             response.discount_value = coupon_code.discount_value
 
-    if response.amount == 0:
+    if response.amount <= 0:
         response.status = 'approved'
+        if response.amount < 0:
+            application.credit = -response.amount
+            db.commit()
+            db.refresh(application)
+            response.amount = 0
+
         return response
 
     reference = {

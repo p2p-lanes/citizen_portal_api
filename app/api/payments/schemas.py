@@ -34,7 +34,9 @@ class PaymentCreate(BaseModel):
     application_id: int
     products: List[PaymentProduct]
     coupon_code: Optional[str] = None
+    edit_passes: Optional[bool] = False
 
+    @classmethod
     @field_validator('products', mode='before')
     def validate_products(cls, v: List[PaymentProduct]) -> List[PaymentProduct]:
         if not v:

@@ -51,7 +51,7 @@ def test_create_payment_success(
     client,
     auth_headers,
     test_payment_data,
-    test_product,
+    test_products,
     db_session,
     mock_create_payment,
 ):
@@ -93,7 +93,7 @@ def test_get_payments(
     client,
     auth_headers,
     test_payment_data,
-    test_product,
+    test_products,
     mock_create_payment,
     db_session,
 ):
@@ -123,7 +123,7 @@ def test_get_payment_by_id(
     client,
     auth_headers,
     test_payment_data,
-    test_product,
+    test_products,
     mock_create_payment,
     db_session,
 ):
@@ -151,7 +151,7 @@ def test_get_payment_other_citizen(
     client,
     auth_headers,
     test_payment_data,
-    test_product,
+    test_products,
     mock_create_payment,
     db_session,
 ):
@@ -179,7 +179,7 @@ def test_simplefi_webhook_payment_approval(
     client,
     auth_headers,
     test_payment_data,
-    test_product,
+    test_products,
     mock_create_payment,
     mock_simplefi_response,
     mock_webhook_cache,
@@ -240,7 +240,7 @@ def test_simplefi_webhook_payment_expired(
     client,
     auth_headers,
     test_payment_data,
-    test_product,
+    test_products,
     mock_create_payment,
     mock_simplefi_response,
     mock_webhook_cache,
@@ -341,7 +341,7 @@ def test_use_coupon_code(
     auth_headers,
     test_coupon_code,
     test_payment_data,
-    test_product,
+    test_products,
     mock_create_payment,
     db_session,
 ):
@@ -368,3 +368,175 @@ def test_use_coupon_code(
 
     # Verify discount code was used
     assert test_coupon_code.current_uses == 1
+
+
+def _approve_payment(client, payment, mock_simplefi_response):
+    webhook_data = {
+        'id': 'test_id',
+        'event_type': 'new_payment',
+        'entity_type': 'payment_request',
+        'entity_id': payment['external_id'],
+        'data': {
+            'payment_request': {
+                'id': mock_simplefi_response['id'],
+                'order_id': 1,
+                'amount': 100.0,
+                'amount_paid': 100.0,
+                'currency': 'USD',
+                'reference': {},
+                'status': 'approved',
+                'status_detail': 'correct',
+                'transactions': [],
+                'card_payment': None,
+                'payments': [],
+            },
+            'new_payment': {
+                'coin': 'ETH',
+                'hash': 'test_hash',
+                'amount': payment['amount'],
+                'paid_at': '2024-01-01T00:00:00Z',
+            },
+        },
+    }
+
+    response = client.post('/webhooks/simplefi', json=webhook_data)
+    assert response.status_code == status.HTTP_200_OK
+
+
+def test_edit_passes_payment(
+    client,
+    auth_headers,
+    test_payment_data,
+    test_application,
+    test_products,
+    mock_create_payment,
+    mock_webhook_cache,
+    db_session,
+):
+    from app.api.applications.models import Application
+
+    application = db_session.get(Application, test_payment_data['application_id'])
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.scholarship_request = False
+    application.discount_assigned = None
+    application.credit = 0
+
+    mock_response = {
+        'id': 'sf1',
+        'status': 'pending',
+        'checkout_url': 'https://test.checkout.url',
+    }
+    mock_create_payment.return_value = mock_response
+
+    # Create initial payment
+    response = client.post('/payments/', json=test_payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    _approve_payment(client, response.json(), mock_response)
+
+    mock_response['id'] = 'sf2'
+
+    # Create edit passes payment
+    edit_payment_data = test_payment_data.copy()
+    edit_payment_data['edit_passes'] = True
+    edit_payment_data['products'] = [
+        {
+            'product_id': 2,
+            'attendee_id': 1,
+            'quantity': 1,
+        }
+    ]
+    response = client.post('/payments/', json=edit_payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == 'pending'
+
+    _approve_payment(client, response.json(), mock_response)
+
+    payment = client.get(f'/payments/{response.json()["id"]}', headers=auth_headers)
+    assert payment.json()['status'] == 'approved'
+    # Verify application state
+    db_session.refresh(application)
+    assert application.credit == 0
+    for attendee in application.attendees:
+        if attendee.id == 1:
+            assert len(attendee.attendee_products) == 1
+            assert attendee.attendee_products[0].product_id == 2
+            assert attendee.attendee_products[0].quantity == 1
+        else:
+            assert len(attendee.attendee_products) == 0
+
+
+def test_edit_passes_payment_cheaper_product(
+    client,
+    auth_headers,
+    test_payment_data,
+    test_application,
+    test_products,
+    mock_create_payment,
+    mock_webhook_cache,
+    db_session,
+):
+    from app.api.applications.models import Application
+
+    application = db_session.get(Application, test_payment_data['application_id'])
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.scholarship_request = False
+    application.discount_assigned = None
+    initial_credit = 10
+    application.credit = initial_credit
+
+    mock_response = {
+        'id': 'sf1',
+        'status': 'pending',
+        'checkout_url': 'https://test.checkout.url',
+    }
+    mock_create_payment.return_value = mock_response
+
+    product_1 = test_products[0]
+    product_2 = test_products[1]
+    test_payment_data['products'] = [
+        {
+            'product_id': product_1.id,
+            'attendee_id': 1,
+            'quantity': 1,
+        },
+        {
+            'product_id': product_2.id,
+            'attendee_id': 1,
+            'quantity': 1,
+        },
+    ]
+
+    # Create initial payment
+    response = client.post('/payments/', json=test_payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == 'pending'
+    _approve_payment(client, response.json(), mock_response)
+
+    mock_response['id'] = 'sf2'
+
+    # Create edit passes payment
+    edit_payment_data = test_payment_data.copy()
+    edit_payment_data['edit_passes'] = True
+    edit_payment_data['products'] = [
+        {
+            'product_id': product_1.id,
+            'attendee_id': 1,
+            'quantity': 1,
+        }
+    ]
+    response = client.post('/payments/', json=edit_payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    payment = response.json()
+
+    assert payment['status'] == 'approved'
+    # Verify application state
+    db_session.refresh(application)
+    assert application.credit == initial_credit + product_2.price
+    for attendee in application.attendees:
+        if attendee.id == 1:
+            assert len(attendee.attendee_products) == 1
+            assert attendee.attendee_products[0].product_id == product_1.id
+            assert attendee.attendee_products[0].quantity == 1
+        else:
+            assert len(attendee.attendee_products) == 0

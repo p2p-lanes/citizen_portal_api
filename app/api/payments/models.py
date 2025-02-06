@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
@@ -58,6 +58,7 @@ class Payment(Base):
     coupon_code_id = Column(Integer, ForeignKey('coupon_codes.id'), nullable=True)
     coupon_code = Column(String, nullable=True)
     discount_value = Column(Float, nullable=True)
+    edit_passes = Column(Boolean, default=False)
 
     application: Mapped['Application'] = relationship(
         'Application', back_populates='payments'

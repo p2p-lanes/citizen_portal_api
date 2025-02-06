@@ -19,8 +19,12 @@ class AttendeeProduct(Base):
     product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
     quantity = Column(Integer, default=1)
 
-    attendee = relationship('Attendee', back_populates='attendee_products')
-    product = relationship('Product', back_populates='attendee_products')
+    attendee: Mapped['Attendee'] = relationship(
+        'Attendee', back_populates='attendee_products'
+    )
+    product: Mapped['Product'] = relationship(
+        'Product', back_populates='attendee_products'
+    )
 
 
 class Attendee(Base):

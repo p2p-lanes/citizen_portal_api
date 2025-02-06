@@ -59,6 +59,7 @@ class CRUDPayment(
         payment_data = payments_utils.create_payment(db, obj, user)
 
         payment_dict = payment_data.model_dump(exclude={'products'})
+        payment_dict['edit_passes'] = obj.edit_passes
         db_payment = self.model(**payment_dict)
 
         # First save the payment to get its ID
@@ -99,6 +100,9 @@ class CRUDPayment(
             db.refresh(db_payment)
 
         if db_payment.status == 'approved':
+            if db_payment.edit_passes:
+                self._clear_application_products(db, db_payment)
+
             self._add_products_to_attendees(db_payment)
             if db_payment.coupon_code_id is not None:
                 coupon_code_crud.use_coupon_code(db, db_payment.coupon_code_id)
@@ -120,6 +124,13 @@ class CRUDPayment(
                         quantity=product_snapshot.quantity,
                     )
                 )
+
+    def _clear_application_products(self, db: Session, payment: models.Payment) -> None:
+        logger.info('Removing products from attendees')
+        application = payment.application
+        attendees_ids = {a.id for a in application.attendees}
+        query = AttendeeProduct.attendee_id.in_(attendees_ids)
+        db.query(AttendeeProduct).filter(query).delete(synchronize_session=False)
 
     def approve_payment(
         self,
@@ -144,6 +155,13 @@ class CRUDPayment(
         )
         updated_payment = self.update(db, payment.id, payment_update, user)
 
+        if payment.edit_passes:
+            self._clear_application_products(db, payment)
+            payment.application.credit = 0
+            db.flush()
+            db.refresh(payment.application)
+
+        # Add new products to attendees
         ticket_list = []
         if payment.products_snapshot:
             logger.info(
@@ -160,6 +178,7 @@ class CRUDPayment(
         if payment.coupon_code_id is not None:
             coupon_code_crud.use_coupon_code(db, payment.coupon_code_id)
 
+        # Send confirmation email
         template = 'payment-confirmed'
         email_template = (
             db.query(EmailTemplate)

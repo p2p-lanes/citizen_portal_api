@@ -4,6 +4,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -16,7 +17,7 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
-    from app.api.applications.attendees.models import Attendee
+    from app.api.applications.attendees.models import Attendee, AttendeeProduct
     from app.api.citizens.models import Citizen
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity
@@ -81,6 +82,8 @@ class Application(Base):
     tela_review = Column(String)
     sophie_review = Column(String)
     devon_review = Column(String)
+
+    credit = Column(Float, default=0)
 
     submitted_at = Column(DateTime, nullable=True)
     accepted_at = Column(DateTime, nullable=True)
@@ -156,3 +159,10 @@ class Application(Base):
         self.tela_review = None
         self.sophie_review = None
         self.devon_review = None
+
+    def _get_products(self) -> List['AttendeeProduct']:
+        return [p for a in self.attendees for p in a.attendee_products]
+
+    def get_credit(self) -> float:
+        total = sum(p.product.price * p.quantity for p in self._get_products())
+        return total + self.credit
