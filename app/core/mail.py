@@ -83,6 +83,7 @@ def send_application_accepted_with_ticketing_url(
     spice: str,
     citizen_id: int,
     first_name: str,
+    email_special_note: str,
     popup_slug: str,
     template: str,
     *,
@@ -95,6 +96,7 @@ def send_application_accepted_with_ticketing_url(
     params = {
         'first_name': first_name,
         'ticketing_url': ticketing_url,
+        'email_special_note': email_special_note,
     }
     return send_mail(
         receiver_mail,

@@ -177,12 +177,14 @@ async def send_email_webhook(
                 spice=citizen.spice,
                 citizen_id=citizen.id,
                 first_name=application.first_name,
+                email_special_note=application.email_special_note,
                 popup_slug=application.popup_city.slug,
                 template=_template,
                 send_at=send_at,
                 application_id=application.id,
             )
         else:
+            params['email_special_note'] = application.email_special_note
             send_mail(
                 receiver_mail=row['email'],
                 template=_template,
