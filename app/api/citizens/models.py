@@ -19,6 +19,9 @@ class Citizen(Base):
     secondary_email = Column(String)
     first_name = Column(String)
     last_name = Column(String)
+    x_user = Column(String)
+    telegram = Column(String)
+
     email_validated = Column(Boolean, default=False)
     spice = Column(String)
     applications = relationship("Application", back_populates="citizen")
