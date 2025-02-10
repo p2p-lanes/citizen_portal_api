@@ -21,6 +21,7 @@ class Citizen(Base):
     last_name = Column(String)
     x_user = Column(String)
     telegram = Column(String)
+    point_of_contact = Column(String)
 
     email_validated = Column(Boolean, default=False)
     spice = Column(String)
