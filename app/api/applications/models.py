@@ -76,6 +76,8 @@ class Application(Base):
     scholarship_details = Column(String)
     scholarship_video_url = Column(String)
 
+    send_note_to_applicant = Column(String)
+
     timour_review = Column(String)
     janine_review = Column(String)
     tela_review = Column(String)

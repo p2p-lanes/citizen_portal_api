@@ -6,6 +6,7 @@ from sqlalchemy.orm import Query, Session
 from app.api.applications.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
+from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
 from app.api.payments import models, schemas
@@ -99,6 +100,8 @@ class CRUDPayment(
 
         if db_payment.status == 'approved':
             self._add_products_to_attendees(db_payment)
+            if db_payment.coupon_code_id is not None:
+                coupon_code_crud.use_coupon_code(db, db_payment.coupon_code_id)
 
         db.commit()
         db.refresh(db_payment)
@@ -153,6 +156,9 @@ class CRUDPayment(
                 attendee = product_snapshot.attendee
                 ticket_list.append(f'{product_snapshot.product_name} ({attendee.name})')
             db.commit()
+
+        if payment.coupon_code_id is not None:
+            coupon_code_crud.use_coupon_code(db, payment.coupon_code_id)
 
         params = {
             'ticket_list': ticket_list,

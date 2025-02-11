@@ -21,7 +21,7 @@ from app.core.logger import logger
 from app.core.utils import current_time
 
 
-class ReminderTemplate(str, Enum):
+class ReminderEvent(str, Enum):
     PURCHASE_REMINDER = 'purchase-reminder'
     APPLICATION_IN_DRAFT = 'application-in-draft'
 
@@ -36,6 +36,7 @@ def _send_reminder_email(
         'ticketing_url': settings.FRONTEND_URL,
         'freq': freq,
     }
+
     email_log_crud.send_mail(
         application.email,
         event=email_template.template,
@@ -43,6 +44,9 @@ def _send_reminder_email(
         params=params,
         entity_type='application',
         entity_id=application.id,
+        spice=application.citizen.spice,
+        citizen_id=application.citizen_id,
+        popup_slug=application.popup_city.slug,
     )
 
 
@@ -64,8 +68,8 @@ def process_application_reminders(
     email_template: EmailTemplate,
 ) -> None:
     used_frequencies = get_used_frequencies(db, application.id, email_template.template)
-    from_date = get_reminder_start_date(application, email_template.template)
-    if email_template.template == ReminderTemplate.PURCHASE_REMINDER:
+    from_date = get_reminder_start_date(application, email_template.event)
+    if email_template.event == ReminderEvent.PURCHASE_REMINDER:
         if any(payment.status == 'approved' for payment in application.payments):
             logger.info('Application %s has a paid payment', application.id)
             return
@@ -109,27 +113,27 @@ def get_used_frequencies(
 
 def get_reminder_start_date(
     application: Application,
-    template: str,
+    event: ReminderEvent,
 ) -> datetime:
     """Determine the start date for reminder calculations."""
     base_date = datetime(2025, 1, 29, 0, 0)
-    if template == ReminderTemplate.PURCHASE_REMINDER:
+    if event == ReminderEvent.PURCHASE_REMINDER:
         if not application.accepted_at:
             return base_date
         return max(base_date, application.accepted_at)
-    if template == ReminderTemplate.APPLICATION_IN_DRAFT:
+    if event == ReminderEvent.APPLICATION_IN_DRAFT:
         if not application.created_at:
             return base_date
         return max(base_date, application.created_at)
-    raise ValueError(f'Invalid template: {template}')
+    raise ValueError(f'Invalid event: {event}')
 
 
-def get_application_status(template: str) -> ApplicationStatus:
-    if template == ReminderTemplate.PURCHASE_REMINDER:
+def get_application_status(event: ReminderEvent) -> ApplicationStatus:
+    if event == ReminderEvent.PURCHASE_REMINDER:
         return ApplicationStatus.ACCEPTED
-    if template == ReminderTemplate.APPLICATION_IN_DRAFT:
+    if event == ReminderEvent.APPLICATION_IN_DRAFT:
         return ApplicationStatus.DRAFT
-    raise ValueError(f'Invalid template: {template}')
+    raise ValueError(f'Invalid event: {event}')
 
 
 def is_reminder_due(from_date: datetime, frequency: timedelta) -> bool:
@@ -148,7 +152,7 @@ def send_reminder_email(db: Session, email_template: EmailTemplate):
             db,
             filters=ApplicationFilter(
                 popup_city_id=popup_city_id,
-                status=get_application_status(email_template.template),
+                status=get_application_status(email_template.event),
             ),
             skip=skip,
             limit=limit,

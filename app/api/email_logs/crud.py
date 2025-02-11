@@ -74,10 +74,18 @@ class CRUDEmailLog(
         send_at: Optional[datetime] = None,
         entity_type: Optional[str] = None,
         entity_id: Optional[int] = None,
+        spice: Optional[str] = None,
+        citizen_id: Optional[int] = None,
+        popup_slug: Optional[str] = None,
     ) -> dict:
         if send_at and not entity_type and not entity_id:
             raise ValueError(
                 'entity_type and entity_id are required if send_at is provided'
+            )
+
+        if spice and citizen_id and popup_slug:
+            params['ticketing_url'] = _generate_authenticate_url(
+                receiver_mail, spice, citizen_id, popup_slug
             )
 
         db = SessionLocal()

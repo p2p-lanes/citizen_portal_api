@@ -1,9 +1,13 @@
+from typing import List
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as application_crud
 from app.api.applications.schemas import ApplicationStatus
+from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.payments import schemas
+from app.api.payments.models import PaymentProduct
 from app.api.payments.schemas import InternalPaymentCreate
 from app.api.products.crud import product as product_crud
 from app.api.products.models import Product
@@ -12,8 +16,30 @@ from app.core import simplefi
 from app.core.security import TokenData
 
 
-def _get_price(product: Product, discount_assigned: int) -> float:
-    return round(product.price * (1 - discount_assigned / 100), 2)
+def _get_price(product: Product, discount_value: float) -> float:
+    return round(product.price * (1 - discount_value / 100), 2)
+
+
+def _calculate_price(
+    products: List[Product],
+    products_data: dict[int, PaymentProduct],
+    discount_value: float,
+) -> float:
+    if patreon := next((p for p in products if p.category == 'patreon'), None):
+        return _get_price(patreon, discount_value=0)
+
+    amounts = {}
+    for p in products:
+        pdata = products_data[p.id]
+        attendee_id = pdata.attendee_id
+        _amount = _get_price(p, discount_value) * pdata.quantity
+        amounts[attendee_id] = (
+            _amount + amounts.get(attendee_id, 0)
+            if p.category != 'supporter'
+            else _get_price(p, discount_value=0)
+        )
+
+    return sum(amounts.values())
 
 
 def create_payment(
@@ -42,37 +68,45 @@ def create_payment(
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.slug == 'patreon' for p in application_products)
 
-    price_zero_payment = InternalPaymentCreate(
+    response = InternalPaymentCreate(
         products=obj.products,
         application_id=application.id,
-        external_id=None,
-        status='approved',
-        amount=0,
         currency='USD',
-        checkout_url=None,
     )
+
     if already_patreon:
-        return price_zero_payment
+        response.status = 'approved'
+        response.amount = 0
+        return response
 
     discount_assigned = application.discount_assigned or 0
 
-    if patreon := next((p for p in products if p.category == 'patreon'), None):
-        amount = _get_price(patreon, discount_assigned=0)
-    else:
-        amounts = {}
-        for p in products:
-            pdata = products_data[p.id]
-            attendee_id = pdata.attendee_id
-            _amount = _get_price(p, discount_assigned) * pdata.quantity
-            amounts[attendee_id] = (
-                _amount + amounts.get(attendee_id, 0)
-                if p.category != 'supporter'
-                else _get_price(p, discount_assigned=0)
-            )
-        amount = sum(amounts.values())
+    response.amount = _calculate_price(
+        products,
+        products_data,
+        discount_value=discount_assigned,
+    )
 
-    if amount == 0:
-        return price_zero_payment
+    if obj.coupon_code:
+        coupon_code = coupon_code_crud.get_by_code(
+            db,
+            code=obj.coupon_code,
+            popup_city_id=application.popup_city_id,
+        )
+        discounted_amount = _calculate_price(
+            products,
+            products_data,
+            discount_value=coupon_code.discount_value,
+        )
+        if discounted_amount < response.amount:
+            response.amount = discounted_amount
+            response.coupon_code_id = coupon_code.id
+            response.coupon_code = coupon_code.code
+            response.discount_value = coupon_code.discount_value
+
+    if response.amount == 0:
+        response.status = 'approved'
+        return response
 
     reference = {
         'email': application.email,
@@ -94,17 +128,13 @@ def create_payment(
         )
 
     payment_request = simplefi.create_payment(
-        amount,
+        response.amount,
         reference=reference,
         simplefi_api_key=api_key,
     )
 
-    return InternalPaymentCreate(
-        products=obj.products,
-        application_id=application.id,
-        external_id=payment_request['id'],
-        status=payment_request['status'],
-        amount=amount,
-        currency='USD',
-        checkout_url=payment_request['checkout_url'],
-    )
+    response.external_id = payment_request['id']
+    response.status = payment_request['status']
+    response.checkout_url = payment_request['checkout_url']
+
+    return response

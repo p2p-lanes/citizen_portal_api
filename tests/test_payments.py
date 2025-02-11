@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 from fastapi import status
 
@@ -44,44 +42,9 @@ def test_payment_data(test_application, client, auth_headers):
     }
 
 
-@pytest.fixture
-def test_product(db_session):
-    from app.api.products.models import Product
-
-    product = Product(
-        id=1,
-        name='Test Product',
-        slug='test-product',
-        description='Test Description',
-        price=100.0,
-        category='ticket',
-        popup_city_id=1,
-        is_active=True,
-    )
-    db_session.add(product)
-    db_session.commit()
-    return product
-
-
 def test_create_payment_unauthorized(client, test_payment_data):
     response = client.post('/payments/', json=test_payment_data)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
-@pytest.fixture
-def mock_simplefi_response():
-    return {
-        'id': 'test_payment_id',
-        'status': 'pending',
-        'checkout_url': 'https://test.checkout.url',
-    }
-
-
-@pytest.fixture
-def mock_create_payment(mock_simplefi_response):
-    with patch('app.core.simplefi.create_payment') as mock:
-        mock.return_value = mock_simplefi_response
-        yield mock
 
 
 def test_create_payment_success(
@@ -372,3 +335,37 @@ def test_simplefi_webhook_invalid_event_type(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     err_msg = 'Event type is not new_payment or new_card_payment'
     assert response.json()['detail'] == err_msg
+
+
+def test_use_coupon_code(
+    client,
+    auth_headers,
+    test_coupon_code,
+    test_payment_data,
+    test_product,
+    mock_create_payment,
+    db_session,
+):
+    test_coupon_code.current_uses = 0
+    test_coupon_code.max_uses = 1
+    test_coupon_code.discount_value = 100
+    db_session.commit()
+
+    # First create a payment
+    from app.api.applications.models import Application
+
+    application = db_session.get(Application, test_payment_data['application_id'])
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.scholarship_request = False
+    application.discount_assigned = None
+    db_session.commit()
+
+    assert application.popup_city_id == test_coupon_code.popup_city_id
+    test_payment_data['coupon_code'] = test_coupon_code.code
+
+    response = client.post('/payments/', json=test_payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == 'approved'
+
+    # Verify discount code was used
+    assert test_coupon_code.current_uses == 1
