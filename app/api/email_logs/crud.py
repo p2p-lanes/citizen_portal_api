@@ -129,6 +129,7 @@ class CRUDEmailLog(
                     receiver_email=receiver_mail,
                     popup_city_id=popup_city.id if popup_city else None,
                     template=template,
+                    event=event,
                     params=params,
                     status=status,
                     send_at=send_at,

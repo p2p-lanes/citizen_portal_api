@@ -35,6 +35,7 @@ class EmailLogFilter(BaseModel):
 class EmailLogBase(BaseModel):
     receiver_email: str
     template: str
+    event: str
     params: dict
     status: EmailStatus
     send_at: Optional[datetime] = None
