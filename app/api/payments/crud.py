@@ -102,7 +102,7 @@ class CRUDPayment(
         if db_payment.status == 'approved':
             if db_payment.edit_passes:
                 self._clear_application_products(db, db_payment)
-                db_payment.application.credit = 0
+                db_payment.application.credit = db_payment.application.credit - db_payment.amount
 
             self._add_products_to_attendees(db_payment)
             if db_payment.coupon_code_id is not None:
