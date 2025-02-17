@@ -27,7 +27,7 @@ def _calculate_price(
     credit: float,
 ) -> float:
     if patreon := next((p for p in products if p.category == 'patreon'), None):
-        return _get_discounted_price(patreon.price, discount_value=0), credit
+        return _get_discounted_price(patreon.price, discount_value=0)
 
     standard_amount = 0
     supporter_amount = 0
