@@ -115,9 +115,11 @@ def create_payment(
         response.status = 'approved'
         if response.amount < 0:
             application.credit = -response.amount
-            db.commit()
-            db.refresh(application)
             response.amount = 0
+        else:
+            application.credit = 0
+        db.commit()
+        db.refresh(application)
 
         return response
 
