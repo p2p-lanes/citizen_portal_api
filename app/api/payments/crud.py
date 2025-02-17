@@ -7,13 +7,13 @@ from app.api.applications.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
+from app.api.email_logs.crud import email_log
+from app.api.email_logs.schemas import EmailEvent
 from app.api.payments import models, schemas
 from app.api.payments.schemas import PaymentSource
-from app.api.popup_city.models import EmailTemplate
 from app.api.products.models import Product
 from app.core import payments_utils
 from app.core.logger import logger
-from app.core.mail import send_payment_confirmed_mail
 from app.core.security import TokenData
 
 
@@ -178,24 +178,17 @@ class CRUDPayment(
         if payment.coupon_code_id is not None:
             coupon_code_crud.use_coupon_code(db, payment.coupon_code_id)
 
-        # Send confirmation email
-        template = 'payment-confirmed'
-        email_template = (
-            db.query(EmailTemplate)
-            .filter(
-                EmailTemplate.popup_city_id == payment.application.popup_city_id,
-                EmailTemplate.event == template,
-            )
-            .first()
-        )
-        if email_template:
-            template = email_template.template
-        send_payment_confirmed_mail(
+        params = {
+            'ticket_list': ticket_list,
+            'first_name': payment.application.first_name,
+        }
+        email_log.send_mail(
             receiver_mail=payment.application.citizen.primary_email,
-            first_name=payment.application.first_name,
-            ticket_list=ticket_list,
-            template=template,
-            application_id=payment.application_id,
+            event=EmailEvent.PAYMENT_CONFIRMED.value,
+            params=params,
+            popup_city=payment.application.popup_city,
+            entity_type='payment',
+            entity_id=payment.id,
         )
 
         logger.info('Payment %s approved', payment.id)

@@ -207,13 +207,13 @@ def mock_webhook_cache():
 
 @pytest.fixture
 def mock_email_template(monkeypatch):
-    """Mock the get_email_template function to avoid template lookup errors"""
-    from app.api.popup_city.crud import popup_city as popup_city_crud
+    """Mock the get_email_template method on PopUpCity to avoid template lookup errors"""
+    from app.api.popup_city.models import PopUpCity
 
-    def mock_get_template(template, *args, **kwargs):
-        return template
+    def mock_get_template(self, event, *args, **kwargs):
+        return event
 
-    monkeypatch.setattr(popup_city_crud, 'get_email_template', mock_get_template)
+    monkeypatch.setattr(PopUpCity, 'get_email_template', mock_get_template)
     return mock_get_template
 
 

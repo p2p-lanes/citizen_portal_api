@@ -183,6 +183,7 @@ def test_simplefi_webhook_payment_approval(
     mock_create_payment,
     mock_simplefi_response,
     mock_webhook_cache,
+    mock_email_template,
     db_session,
 ):
     # First create a payment
@@ -411,6 +412,7 @@ def test_edit_passes_payment(
     test_products,
     mock_create_payment,
     mock_webhook_cache,
+    mock_email_template,
     db_session,
 ):
     from app.api.applications.models import Application
@@ -474,6 +476,7 @@ def test_edit_passes_payment_cheaper_product(
     test_products,
     mock_create_payment,
     mock_webhook_cache,
+    mock_email_template,
     db_session,
 ):
     from app.api.applications.models import Application
