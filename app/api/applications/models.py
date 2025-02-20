@@ -85,7 +85,7 @@ class Application(Base):
     sophie_review = Column(String)
     devon_review = Column(String)
 
-    credit = Column(Float, default=0)
+    credit = Column(Float, default=0, nullable=False)
 
     submitted_at = Column(DateTime, nullable=True)
     accepted_at = Column(DateTime, nullable=True)
