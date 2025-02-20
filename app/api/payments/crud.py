@@ -179,7 +179,7 @@ class CRUDPayment(
             coupon_code_crud.use_coupon_code(db, payment.coupon_code_id)
 
         params = {
-            'ticket_list': ticket_list,
+            'ticket_list': ', '.join(ticket_list),
             'first_name': payment.application.first_name,
         }
         email_log.send_mail(
