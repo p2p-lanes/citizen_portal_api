@@ -87,7 +87,10 @@ def create_payment(
 
     if obj.edit_passes and is_buying_patreon and not already_patreon:
         logger.error('Cannot edit passes for Patreon products')
-        obj.edit_passes = False
+        raise HTTPException(
+            status_code=400,
+            detail='Cannot edit passes for Patreon products',
+        )
 
     response = InternalPaymentCreate(
         products=obj.products,
