@@ -13,6 +13,7 @@ from app.api.products.crud import product as product_crud
 from app.api.products.models import Product
 from app.api.products.schemas import ProductFilter
 from app.core import simplefi
+from app.core.logger import logger
 from app.core.security import TokenData
 
 
@@ -65,8 +66,6 @@ def create_payment(
     if application.status != ApplicationStatus.ACCEPTED.value:
         raise HTTPException(status_code=400, detail='Application is not accepted')
 
-    credit = application.get_credit() if obj.edit_passes else 0
-
     product_ids = [p.product_id for p in obj.products]
     products_data = {p.product_id: p for p in obj.products}
     products = product_crud.find(
@@ -81,6 +80,11 @@ def create_payment(
     if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
 
+    if obj.edit_passes and any(p.category == 'patreon' for p in products):
+        logger.error('Cannot edit passes for Patreon products')
+        obj.edit_passes = False
+
+    credit = application.get_credit() if obj.edit_passes else 0
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.slug == 'patreon' for p in application_products)
 
