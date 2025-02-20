@@ -26,23 +26,34 @@ def _calculate_price(
     discount_value: float,
     credit: float,
 ) -> float:
-    if patreon := next((p for p in products if p.category == 'patreon'), None):
-        return _get_discounted_price(patreon.price, discount_value=0)
-
-    standard_amount = 0
-    supporter_amount = 0
+    attendees = {}
     for p in products:
         quantity = products_data[p.id].quantity
-        if p.category == 'supporter':
-            supporter_amount += p.price * quantity
+        attendee_id = products_data[p.id].attendee_id
+        if attendee_id not in attendees:
+            attendees[attendee_id] = {'standard': 0, 'supporter': 0, 'patreon': 0}
+
+        if attendees[attendee_id]['patreon'] > 0:
+            continue
+
+        if p.category == 'patreon':
+            attendees[attendee_id]['patreon'] = p.price * quantity
+            attendees[attendee_id]['standard'] = 0
+            attendees[attendee_id]['supporter'] = 0
+        elif p.category == 'supporter':
+            attendees[attendee_id]['supporter'] += p.price * quantity
         else:
-            standard_amount += p.price * quantity
+            attendees[attendee_id]['standard'] += p.price * quantity
+
+    standard_amount = sum(a['standard'] for a in attendees.values())
+    supporter_amount = sum(a['supporter'] for a in attendees.values())
+    patreon_amount = sum(a['patreon'] for a in attendees.values())
 
     standard_amount = standard_amount - credit
     if standard_amount > 0:
         standard_amount = _get_discounted_price(standard_amount, discount_value)
 
-    return standard_amount + supporter_amount
+    return standard_amount + supporter_amount + patreon_amount
 
 
 def create_payment(
