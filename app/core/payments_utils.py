@@ -98,11 +98,6 @@ def create_payment(
         currency='USD',
     )
 
-    if already_patreon:
-        response.status = 'approved'
-        response.amount = 0
-        return response
-
     discount_assigned = application.discount_assigned or 0
 
     response.amount = _calculate_price(
