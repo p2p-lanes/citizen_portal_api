@@ -26,6 +26,7 @@ def _calculate_price(
     products_data: dict[int, PaymentProduct],
     discount_value: float,
     credit: float,
+    already_patreon: bool,
 ) -> float:
     attendees = {}
     for p in products:
@@ -38,7 +39,9 @@ def _calculate_price(
             continue
 
         if p.category == 'patreon':
-            attendees[attendee_id]['patreon'] = p.price * quantity
+            attendees[attendee_id]['patreon'] = (
+                p.price * quantity if not already_patreon else 0
+            )
             attendees[attendee_id]['standard'] = 0
             attendees[attendee_id]['supporter'] = 0
         elif p.category == 'supporter':
@@ -105,6 +108,7 @@ def create_payment(
         products_data,
         discount_value=discount_assigned,
         credit=credit,
+        already_patreon=already_patreon,
     )
 
     if obj.coupon_code:
@@ -118,6 +122,7 @@ def create_payment(
             products_data,
             discount_value=coupon_code.discount_value,
             credit=credit,
+            already_patreon=already_patreon,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
