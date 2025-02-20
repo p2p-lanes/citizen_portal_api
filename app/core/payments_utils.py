@@ -80,13 +80,14 @@ def create_payment(
     if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
 
-    if obj.edit_passes and any(p.category == 'patreon' for p in products):
-        logger.error('Cannot edit passes for Patreon products')
-        obj.edit_passes = False
-
     credit = application.get_credit() if obj.edit_passes else 0
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.slug == 'patreon' for p in application_products)
+    is_buying_patreon = any(p.category == 'patreon' for p in products)
+
+    if obj.edit_passes and is_buying_patreon and not already_patreon:
+        logger.error('Cannot edit passes for Patreon products')
+        obj.edit_passes = False
 
     response = InternalPaymentCreate(
         products=obj.products,
