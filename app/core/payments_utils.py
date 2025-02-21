@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as application_crud
+from app.api.applications.models import Application
 from app.api.applications.schemas import ApplicationStatus
 from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.payments import schemas
@@ -21,13 +22,33 @@ def _get_discounted_price(price: float, discount_value: float) -> float:
     return round(price * (1 - discount_value / 100), 2)
 
 
+def _get_credit(application: Application, discount_value: float) -> float:
+    total = 0
+    for a in application.attendees:
+        patreon = False
+        subtotal = 0
+        for p in a.attendee_products:
+            if p.product.category == 'patreon':
+                patreon = True
+                subtotal = 0
+            elif not patreon:
+                subtotal += p.product.price * p.quantity
+        if not patreon:
+            total += subtotal
+
+    return _get_discounted_price(total, discount_value) + application.credit
+
+
 def _calculate_price(
     products: List[Product],
     products_data: dict[int, PaymentProduct],
     discount_value: float,
-    credit: float,
+    application: Application,
     already_patreon: bool,
+    edit_passes: bool,
 ) -> float:
+    credit = _get_credit(application, discount_value) if edit_passes else 0
+    logger.info('Credit: %s', credit)
     attendees = {}
     for p in products:
         quantity = products_data[p.id].quantity
@@ -53,9 +74,13 @@ def _calculate_price(
     supporter_amount = sum(a['supporter'] for a in attendees.values())
     patreon_amount = sum(a['patreon'] for a in attendees.values())
 
-    standard_amount = standard_amount - credit
+    logger.info('Standard amount: %s', standard_amount)
+    logger.info('Supporter amount: %s', supporter_amount)
+    logger.info('Patreon amount: %s', patreon_amount)
+
     if standard_amount > 0:
         standard_amount = _get_discounted_price(standard_amount, discount_value)
+    standard_amount = standard_amount - credit
 
     return standard_amount + supporter_amount + patreon_amount
 
@@ -83,7 +108,6 @@ def create_payment(
     if len(products) != len(product_ids):
         raise HTTPException(status_code=400, detail='Some products are not available')
 
-    credit = application.get_credit() if obj.edit_passes else 0
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.category == 'patreon' for p in application_products)
     is_buying_patreon = any(p.category == 'patreon' for p in products)
@@ -107,8 +131,9 @@ def create_payment(
         products,
         products_data,
         discount_value=discount_assigned,
-        credit=credit,
+        application=application,
         already_patreon=already_patreon,
+        edit_passes=obj.edit_passes,
     )
 
     if obj.coupon_code:
@@ -121,8 +146,9 @@ def create_payment(
             products,
             products_data,
             discount_value=coupon_code.discount_value,
-            credit=credit,
+            application=application,
             already_patreon=already_patreon,
+            edit_passes=obj.edit_passes,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount

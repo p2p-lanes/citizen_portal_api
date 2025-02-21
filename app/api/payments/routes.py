@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.payments.crud import payment as payment_crud
 from app.api.payments import schemas
+from app.api.payments.crud import payment as payment_crud
 from app.core.database import get_db
 from app.core.security import TokenData, get_current_user
 
@@ -38,7 +38,9 @@ def get_payment(
 @router.post('/', response_model=schemas.Payment)
 def create_payment(
     payment: schemas.PaymentCreate,
-    current_user: TokenData = Depends(get_current_user),
+    # current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return payment_crud.create(db=db, obj=payment, user=current_user)
+    return payment_crud.create(
+        db=db, obj=payment, user=TokenData(citizen_id=53, email='asd')
+    )

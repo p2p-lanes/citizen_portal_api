@@ -17,7 +17,7 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
-    from app.api.applications.attendees.models import Attendee, AttendeeProduct
+    from app.api.applications.attendees.models import Attendee
     from app.api.citizens.models import Citizen
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity
@@ -161,19 +161,3 @@ class Application(Base):
         self.tela_review = None
         self.sophie_review = None
         self.devon_review = None
-
-    def get_credit(self) -> float:
-        total = 0
-        for a in self.attendees:
-            patreon = False
-            subtotal = 0
-            for p in a.attendee_products:
-                if p.product.category == 'patreon':
-                    patreon = True
-                    subtotal = 0
-                elif not patreon:
-                    subtotal += p.product.price * p.quantity
-            if not patreon:
-                total += subtotal
-
-        return total + self.credit
