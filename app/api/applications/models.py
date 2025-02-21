@@ -163,11 +163,17 @@ class Application(Base):
         self.devon_review = None
 
     def get_credit(self) -> float:
-        products = [
-            p
-            for a in self.attendees
-            for p in a.attendee_products
-            if p.product.category != 'patreon'
-        ]
-        total = sum(p.product.price * p.quantity for p in products)
+        total = 0
+        for a in self.attendees:
+            patreon = False
+            subtotal = 0
+            for p in a.attendee_products:
+                if p.product.category == 'patreon':
+                    patreon = True
+                    subtotal = 0
+                elif not patreon:
+                    subtotal += p.product.price * p.quantity
+            if not patreon:
+                total += subtotal
+
         return total + self.credit
