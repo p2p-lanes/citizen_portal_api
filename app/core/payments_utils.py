@@ -85,7 +85,7 @@ def create_payment(
 
     credit = application.get_credit() if obj.edit_passes else 0
     application_products = [p for a in application.attendees for p in a.products]
-    already_patreon = any(p.slug == 'patreon' for p in application_products)
+    already_patreon = any(p.category == 'patreon' for p in application_products)
     is_buying_patreon = any(p.category == 'patreon' for p in products)
 
     if obj.edit_passes and is_buying_patreon and not already_patreon:

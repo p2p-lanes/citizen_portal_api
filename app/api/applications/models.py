@@ -162,9 +162,12 @@ class Application(Base):
         self.sophie_review = None
         self.devon_review = None
 
-    def _get_products(self) -> List['AttendeeProduct']:
-        return [p for a in self.attendees for p in a.attendee_products]
-
     def get_credit(self) -> float:
-        total = sum(p.product.price * p.quantity for p in self._get_products())
+        products = [
+            p
+            for a in self.attendees
+            for p in a.attendee_products
+            if p.product.category != 'patreon'
+        ]
+        total = sum(p.product.price * p.quantity for p in products)
         return total + self.credit
