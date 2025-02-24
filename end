@@ -1,0 +1,8 @@
+* [33m1e82d46[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m)[m Added get citizen by email route
+[31m|[m *   [33m1df2bfd[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Merge develop into main
+[31m|[m [32m|[m[31m\[m  
+[31m|[m [32m|[m[31m/[m  
+[31m|[m[31m/[m[32m|[m   
+* [32m|[m [33me4aeb67[m[33m ([m[1;31morigin/develop[m[33m, [m[1;31morigin/demo[m[33m)[m fix: payment create endpoint
+* [32m|[m [33m2bf03c0[m fix: calculate price
+* [32m|[m [33m3dbda7c[m fix: get credit method
