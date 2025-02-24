@@ -8,20 +8,17 @@ from sqlalchemy.orm import Session
 from app.api.applications.crud import calculate_status
 from app.api.applications.models import Application
 from app.api.applications.schemas import ApplicationStatus
-from app.api.citizens.crud import create_spice
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.models import EmailLog
 from app.api.email_logs.schemas import EmailStatus
 from app.api.payments.crud import payment as payment_crud
 from app.api.payments.schemas import PaymentFilter, PaymentUpdate
-from app.api.popup_city.crud import popup_city
 from app.api.webhooks import schemas
 from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.cache import WebhookCache
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
-from app.core.mail import send_application_accepted_with_ticketing_url, send_mail
 from app.core.security import TokenData
 from app.core.utils import current_time
 
@@ -109,7 +106,7 @@ async def update_status_webhook(
 @router.post('/send_email', status_code=status.HTTP_200_OK)
 async def send_email_webhook(
     webhook_payload: schemas.WebhookPayload,
-    template: str = Query(..., description='Email template name'),
+    event: str = Query(..., description='Email event'),
     fields: str = Query(..., description='Template fields'),
     unique: bool = Query(True, description='Verify if the email is unique'),
     delay: int = Query(0, description='Delay in minutes'),
@@ -122,7 +119,7 @@ async def send_email_webhook(
     fields = [f.strip() for f in fields.split(',')]
     processed_ids = []
 
-    logger.info('Sending email %s to %s rows', template, len(webhook_payload.data.rows))
+    logger.info('Sending email %s to %s rows', event, len(webhook_payload.data.rows))
     logger.info('Fields: %s', fields)
     send_at = current_time() + timedelta(minutes=delay) if delay else None
 
@@ -137,8 +134,6 @@ async def send_email_webhook(
             params['ticketing_url'] = settings.FRONTEND_URL
 
         application = db.get(Application, row['id'])
-        popup_city_id = application.popup_city_id
-        _template = popup_city.get_email_template(db, popup_city_id, template)
 
         if unique:
             exists_email_log = (
@@ -146,7 +141,7 @@ async def send_email_webhook(
                 .filter(
                     EmailLog.entity_id == application.id,
                     EmailLog.entity_type == 'application',
-                    EmailLog.template == _template,
+                    EmailLog.event == event,
                     EmailLog.status == EmailStatus.SUCCESS,
                 )
                 .first()
@@ -164,35 +159,17 @@ async def send_email_webhook(
                 entity_id=application.id,
             )
 
-        application_approved = template.startswith('application-approved')
-        if application_approved:
-            citizen = application.citizen
-            logger.info('Citizen %s', citizen.id)
-            if not citizen.spice:
-                citizen.spice = create_spice()
-                db.commit()
-
-            send_application_accepted_with_ticketing_url(
-                receiver_mail=row['email'],
-                spice=citizen.spice,
-                citizen_id=citizen.id,
-                first_name=application.first_name,
-                send_note_to_applicant=application.send_note_to_applicant,
-                popup_slug=application.popup_city.slug,
-                template=_template,
-                send_at=send_at,
-                application_id=application.id,
-            )
-        else:
-            params['send_note_to_applicant'] = application.send_note_to_applicant
-            send_mail(
-                receiver_mail=row['email'],
-                template=_template,
-                params=params,
-                send_at=send_at,
-                entity_type='application',
-                entity_id=application.id,
-            )
+        params['ticketing_url'] = email_log.generate_authenticate_url(db, application)
+        params['first_name'] = application.first_name
+        email_log.send_mail(
+            receiver_mail=row['email'],
+            event=event,
+            popup_city=application.popup_city,
+            params=params,
+            send_at=send_at,
+            entity_type='application',
+            entity_id=application.id,
+        )
 
         processed_ids.append(row['id'])
 

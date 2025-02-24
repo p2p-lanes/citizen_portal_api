@@ -1,5 +1,3 @@
-import random
-import string
 from typing import List, Optional
 
 from fastapi import HTTPException
@@ -7,13 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
 from app.api.citizens import models, schemas
-from app.core.mail import send_login_mail
+from app.api.email_logs.crud import email_log
 from app.core.security import TokenData
-
-
-def create_spice() -> str:
-    alla = string.ascii_letters + string.digits
-    return ''.join(random.sample(alla, 12))
+from app.core.utils import create_spice
 
 
 class CRUDCitizen(
@@ -48,11 +42,13 @@ class CRUDCitizen(
             **obj.model_dump(),
             spice=create_spice(),
         )
-        return super().create(db, to_create, user)
+        citizen = super().create(db, to_create)
+        email_log.send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
+        return citizen
 
     def signup(self, db: Session, *, obj: schemas.CitizenCreate) -> models.Citizen:
         citizen = self.create(db, obj)
-        send_login_mail(citizen.primary_email, citizen.spice, citizen.id)
+        email_log.send_login_mail(citizen.primary_email, citizen.spice, citizen.id)
         return citizen
 
     def authenticate(
@@ -70,8 +66,8 @@ class CRUDCitizen(
             citizen.spice = create_spice()
             db.commit()
             db.refresh(citizen)
-        send_login_mail(email, citizen.spice, citizen.id, popup_slug)
-        return {'message': 'Mail sent successfully'}
+        email_log.send_login_mail(email, citizen.spice, citizen.id, popup_slug)
+        return {"message": "Mail sent successfully"}
 
     def login(
         self,
@@ -82,9 +78,9 @@ class CRUDCitizen(
     ) -> models.Citizen:
         citizen = self.get_by_email(db, email)
         if not citizen:
-            raise HTTPException(status_code=404, detail='Citizen not found')
+            raise HTTPException(status_code=404, detail="Citizen not found")
         if citizen.spice != spice:
-            raise HTTPException(status_code=401, detail='Invalid spice')
+            raise HTTPException(status_code=401, detail="Invalid spice")
         citizen.email_validated = True
         db.commit()
         db.refresh(citizen)

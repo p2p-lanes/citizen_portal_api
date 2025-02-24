@@ -8,9 +8,9 @@ from app.api.applications.attendees import schemas as attendees_schemas
 from app.api.applications.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
-from app.api.popup_city.crud import popup_city
+from app.api.email_logs.crud import email_log
+from app.api.email_logs.schemas import EmailEvent
 from app.api.popup_city.models import PopUpCity
-from app.core.mail import send_application_received_mail
 from app.core.security import TokenData
 from app.core.utils import current_time
 
@@ -53,6 +53,16 @@ def calculate_status(
         ), requested_a_discount
 
     return reviews_status, requested_a_discount
+
+
+def _send_application_received_mail(application: models.Application):
+    email_log.send_mail(
+        receiver_mail=application.email,
+        event=EmailEvent.APPLICATION_RECEIVED.value,
+        popup_city=application.popup_city,
+        entity_type='application',
+        entity_id=application.id,
+    )
 
 
 class CRUDApplication(
@@ -98,12 +108,6 @@ class CRUDApplication(
                 obj, requires_approval=requires_approval
             )
 
-            if obj.status == schemas.ApplicationStatus.IN_REVIEW:
-                _template = popup_city.get_email_template(
-                    db, popup_city_id, 'application-received'
-                )
-                send_application_received_mail(receiver_mail=email, template=_template)
-
         application = super().create(db, obj)
 
         attendee = attendees_schemas.AttendeeCreate(
@@ -112,6 +116,9 @@ class CRUDApplication(
             email=email,
         )
         self.create_attendee(db, application.id, attendee, user)
+
+        if application.status == schemas.ApplicationStatus.IN_REVIEW:
+            _send_application_received_mail(application)
 
         return application
 
@@ -134,16 +141,10 @@ class CRUDApplication(
                 application, requires_approval=requires_approval
             )
             if application.status == schemas.ApplicationStatus.IN_REVIEW:
-                _template = popup_city.get_email_template(
-                    db, application.popup_city_id, 'application-received'
-                )
-                send_application_received_mail(
-                    receiver_mail=application.email, template=_template
-                )
+                _send_application_received_mail(application)
         else:
-            application.requested_discount = _requested_a_discount(
-                application, requires_approval
-            )
+            requested_discount = _requested_a_discount(application, requires_approval)
+            application.requested_discount = requested_discount
 
         db.add(application)
         db.commit()

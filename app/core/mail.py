@@ -1,38 +1,8 @@
-import urllib.parse
-from datetime import datetime, timedelta
-from typing import Optional
+import requests
 
-from app.api.email_logs.crud import email_log
-
-from .config import settings
-from .logger import logger
-from .utils import encode
-
-
-def _generate_authenticate_url(
-    receiver_mail: str,
-    spice: str,
-    citizen_id: int,
-    popup_slug: Optional[str] = None,
-):
-    url = urllib.parse.urljoin(
-        settings.BACKEND_URL,
-        f'citizens/login?email={urllib.parse.quote(receiver_mail)}&spice={spice}',
-    )
-    token_url = encode(
-        {
-            'url': url,
-            'citizen_email': receiver_mail,
-            'citizen_id': citizen_id,
-        },
-        expires_delta=timedelta(hours=3),
-    )
-    auth_url = urllib.parse.urljoin(
-        settings.FRONTEND_URL, f'/auth?token_url={token_url}'
-    )
-    if popup_slug:
-        auth_url += f'&popup={popup_slug}'
-    return auth_url
+from app.api.email_logs.schemas import EmailStatus
+from app.core.config import Environment, settings
+from app.core.logger import logger
 
 
 def send_mail(
@@ -40,118 +10,27 @@ def send_mail(
     *,
     template: str,
     params: dict,
-    send_at: Optional[datetime] = None,
-    entity_type: Optional[str] = None,
-    entity_id: Optional[int] = None,
 ):
     logger.info('sending %s email to %s', template, receiver_mail)
-    return email_log.send_mail(
-        receiver_mail,
-        template=template,
-        params=params,
-        send_at=send_at,
-        entity_type=entity_type,
-        entity_id=entity_id,
-    )
-
-
-def send_login_mail(
-    receiver_mail: str,
-    spice: str,
-    citizen_id: int,
-    popup_slug: Optional[str] = None,
-):
-    authenticate_url = _generate_authenticate_url(
-        receiver_mail, spice, citizen_id, popup_slug
-    )
-    params = {
-        'the_url': authenticate_url,
-        'email': receiver_mail,
+    url = 'https://api.postmarkapp.com/email/withTemplate'
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Postmark-Server-Token': settings.POSTMARK_API_TOKEN,
     }
-    template = 'auth-citizen-portal'
-    return send_mail(
-        receiver_mail=receiver_mail,
-        template=template,
-        params=params,
-        entity_type='citizen',
-        entity_id=citizen_id,
-    )
-
-
-def send_application_accepted_with_ticketing_url(
-    receiver_mail: str,
-    spice: str,
-    citizen_id: int,
-    first_name: str,
-    send_note_to_applicant: str,
-    popup_slug: str,
-    template: str,
-    *,
-    send_at: Optional[datetime] = None,
-    application_id: Optional[int] = None,
-):
-    ticketing_url = _generate_authenticate_url(
-        receiver_mail, spice, citizen_id, popup_slug=popup_slug
-    )
-    params = {
-        'first_name': first_name,
-        'ticketing_url': ticketing_url,
-        'send_note_to_applicant': send_note_to_applicant,
+    data = {
+        'From': f'{settings.EMAIL_FROM_NAME} <{settings.EMAIL_FROM_ADDRESS}>',
+        'To': receiver_mail,
+        'TemplateAlias': template,
+        'TemplateModel': params,
     }
-    return send_mail(
-        receiver_mail,
-        template=template,
-        params=params,
-        send_at=send_at,
-        entity_type='application',
-        entity_id=application_id,
-    )
+    if settings.EMAIL_REPLY_TO:
+        data['ReplyTo'] = settings.EMAIL_REPLY_TO
 
+    if settings.ENVIRONMENT == Environment.TEST:
+        return {'status': EmailStatus.SUCCESS}
 
-def send_application_received_mail(
-    receiver_mail: str,
-    *,
-    send_at: Optional[datetime] = None,
-    application_id: Optional[int] = None,
-    template: Optional[str] = None,
-):
-    submission_form_url = urllib.parse.urljoin(settings.FRONTEND_URL, 'portal')
-    params = {
-        'submission_form_url': submission_form_url,
-        'email': receiver_mail,
-    }
-    if not template:
-        template = 'application-received'
-    return send_mail(
-        receiver_mail,
-        template=template,
-        params=params,
-        send_at=send_at,
-        entity_type='application',
-        entity_id=application_id,
-    )
+    response = requests.post(url, json=data, headers=headers)
+    response.raise_for_status()
 
-
-def send_payment_confirmed_mail(
-    receiver_mail: str,
-    first_name: str,
-    ticket_list: list[str],
-    template: Optional[str] = None,
-    *,
-    send_at: Optional[datetime] = None,
-    application_id: Optional[int] = None,
-):
-    params = {
-        'first_name': first_name,
-        'ticket_list': ' - '.join(ticket_list),
-    }
-    if not template:
-        template = 'payment-confirmed'
-    return send_mail(
-        receiver_mail,
-        template=template,
-        params=params,
-        send_at=send_at,
-        entity_type='application',
-        entity_id=application_id,
-    )
+    return {'status': EmailStatus.SUCCESS, 'response': response.json()}

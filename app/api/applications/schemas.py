@@ -108,6 +108,7 @@ class Application(InternalApplicationCreate):
     attendees: Optional[list[Attendee]] = None
     discount_assigned: Optional[int] = None
     products: Optional[list[Product]] = None
+    credit: Optional[float] = None
 
     model_config = ConfigDict(
         from_attributes=True,

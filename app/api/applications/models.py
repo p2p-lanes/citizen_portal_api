@@ -4,6 +4,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -83,6 +84,8 @@ class Application(Base):
     tela_review = Column(String)
     sophie_review = Column(String)
     devon_review = Column(String)
+
+    credit = Column(Float, default=0, nullable=False)
 
     submitted_at = Column(DateTime, nullable=True)
     accepted_at = Column(DateTime, nullable=True)

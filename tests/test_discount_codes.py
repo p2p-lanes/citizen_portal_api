@@ -130,7 +130,7 @@ def test_payment_with_coupon_code(
     client,
     auth_headers,
     test_application,
-    test_product,
+    test_products,
     test_coupon_code,
     mock_create_payment,
     db_session,
@@ -154,10 +154,15 @@ def test_payment_with_coupon_code(
     )
 
     # Create payment with coupon code
+    test_product = test_products[0]
     payment_data = {
         'application_id': application_id,
         'products': [
-            {'product_id': test_product.id, 'attendee_id': attendee.id, 'quantity': 1}
+            {
+                'product_id': test_product.id,
+                'attendee_id': attendee.id,
+                'quantity': 1,
+            }
         ],
         'coupon_code': test_coupon_code.code,
     }
