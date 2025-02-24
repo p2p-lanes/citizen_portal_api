@@ -67,3 +67,12 @@ def get_citizen(
     db: Session = Depends(get_db),
 ):
     return citizen_crud.get(db=db, id=citizen_id, user=current_user)
+
+
+
+@router.get('/email/{email}', response_model=schemas.Citizen)
+def get_citizen_by_email(
+    email: str,
+    db: Session = Depends(get_db),
+):
+    return citizen_crud.get_by_email(db=db, email=email)
