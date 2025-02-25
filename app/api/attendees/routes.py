@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Header
 from sqlalchemy.orm import Session
 
 from app.api.attendees import schemas
@@ -66,12 +66,17 @@ def delete_attendee(
     return {"detail": "Attendee deleted successfully"}
 
 
+API_KEY = "hP@&Oy&w6X2&AM#R6%" 
+
 # Search for attendees by email
 @router.get('/search/email', response_model=list[schemas.Attendee])
 def search_attendees_by_email(
     email: str,
+    x_api_key: str = Header(...),
     db: Session = Depends(get_db),
 ):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")
     attendees = attendee_crud.get_by_email(db=db, email=email)
     if not attendees:
         raise HTTPException(status_code=404, detail="No attendees found with this email")
