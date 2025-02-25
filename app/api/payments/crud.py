@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
-from app.api.applications.attendees.models import Attendee, AttendeeProduct
+from app.api.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.coupon_codes.crud import coupon_code as coupon_code_crud

@@ -4,7 +4,7 @@ from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.api.applications.attendees.schemas import Attendee
+from app.api.attendees.schemas import Attendee
 from app.api.products.schemas import Product
 
 

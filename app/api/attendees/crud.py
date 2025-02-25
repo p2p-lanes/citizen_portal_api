@@ -34,6 +34,9 @@ class CRUDAttendees(
         user: TokenData,
     ) -> models.Attendee:
         return super().create(db, obj, user)
+    
+    def get_by_email(self, db: Session, email: str) -> List[models.Attendee]:
+        return db.query(self.model).filter(self.model.email == email).all()
 
 
 attendee = CRUDAttendees(models.Attendee)
