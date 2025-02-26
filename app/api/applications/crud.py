@@ -4,8 +4,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import models, schemas
-from app.api.applications.attendees import schemas as attendees_schemas
-from app.api.applications.attendees.crud import attendee as attendees_crud
+from app.api.attendees import schemas as attendees_schemas
+from app.api.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
 from app.api.email_logs.crud import email_log

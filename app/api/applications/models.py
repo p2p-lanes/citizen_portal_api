@@ -17,7 +17,7 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
-    from app.api.applications.attendees.models import Attendee
+    from app.api.attendees.models import Attendee
     from app.api.citizens.models import Citizen
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity

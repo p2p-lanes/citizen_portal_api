@@ -57,6 +57,7 @@ class Attendee(Base):
     payment_products: Mapped[List['PaymentProduct']] = relationship(
         'PaymentProduct', back_populates='attendee'
     )
+  
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
