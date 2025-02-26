@@ -48,7 +48,7 @@ class AttendeeUpdate(BaseModel):
 class Attendee(AttendeeBase):
     id: int
     products: List[Product]
-
+    
     model_config = ConfigDict(from_attributes=True)
 
 

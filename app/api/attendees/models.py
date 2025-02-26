@@ -10,8 +10,6 @@ if TYPE_CHECKING:
     from app.api.applications.models import Application
     from app.api.payments.models import PaymentProduct
     from app.api.products.models import Product
-    from app.api.popup_city.models import PopUpCity  
-    
 
 
 class AttendeeProduct(Base):
@@ -59,7 +57,6 @@ class Attendee(Base):
     payment_products: Mapped[List['PaymentProduct']] = relationship(
         'PaymentProduct', back_populates='attendee'
     )
-
   
 
     created_at = Column(DateTime, default=current_time)
