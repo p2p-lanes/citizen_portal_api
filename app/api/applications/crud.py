@@ -68,6 +68,24 @@ def _send_application_received_mail(application: models.Application):
 class CRUDApplication(
     CRUDBase[models.Application, schemas.ApplicationCreate, schemas.ApplicationCreate]
 ):
+    def _update_citizen_profile(self, db: Session, application: models.Application):
+        citizen = application.citizen
+
+        citizen.telegram = application.telegram
+        citizen.organization = application.organization
+        citizen.role = application.role
+        citizen.residence = application.residence
+        citizen.social_media = application.social_media
+        citizen.age = application.age
+        citizen.gender = application.gender
+        citizen.eth_address = application.eth_address
+        citizen.referral = application.referral
+
+        db.commit()
+        db.refresh(citizen)
+
+        return citizen
+
     def _check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
         return db_obj.citizen_id == user.citizen_id
 
@@ -120,6 +138,7 @@ class CRUDApplication(
         if application.status == schemas.ApplicationStatus.IN_REVIEW:
             _send_application_received_mail(application)
 
+        self._update_citizen_profile(db, application)
         return application
 
     def update(
@@ -145,6 +164,8 @@ class CRUDApplication(
         else:
             requested_discount = _requested_a_discount(application, requires_approval)
             application.requested_discount = requested_discount
+
+        self._update_citizen_profile(db, application)
 
         db.add(application)
         db.commit()
