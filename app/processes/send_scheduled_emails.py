@@ -1,6 +1,6 @@
 import time
 
-from app.api.applications.attendees.models import Attendee
+from app.api.attendees.models import Attendee
 from app.api.applications.models import Application
 from app.api.citizens.models import Citizen
 from app.api.email_logs.crud import email_log
