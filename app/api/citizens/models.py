@@ -6,7 +6,7 @@ from app.core.utils import current_time
 
 
 class Citizen(Base):
-    __tablename__ = "citizens"
+    __tablename__ = 'citizens'
 
     id = Column(
         Integer,
@@ -22,10 +22,18 @@ class Citizen(Base):
     x_user = Column(String)
     telegram = Column(String)
     point_of_contact = Column(String)
+    organization = Column(String)
+    role = Column(String)
+    residence = Column(String)
+    social_media = Column(String)
+    age = Column(Integer)
+    gender = Column(String)
+    eth_address = Column(String)
+    referral = Column(String)
 
     email_validated = Column(Boolean, default=False)
     spice = Column(String)
-    applications = relationship("Application", back_populates="citizen")
+    applications = relationship('Application', back_populates='citizen')
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
@@ -34,7 +42,7 @@ class Citizen(Base):
 
     __table_args__ = (
         Index(
-            "ix_citizens_primary_email_unique",
+            'ix_citizens_primary_email_unique',
             primary_email,
             unique=True,
             postgresql_where=(primary_email is not None),
@@ -42,7 +50,7 @@ class Citizen(Base):
     )
 
 
-@event.listens_for(Citizen, "before_insert")
+@event.listens_for(Citizen, 'before_insert')
 def clean_email(mapper, connection, target):
     if target.primary_email:
         target.primary_email = target.primary_email.lower().strip()
