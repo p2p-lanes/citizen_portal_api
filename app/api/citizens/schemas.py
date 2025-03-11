@@ -17,6 +17,8 @@ class Authenticate(BaseModel):
     @field_validator('email')
     @classmethod
     def decode_email(cls, value: str) -> str:
+        if not value:
+            raise ValueError("Email cannot be empty")
         return unquote(value)
 
 
