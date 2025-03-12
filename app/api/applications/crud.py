@@ -71,6 +71,8 @@ class CRUDApplication(
     def _update_citizen_profile(self, db: Session, application: models.Application):
         citizen = application.citizen
 
+        citizen.first_name = application.first_name
+        citizen.last_name = application.last_name
         citizen.telegram = application.telegram
         citizen.organization = application.organization
         citizen.role = application.role
