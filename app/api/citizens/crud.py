@@ -43,7 +43,6 @@ class CRUDCitizen(
             spice=create_spice(),
         )
         citizen = super().create(db, to_create)
-        email_log.send_login_mail(citizen.primary_email, to_create.spice, citizen.id)
         return citizen
 
     def signup(self, db: Session, *, obj: schemas.CitizenCreate) -> models.Citizen:
@@ -67,7 +66,7 @@ class CRUDCitizen(
             db.commit()
             db.refresh(citizen)
         email_log.send_login_mail(email, citizen.spice, citizen.id, popup_slug)
-        return {"message": "Mail sent successfully"}
+        return {'message': 'Mail sent successfully'}
 
     def login(
         self,
@@ -78,9 +77,9 @@ class CRUDCitizen(
     ) -> models.Citizen:
         citizen = self.get_by_email(db, email)
         if not citizen:
-            raise HTTPException(status_code=404, detail="Citizen not found")
+            raise HTTPException(status_code=404, detail='Citizen not found')
         if citizen.spice != spice:
-            raise HTTPException(status_code=401, detail="Invalid spice")
+            raise HTTPException(status_code=401, detail='Invalid spice')
         citizen.email_validated = True
         db.commit()
         db.refresh(citizen)

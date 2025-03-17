@@ -43,6 +43,7 @@ class ApplicationBaseCommon(BaseModel):
     video_url: Optional[str] = None
     payment_capacity: Optional[str] = None
     github_profile: Optional[str] = None
+    minting_link: Optional[str] = None
 
     hackathon_interest: Optional[bool] = None
     host_session: Optional[str] = None
