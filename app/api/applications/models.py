@@ -102,7 +102,7 @@ class Application(Base):
         'Attendee', back_populates='application'
     )
 
-    citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
+    citizen_id = Column(Integer, ForeignKey('humans.id'), nullable=False)
     citizen: Mapped['Citizen'] = relationship(
         'Citizen', back_populates='applications', lazy='joined'
     )

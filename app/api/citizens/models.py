@@ -6,7 +6,7 @@ from app.core.utils import current_time
 
 
 class Citizen(Base):
-    __tablename__ = 'citizens'
+    __tablename__ = 'humans'
 
     id = Column(
         Integer,
@@ -42,7 +42,7 @@ class Citizen(Base):
 
     __table_args__ = (
         Index(
-            'ix_citizens_primary_email_unique',
+            'ix_humans_primary_email_unique',
             primary_email,
             unique=True,
             postgresql_where=(primary_email is not None),
