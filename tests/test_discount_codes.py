@@ -135,7 +135,7 @@ def test_payment_with_coupon_code(
     mock_create_payment,
     db_session,
 ):
-    from app.api.applications.attendees.models import Attendee
+    from app.api.attendees.models import Attendee
     from app.api.applications.models import Application
     from app.api.applications.schemas import ApplicationStatus
 
