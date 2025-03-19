@@ -10,3 +10,9 @@ class CouponCode(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class CouponCodeCreate(BaseModel):
+    code: str
+    popup_city_id: int
+    discount_value: float
