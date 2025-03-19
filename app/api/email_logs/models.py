@@ -24,7 +24,7 @@ class EmailLog(Base):
     entity_type = Column(String, nullable=True)
     entity_id = Column(Integer, nullable=True)
 
-    citizen_id = Column(Integer, ForeignKey('citizens.id'), index=True)
+    citizen_id = Column(Integer, ForeignKey('humans.id'), index=True)
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=True)
 
     created_at = Column(DateTime, default=current_time)
