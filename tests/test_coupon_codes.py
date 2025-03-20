@@ -182,6 +182,8 @@ def test_create_coupon_code_success(client, test_popup_city):
         'code': 'NEW10',
         'popup_city_id': test_popup_city.id,
         'discount_value': 10.0,
+        'max_uses': 100,
+        'current_uses': 0,
     }
     response = client.post(
         '/coupon-codes',
@@ -201,6 +203,8 @@ def test_create_coupon_code_invalid_api_key(client, test_popup_city):
         'code': 'NEW10',
         'popup_city_id': test_popup_city.id,
         'discount_value': 10.0,
+        'max_uses': 100,
+        'current_uses': 0,
     }
     response = client.post(
         '/coupon-codes',
@@ -217,6 +221,8 @@ def test_create_coupon_code_missing_api_key(client, test_popup_city):
         'code': 'NEW10',
         'popup_city_id': test_popup_city.id,
         'discount_value': 10.0,
+        'max_uses': 100,
+        'current_uses': 0,
     }
     response = client.post('/coupon-codes', json=coupon_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -228,6 +234,8 @@ def test_create_duplicate_coupon_code(client, test_popup_city):
         'code': 'NEW10',
         'popup_city_id': test_popup_city.id,
         'discount_value': 10.0,
+        'max_uses': 100,
+        'current_uses': 0,
     }
     # Create first coupon code
     response = client.post(
@@ -267,6 +275,8 @@ def test_create_coupon_code_different_popup_city(client, test_popup_city, db_ses
         'code': 'NEW10',
         'popup_city_id': test_popup_city.id,
         'discount_value': 10.0,
+        'max_uses': 100,
+        'current_uses': 0,
     }
     # Create first coupon code
     response = client.post(
