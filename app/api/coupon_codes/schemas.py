@@ -17,5 +17,4 @@ class CouponCodeCreate(BaseModel):
     popup_city_id: int
     discount_value: float
     max_uses: int
-    current_uses: int
     is_active: bool = True
