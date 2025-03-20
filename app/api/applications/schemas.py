@@ -13,6 +13,7 @@ class ApplicationStatus(str, Enum):
     IN_REVIEW = 'in review'
     REJECTED = 'rejected'
     ACCEPTED = 'accepted'
+    WITHDRAWN = 'withdrawn'
 
 
 class UserSettableStatus(str, Enum):
