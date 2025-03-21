@@ -294,3 +294,26 @@ def test_create_coupon_code_different_popup_city(client, test_popup_city, db_ses
         headers={'x-api-key': settings.COUPON_API_KEY},
     )
     assert response.status_code == status.HTTP_200_OK
+
+
+def test_create_coupon_code_invalid_discount_value(client, test_popup_city):
+    """Test creating a coupon code with invalid discount value"""
+    coupon_data = {
+        'code': 'NEW10',
+        'popup_city_id': test_popup_city.id,
+        'discount_value': 14,
+        'max_uses': 100,
+        'current_uses': 0,
+    }
+    response = client.post(
+        '/coupon-codes',
+        json=coupon_data,
+        headers={'x-api-key': settings.COUPON_API_KEY},
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    error_response = response.json()
+    assert isinstance(error_response['detail'], list)
+    assert len(error_response['detail']) == 1
+    assert error_response['detail'][0]['loc'] == ['body', 'discount_value']
+    expected_err_msg = 'Value error, discount_value must be 0, 10, 20, ..., 90, or 100'
+    assert error_response['detail'][0]['msg'] == expected_err_msg
