@@ -10,6 +10,7 @@ from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
+from app.api.organizations.crud import organization as organization_crud
 from app.api.popup_city.models import PopUpCity
 from app.core.security import TokenData
 from app.core.utils import current_time
@@ -74,7 +75,6 @@ class CRUDApplication(
         citizen.first_name = application.first_name
         citizen.last_name = application.last_name
         citizen.telegram = application.telegram
-        citizen.organization = application.organization
         citizen.role = application.role
         citizen.residence = application.residence
         citizen.social_media = application.social_media
@@ -82,6 +82,12 @@ class CRUDApplication(
         citizen.gender = application.gender
         citizen.eth_address = application.eth_address
         citizen.referral = application.referral
+
+        if application.organization:
+            org = organization_crud.get_or_create(db, application.organization)
+            application.organization_id = org.id
+        else:
+            application.organization_id = None
 
         db.commit()
         db.refresh(citizen)
