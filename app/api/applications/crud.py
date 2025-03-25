@@ -11,6 +11,7 @@ from app.api.citizens.models import Citizen as CitizenModel
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
 from app.api.popup_city.models import PopUpCity
+from app.core.logger import logger
 from app.core.security import TokenData
 from app.core.utils import current_time
 
@@ -97,6 +98,7 @@ class CRUDApplication(
         obj: schemas.ApplicationCreate,
         user: TokenData,
     ) -> models.Application:
+        logger.info('Creating application: %s', obj)
         if obj.citizen_id != user.citizen_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -107,6 +109,7 @@ class CRUDApplication(
         citizen = db.query(CitizenModel).filter(CitizenModel.id == citizen_id).first()
         if not citizen:
             raise HTTPException(status_code=404, detail='Citizen not found')
+        logger.info('Citizen found: %s %s', citizen.id, citizen.primary_email)
         email = citizen.primary_email
         submitted_at = (
             current_time()
