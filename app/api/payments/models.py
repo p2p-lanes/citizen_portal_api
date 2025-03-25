@@ -7,7 +7,7 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
-    from app.api.applications.attendees.models import Attendee
+    from app.api.attendees.models import Attendee
     from app.api.applications.models import Application
     from app.api.products.models import Product
 
