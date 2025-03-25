@@ -87,8 +87,7 @@ class CRUDApplication(
         if application.organization:
             org = organization_crud.get_or_create(db, application.organization)
             application.organization_id = org.id
-        else:
-            application.organization_id = None
+            citizen.organization_id = org.id
 
         db.commit()
         db.refresh(citizen)

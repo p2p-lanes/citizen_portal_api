@@ -1,8 +1,22 @@
-from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, event
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    event,
+)
+from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
 from app.core.utils import current_time
+
+if TYPE_CHECKING:
+    from app.api.organizations.models import Organization
 
 
 class Citizen(Base):
@@ -35,6 +49,13 @@ class Citizen(Base):
     spice = Column(String)
     applications = relationship('Application', back_populates='citizen')
 
+    organization_id = Column(
+        Integer, ForeignKey('organizations.id'), nullable=True, index=True
+    )
+    organization_rel: Mapped[Optional['Organization']] = relationship(
+        'Organization', lazy='joined'
+    )
+
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
     created_by = Column(String)
@@ -47,6 +68,7 @@ class Citizen(Base):
             unique=True,
             postgresql_where=(primary_email is not None),
         ),
+        Index('ix_humans_organization_id', 'organization_id'),
     )
 
 
