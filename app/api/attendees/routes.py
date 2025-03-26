@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, Header
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.attendees import schemas
 from app.api.attendees.crud import attendee as attendee_crud
+from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import Token, TokenData, create_access_token, get_current_user
+from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
+
 
 # Create a new attendee
 @router.post('/', response_model=schemas.Attendee)
@@ -37,7 +39,7 @@ def get_attendee(
 ):
     attendee = attendee_crud.get(db=db, id=attendee_id)
     if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
+        raise HTTPException(status_code=404, detail='Attendee not found')
     return attendee
 
 
@@ -47,10 +49,11 @@ def update_attendee(
     attendee_id: int,
     attendee: schemas.AttendeeUpdate,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
     updated_attendee = attendee_crud.update(db=db, id=attendee_id, obj=attendee)
     if not updated_attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
+        raise HTTPException(status_code=404, detail='Attendee not found')
     return updated_attendee
 
 
@@ -59,14 +62,13 @@ def update_attendee(
 def delete_attendee(
     attendee_id: int,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
     result = attendee_crud.delete(db=db, id=attendee_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-    return {"detail": "Attendee deleted successfully"}
+        raise HTTPException(status_code=404, detail='Attendee not found')
+    return {'detail': 'Attendee deleted successfully'}
 
-
-API_KEY = "hP@&Oy&w6X2&AM#R6%" 
 
 # Search for attendees by email
 @router.get('/search/email', response_model=list[schemas.Attendee])
@@ -75,9 +77,11 @@ def search_attendees_by_email(
     x_api_key: str = Header(...),
     db: Session = Depends(get_db),
 ):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API key")
+    if x_api_key != settings.ATTENDEES_API_KEY:
+        raise HTTPException(status_code=403, detail='Invalid API key')
     attendees = attendee_crud.get_by_email(db=db, email=email)
     if not attendees:
-        raise HTTPException(status_code=404, detail="No attendees found with this email")
+        raise HTTPException(
+            status_code=404, detail='No attendees found with this email'
+        )
     return attendees
