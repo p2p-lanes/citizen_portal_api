@@ -32,6 +32,14 @@ class CRUDCitizen(
     def get_by_email(self, db: Session, email: str) -> Optional[models.Citizen]:
         return db.query(self.model).filter(self.model.primary_email == email).first()
 
+    def get_or_create(
+        self, db: Session, citizen: schemas.CitizenCreate
+    ) -> models.Citizen:
+        existing_citizen = self.get_by_email(db, citizen.primary_email)
+        if existing_citizen:
+            return existing_citizen
+        return self.create(db, citizen)
+
     def create(
         self,
         db: Session,

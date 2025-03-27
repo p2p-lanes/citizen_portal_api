@@ -1,7 +1,10 @@
 import pytest
 from fastapi import status
 
+from app.api.applications.models import ApplicationStatus
+from app.api.citizens.models import Citizen
 from app.api.groups.models import Group, GroupLeader
+from app.core.config import settings
 from tests.conftest import get_auth_headers_for_citizen
 
 
@@ -10,6 +13,7 @@ def test_group(db_session, test_popup_city, test_citizen):
     """Create a test group with the test citizen as leader"""
     group = Group(
         name='Test Group',
+        slug='test-group',
         description='Test Description',
         discount_percentage=10.0,
         popup_city_id=test_popup_city.id,
@@ -120,6 +124,7 @@ def test_get_groups_with_sorting(client, auth_headers, test_group, db_session):
     # Create a second group
     group2 = Group(
         name='Another Group',
+        slug='another-group',
         description='Another Description',
         discount_percentage=15.0,
         popup_city_id=test_group.popup_city_id,
@@ -164,3 +169,121 @@ def test_get_groups_invalid_sort_field(client, auth_headers):
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'Invalid sort field' in response.json()['detail']
+
+
+@pytest.mark.parametrize('identifier_type', ['id', 'slug'])
+def test_add_new_member_success(client, db_session, test_group, identifier_type):
+    """Test successfully adding a new member to a group using either ID or slug"""
+    # validate that the citizen does not exist
+    email = 'john.doe@example.com'
+    citizen = db_session.query(Citizen).filter(Citizen.primary_email == email).first()
+    assert citizen is None
+
+    member_data = {
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'email': email,
+    }
+
+    # Use either ID or slug based on the parameter
+    group_identifier = test_group.id if identifier_type == 'id' else test_group.slug
+    response = client.post(
+        f'/groups/{group_identifier}/new_member',
+        json=member_data,
+        headers={'api-key': settings.GROUPS_API_KEY},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data['id'] == test_group.id
+
+    citizen = db_session.query(Citizen).filter(Citizen.primary_email == email).first()
+    assert citizen is not None
+    assert citizen.first_name == member_data['first_name']
+    assert citizen.last_name == member_data['last_name']
+    assert citizen.primary_email == member_data['email']
+
+    applications = citizen.applications
+    assert len(applications) == 1
+    application = applications[0]
+    assert application.group_id == test_group.id
+    assert application.status == ApplicationStatus.ACCEPTED
+    assert application.first_name == member_data['first_name']
+    assert application.last_name == member_data['last_name']
+    assert application.email == member_data['email']
+
+
+def test_add_new_member_unauthorized(client, test_group):
+    """Test adding a member without API key fails"""
+    member_data = {
+        'first_name': 'New',
+        'last_name': 'Member',
+        'email': 'new.member@example.com',
+    }
+
+    response = client.post(f'/groups/{test_group.id}/new_member', json=member_data)
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json()['detail'] == 'Unauthorized'
+
+
+def test_add_new_member_invalid_api_key(client, test_group):
+    """Test adding a member with invalid API key fails"""
+    member_data = {
+        'first_name': 'New',
+        'last_name': 'Member',
+        'email': 'new.member@example.com',
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/new_member',
+        json=member_data,
+        headers={'api-key': 'invalid_key'},
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json()['detail'] == 'Unauthorized'
+
+
+def test_add_new_member_invalid_data(client, test_group):
+    """Test adding a member with invalid data fails"""
+    invalid_member_data = {
+        'first_name': '',  # Empty first name should fail validation
+        'last_name': 'Member',
+        'email': 'invalid-email',  # Invalid email should fail validation
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/new_member',
+        json=invalid_member_data,
+        headers={'api-key': settings.GROUPS_API_KEY},
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_add_new_member_nonexistent_group(client):
+    """Test adding a member to a non-existent group fails"""
+    member_data = {
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'email': 'john.doe@example.com',
+    }
+
+    response = client.post(
+        '/groups/99999/new_member',  # Non-existent group ID
+        json=member_data,
+        headers={'api-key': settings.GROUPS_API_KEY},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()['detail'] == 'Group not found'
+
+    response = client.post(
+        '/groups/non-existent-slug/new_member',  # Non-existent group slug
+        json=member_data,
+        headers={'api-key': settings.GROUPS_API_KEY},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()['detail'] == 'Group not found'

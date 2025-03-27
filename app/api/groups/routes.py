@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, Query
+from typing import Union
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.groups import schemas
 from app.api.groups.crud import group as group_crud
+from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import TokenData, get_current_user
+from app.core.security import SYSTEM_TOKEN, TokenData, get_current_user
 
 router = APIRouter()
 
@@ -37,3 +40,21 @@ def get_group(
     db: Session = Depends(get_db),
 ):
     return group_crud.get(db=db, id=group_id, user=current_user)
+
+
+@router.post('/{group_id}/new_member', response_model=schemas.Group)
+def new_member(
+    group_id: Union[int, str],
+    member: schemas.GroupMember,
+    api_key: str = Header(None, alias='api-key'),
+    db: Session = Depends(get_db),
+):
+    if api_key != settings.GROUPS_API_KEY:
+        raise HTTPException(status_code=401, detail='Unauthorized')
+
+    return group_crud.add_member(
+        db=db,
+        group_id=group_id,
+        member=member,
+        user=SYSTEM_TOKEN,
+    )

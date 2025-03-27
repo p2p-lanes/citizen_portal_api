@@ -10,13 +10,6 @@ from app.core.config import settings
 from app.core.logger import logger
 from app.core.utils import current_time
 
-# Constants
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
-
 
 class Token(BaseModel):
     access_token: str
@@ -26,6 +19,18 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     citizen_id: int
     email: str
+
+
+# Constants
+ALGORITHM = 'HS256'
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# System token used for internal service operations
+# citizen_id=0 represents a system-level operation rather than a real user
+SYSTEM_TOKEN = TokenData(citizen_id=0, email='')
+
+# OAuth2 scheme
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

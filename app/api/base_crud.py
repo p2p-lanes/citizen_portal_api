@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import Query, Session
 
 from app.core.logger import logger
-from app.core.security import TokenData
+from app.core.security import SYSTEM_TOKEN, TokenData
 
 ModelType = TypeVar('ModelType', bound=DeclarativeMeta)
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
@@ -21,7 +21,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     def _check_permission(self, db_obj: ModelType, user: TokenData) -> bool:
         """Override this method to implement permission checks"""
-        return True
+        return user == SYSTEM_TOKEN
 
     def _apply_filters(
         self, query: Query, filters: Optional[BaseModel] = None
@@ -89,11 +89,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 status_code=404, detail=f'{self.model.__name__} not found'
             )
         if not self._check_permission(obj, user):
-            logger.error('Not authorized to access this resource')
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='Not authorized to access this resource',
-            )
+            err_msg = f'Not authorized to access this {self.model.__name__}: {obj.id}'
+            logger.error(err_msg)
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=err_msg)
         return obj
 
     def find(

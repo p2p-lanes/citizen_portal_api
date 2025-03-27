@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
 from app.api.coupon_codes import models, schemas
+from app.core.security import SYSTEM_TOKEN
 from app.core.utils import current_time
 
 
@@ -44,7 +45,7 @@ class CRUDCouponCode(
         return coupon_code
 
     def use_coupon_code(self, db: Session, coupon_code_id: int):
-        coupon_code = self.get(db, coupon_code_id, user=None)
+        coupon_code = self.get(db, coupon_code_id, user=SYSTEM_TOKEN)
         current_uses = coupon_code.current_uses or 0
         coupon_code.current_uses = current_uses + 1
         db.commit()

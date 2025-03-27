@@ -13,7 +13,7 @@ from app.api.email_logs.schemas import EmailEvent
 from app.api.organizations.crud import organization as organization_crud
 from app.api.popup_city.models import PopUpCity
 from app.core.logger import logger
-from app.core.security import TokenData
+from app.core.security import SYSTEM_TOKEN, TokenData
 from app.core.utils import current_time
 
 
@@ -97,7 +97,7 @@ class CRUDApplication(
     def _check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
         user_id = user.citizen_id
         is_leader = db_obj.group.is_leader(user_id) if db_obj.group else False
-        return db_obj.citizen_id == user_id or is_leader
+        return user == SYSTEM_TOKEN or db_obj.citizen_id == user_id or is_leader
 
     def get_by_citizen_and_popup_city(
         self, db: Session, citizen_id: int, popup_city_id: int
@@ -128,7 +128,7 @@ class CRUDApplication(
         group = None
         if obj.group_id:
             group = groups_crud.get(db, obj.group_id, user)
-            if not group.is_leader(user.citizen_id):
+            if user != SYSTEM_TOKEN and not group.is_leader(user.citizen_id):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail='Not authorized to create application for another citizen',
