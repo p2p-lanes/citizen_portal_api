@@ -33,8 +33,10 @@ class PaymentProduct(BaseModel):
 class PaymentCreate(BaseModel):
     application_id: int
     products: List[PaymentProduct]
-    discount_code: Optional[str] = None
+    coupon_code: Optional[str] = None
+    edit_passes: Optional[bool] = False
 
+    @classmethod
     @field_validator('products', mode='before')
     def validate_products(cls, v: List[PaymentProduct]) -> List[PaymentProduct]:
         if not v:
@@ -43,8 +45,8 @@ class PaymentCreate(BaseModel):
 
 
 class InternalPaymentCreate(PaymentCreate, PaymentBase):
-    discount_code_id: Optional[int] = None
-    discount_code: Optional[str] = None
+    coupon_code_id: Optional[int] = None
+    coupon_code: Optional[str] = None
     discount_value: Optional[float] = None
     group_id: Optional[int] = None
 

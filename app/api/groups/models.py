@@ -14,14 +14,14 @@ if TYPE_CHECKING:
 class GroupLeader(Base):
     __tablename__ = 'group_leaders'
 
-    citizen_id = Column(Integer, ForeignKey('citizens.id'), primary_key=True)
+    citizen_id = Column(Integer, ForeignKey('humans.id'), primary_key=True)
     group_id = Column(Integer, ForeignKey('groups.id'), primary_key=True)
 
 
 class GroupMembers(Base):
     __tablename__ = 'group_members'
 
-    citizen_id = Column(Integer, ForeignKey('citizens.id'), primary_key=True)
+    citizen_id = Column(Integer, ForeignKey('humans.id'), primary_key=True)
     group_id = Column(Integer, ForeignKey('groups.id'), primary_key=True)
 
 

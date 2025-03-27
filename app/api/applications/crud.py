@@ -4,15 +4,15 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import models, schemas
-from app.api.applications.attendees import schemas as attendees_schemas
-from app.api.applications.attendees.crud import attendee as attendees_crud
+from app.api.attendees import schemas as attendees_schemas
+from app.api.attendees.crud import attendee as attendees_crud
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
-from app.api.groups import models as groups_models
-from app.api.groups.crud import group as groups_crud
-from app.api.popup_city.crud import popup_city
+from app.api.email_logs.crud import email_log
+from app.api.email_logs.schemas import EmailEvent
+from app.api.organizations.crud import organization as organization_crud
 from app.api.popup_city.models import PopUpCity
-from app.core.mail import send_application_received_mail
+from app.core.logger import logger
 from app.core.security import TokenData
 from app.core.utils import current_time
 
@@ -57,12 +57,47 @@ def calculate_status(
     return reviews_status, requested_a_discount
 
 
+def _send_application_received_mail(application: models.Application):
+    email_log.send_mail(
+        receiver_mail=application.email,
+        event=EmailEvent.APPLICATION_RECEIVED.value,
+        popup_city=application.popup_city,
+        entity_type='application',
+        entity_id=application.id,
+    )
+
+
 class CRUDApplication(
     CRUDBase[models.Application, schemas.ApplicationCreate, schemas.ApplicationCreate]
 ):
+    def _update_citizen_profile(self, db: Session, application: models.Application):
+        citizen = application.citizen
+
+        citizen.first_name = application.first_name
+        citizen.last_name = application.last_name
+        citizen.telegram = application.telegram
+        citizen.role = application.role
+        citizen.residence = application.residence
+        citizen.social_media = application.social_media
+        citizen.age = application.age
+        citizen.gender = application.gender
+        citizen.eth_address = application.eth_address
+        citizen.referral = application.referral
+
+        if application.organization:
+            org = organization_crud.get_or_create(db, application.organization)
+            application.organization_id = org.id
+            citizen.organization_id = org.id
+
+        db.commit()
+        db.refresh(citizen)
+
+        return citizen
+
     def _check_permission(self, db_obj: models.Application, user: TokenData) -> bool:
         user_id = user.citizen_id
-        return db_obj.citizen_id == user_id or db_obj.group.is_leader(user_id)
+        is_leader = db_obj.group.is_leader(user_id) if db_obj.group else False
+        return db_obj.citizen_id == user_id or is_leader
 
     def get_by_citizen_and_popup_city(
         self, db: Session, citizen_id: int, popup_city_id: int
@@ -82,6 +117,9 @@ class CRUDApplication(
         obj: schemas.ApplicationCreate,
         user: TokenData,
     ) -> models.Application:
+        from app.api.groups.crud import group as groups_crud
+
+        logger.info('Creating application: %s', obj)
         citizen_id = obj.citizen_id
         citizen = db.query(CitizenModel).filter(CitizenModel.id == citizen_id).first()
         if not citizen:
@@ -102,6 +140,7 @@ class CRUDApplication(
                 detail='Not authorized to create application for another citizen',
             )
 
+        logger.info('Citizen found: %s %s', citizen.id, citizen.primary_email)
         email = citizen.primary_email
         submitted_at = (
             current_time()
@@ -123,12 +162,6 @@ class CRUDApplication(
                 obj, requires_approval=requires_approval
             )
 
-            if obj.status == schemas.ApplicationStatus.IN_REVIEW:
-                _template = popup_city.get_email_template(
-                    db, popup_city_id, 'application-received'
-                )
-                send_application_received_mail(receiver_mail=email, template=_template)
-
         application = super().create(db, obj)
 
         attendee = attendees_schemas.AttendeeCreate(
@@ -139,6 +172,10 @@ class CRUDApplication(
         )
         self.create_attendee(db, application.id, attendee, user)
 
+        if application.status == schemas.ApplicationStatus.IN_REVIEW:
+            _send_application_received_mail(application)
+
+        self._update_citizen_profile(db, application)
         return application
 
     def update(
@@ -160,16 +197,12 @@ class CRUDApplication(
                 application, requires_approval=requires_approval
             )
             if application.status == schemas.ApplicationStatus.IN_REVIEW:
-                _template = popup_city.get_email_template(
-                    db, application.popup_city_id, 'application-received'
-                )
-                send_application_received_mail(
-                    receiver_mail=application.email, template=_template
-                )
+                _send_application_received_mail(application)
         else:
-            application.requested_discount = _requested_a_discount(
-                application, requires_approval
-            )
+            requested_discount = _requested_a_discount(application, requires_approval)
+            application.requested_discount = requested_discount
+
+        self._update_citizen_profile(db, application)
 
         db.add(application)
         db.commit()

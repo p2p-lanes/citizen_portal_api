@@ -1,14 +1,14 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
-    from app.api.applications.attendees.models import Attendee
     from app.api.applications.models import Application
+    from app.api.attendees.models import Attendee
     from app.api.products.models import Product
 
 
@@ -55,9 +55,10 @@ class Payment(Base):
     rate = Column(Float)
     source = Column(String)
     checkout_url = Column(String)
-    discount_code_id = Column(Integer, ForeignKey('discount_codes.id'), nullable=True)
-    discount_code = Column(String, nullable=True)
+    coupon_code_id = Column(Integer, ForeignKey('coupon_codes.id'), nullable=True)
+    coupon_code = Column(String, nullable=True)
     discount_value = Column(Float, nullable=True)
+    edit_passes = Column(Boolean, default=False)
     group_id = Column(Integer, ForeignKey('groups.id'), nullable=True)
 
     application: Mapped['Application'] = relationship(

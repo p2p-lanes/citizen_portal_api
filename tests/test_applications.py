@@ -1,5 +1,6 @@
 from fastapi import status
 
+from app.api.applications.models import Application
 from app.api.applications.schemas import ApplicationStatus
 from tests.conftest import get_auth_headers_for_citizen
 
@@ -270,7 +271,7 @@ def test_update_attendee_success(client, auth_headers, test_application):
     update_data = {
         'name': 'Updated Attendee',
         'email': attendee_data['email'],
-        'category': 'spouse',  # Can't change category
+        'category': 'spouse',
     }
     response = client.put(
         f'/applications/{application_id}/attendees/{attendee_id}',
@@ -281,7 +282,7 @@ def test_update_attendee_success(client, auth_headers, test_application):
     data = response.json()
     updated_attendee = next(a for a in data['attendees'] if a['id'] == attendee_id)
     assert updated_attendee['name'] == update_data['name']
-    assert updated_attendee['category'] == attendee_data['category']  # unchanged
+    assert updated_attendee['category'] == update_data['category']
     assert updated_attendee['email'] == update_data['email']
 
 
@@ -539,3 +540,65 @@ def test_application_status_validation(
     assert response.json()['status'] == ApplicationStatus.ACCEPTED.value
     assert response.json()['discount_assigned'] is None
     assert response.json()['scholarship_request'] is False
+
+
+def test_create_application_with_new_organization(
+    client, auth_headers, test_application, db_session
+):
+    """Test that creating an application with a new organization creates the organization and links it"""
+    from app.api.organizations.models import Organization
+
+    organization_name = 'New Test Organization'
+    # Verify organization doesn't exist
+    organization = (
+        db_session.query(Organization).filter_by(name=organization_name).first()
+    )
+    assert organization is None
+
+    # Create application with a new organization
+    test_application['organization'] = organization_name
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data['organization'] == organization_name
+
+    # Verify organization was created
+    organization = (
+        db_session.query(Organization).filter_by(name=organization_name).first()
+    )
+    assert organization is not None
+
+    # Verify application is linked to organization
+    application = db_session.query(Application).filter_by(id=data['id']).first()
+    assert application.organization_id == organization.id
+
+
+def test_create_application_with_existing_organization(
+    client, auth_headers, test_application, db_session
+):
+    """Test that creating an application with an existing organization links to the existing organization"""
+    from app.api.organizations.models import Organization
+
+    # First create an organization
+    existing_org = Organization(name='Existing Organization')
+    db_session.add(existing_org)
+    db_session.commit()
+
+    # Create application with the existing organization
+    test_application['organization'] = existing_org.name
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data['organization'] == existing_org.name
+
+    # Verify application is linked to existing organization
+    application = db_session.query(Application).filter_by(id=data['id']).first()
+    assert application.organization_id == existing_org.id
+
+    # Verify no new organization was created
+    organizations = db_session.query(Organization).all()
+    assert len(organizations) == 1

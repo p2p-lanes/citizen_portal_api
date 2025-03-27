@@ -27,14 +27,20 @@ class Settings:
         else SQLALCHEMY_TEST_DATABASE_URL
     )
 
-    SECRET_KEY: str = os.getenv('SECRET_KEY', '')
     POSTMARK_API_TOKEN: str = os.getenv('POSTMARK_API_TOKEN')
+    EMAIL_FROM_ADDRESS: str = os.getenv('EMAIL_FROM_ADDRESS')
+    EMAIL_FROM_NAME: str = os.getenv('EMAIL_FROM_NAME')
+    EMAIL_REPLY_TO: str = os.getenv('EMAIL_REPLY_TO')
+
+    SECRET_KEY: str = os.getenv('SECRET_KEY', '')
     BACKEND_URL: str = os.getenv('BACKEND_URL')
     FRONTEND_URL: str = os.getenv('FRONTEND_URL')
     SIMPLEFI_API_URL: str = os.getenv('SIMPLEFI_API_URL')
     NOCODB_URL: str = os.getenv('NOCODB_URL')
     NOCODB_TOKEN: str = os.getenv('NOCODB_TOKEN')
     NOCODB_WEBHOOK_SECRET: str = os.getenv('NOCODB_WEBHOOK_SECRET')
+    COUPON_API_KEY: str = os.getenv('COUPON_API_KEY')
+    ATTENDEES_API_KEY: str = os.getenv('ATTENDEES_API_KEY')
 
 
 settings = Settings()

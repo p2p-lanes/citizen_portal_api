@@ -4,6 +4,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -16,9 +17,10 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
-    from app.api.applications.attendees.models import Attendee
+    from app.api.attendees.models import Attendee
     from app.api.citizens.models import Citizen
     from app.api.groups.models import Group
+    from app.api.organizations.models import Organization
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity
 
@@ -49,6 +51,7 @@ class Application(Base):
     video_url = Column(String)
     payment_capacity = Column(String)
     github_profile = Column(String)
+    minting_link = Column(String)
 
     hackathon_interest = Column(Boolean)
     host_session = Column(String)
@@ -77,11 +80,15 @@ class Application(Base):
     scholarship_details = Column(String)
     scholarship_video_url = Column(String)
 
+    send_note_to_applicant = Column(String)
+
     timour_review = Column(String)
     janine_review = Column(String)
     tela_review = Column(String)
     sophie_review = Column(String)
     devon_review = Column(String)
+
+    credit = Column(Float, default=0, nullable=False)
 
     submitted_at = Column(DateTime, nullable=True)
     accepted_at = Column(DateTime, nullable=True)
@@ -97,14 +104,20 @@ class Application(Base):
         'Attendee', back_populates='application'
     )
 
-    citizen_id = Column(Integer, ForeignKey('citizens.id'), nullable=False)
+    citizen_id = Column(Integer, ForeignKey('humans.id'), nullable=False)
     citizen: Mapped['Citizen'] = relationship(
         'Citizen', back_populates='applications', lazy='joined'
     )
     popup_city_id = Column(Integer, ForeignKey('popups.id'), nullable=False)
     popup_city: Mapped['PopUpCity'] = relationship('PopUpCity', lazy='joined')
+
+    organization_id = Column(Integer, ForeignKey('organizations.id'), nullable=True)
+    organization_rel: Mapped[Optional['Organization']] = relationship(
+        'Organization', lazy='joined'
+    )
+
     group_id = Column(Integer, ForeignKey('groups.id'), nullable=True)
-    group: Mapped['Group'] = relationship('Group', lazy='joined')
+    group: Mapped[Optional['Group']] = relationship('Group', lazy='joined')
 
     created_by_leader = Column(Boolean, nullable=False, default=False)
 

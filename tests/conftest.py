@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.citizens.models import Citizen
-from app.api.discount_codes.models import DiscountCode
+from app.api.coupon_codes.models import CouponCode
 from app.api.popup_city.models import PopUpCity
 from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.config import Environment, settings
@@ -150,10 +150,10 @@ def test_application(test_citizen, test_popup_city):
 
 
 @pytest.fixture
-def test_product(db_session):
+def test_products(db_session):
     from app.api.products.models import Product
 
-    product = Product(
+    product1 = Product(
         id=1,
         name='Test Product',
         slug='test-product',
@@ -163,14 +163,25 @@ def test_product(db_session):
         popup_city_id=1,
         is_active=True,
     )
-    db_session.add(product)
+    product2 = Product(
+        id=2,
+        name='Test Product 2',
+        slug='test-product-2',
+        description='Test Description 2',
+        price=200.0,
+        category='ticket',
+        popup_city_id=1,
+        is_active=True,
+    )
+    db_session.add(product1)
+    db_session.add(product2)
     db_session.commit()
-    return product
+    return product1, product2
 
 
 @pytest.fixture
-def test_discount_code(db_session, test_popup_city):
-    discount_code = DiscountCode(
+def test_coupon_code(db_session, test_popup_city):
+    coupon_code = CouponCode(
         code='TEST10',
         popup_city_id=test_popup_city.id,
         discount_value=10.0,
@@ -180,9 +191,9 @@ def test_discount_code(db_session, test_popup_city):
         start_date=current_time() - timedelta(days=1),
         end_date=current_time() + timedelta(days=1),
     )
-    db_session.add(discount_code)
+    db_session.add(coupon_code)
     db_session.commit()
-    return discount_code
+    return coupon_code
 
 
 @pytest.fixture
@@ -196,13 +207,13 @@ def mock_webhook_cache():
 
 @pytest.fixture
 def mock_email_template(monkeypatch):
-    """Mock the get_email_template function to avoid template lookup errors"""
-    from app.api.popup_city.crud import popup_city as popup_city_crud
+    """Mock the get_email_template method on PopUpCity to avoid template lookup errors"""
+    from app.api.popup_city.models import PopUpCity
 
-    def mock_get_template(template, *args, **kwargs):
-        return template
+    def mock_get_template(self, event, *args, **kwargs):
+        return event
 
-    monkeypatch.setattr(popup_city_crud, 'get_email_template', mock_get_template)
+    monkeypatch.setattr(PopUpCity, 'get_email_template', mock_get_template)
     return mock_get_template
 
 

@@ -37,6 +37,7 @@ class InternalAttendeeCreate(AttendeeCreate):
 class AttendeeUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
+    category: Optional[str] = None
 
     @field_validator('email')
     @classmethod

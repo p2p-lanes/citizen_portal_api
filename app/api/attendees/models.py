@@ -17,10 +17,14 @@ class AttendeeProduct(Base):
 
     attendee_id = Column(Integer, ForeignKey('attendees.id'), primary_key=True)
     product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
-    quantity = Column(Integer, default=1)
+    quantity = Column(Integer, nullable=False, default=1)
 
-    attendee = relationship('Attendee', back_populates='attendee_products')
-    product = relationship('Product', back_populates='attendee_products')
+    attendee: Mapped['Attendee'] = relationship(
+        'Attendee', back_populates='attendee_products'
+    )
+    product: Mapped['Product'] = relationship(
+        'Product', back_populates='attendee_products'
+    )
 
 
 class Attendee(Base):
@@ -53,6 +57,7 @@ class Attendee(Base):
     payment_products: Mapped[List['PaymentProduct']] = relationship(
         'PaymentProduct', back_populates='attendee'
     )
+  
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)

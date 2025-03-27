@@ -4,7 +4,7 @@ from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.api.applications.attendees.schemas import Attendee
+from app.api.attendees.schemas import Attendee
 from app.api.products.schemas import Product
 
 
@@ -13,6 +13,7 @@ class ApplicationStatus(str, Enum):
     IN_REVIEW = 'in review'
     REJECTED = 'rejected'
     ACCEPTED = 'accepted'
+    WITHDRAWN = 'withdrawn'
 
 
 class UserSettableStatus(str, Enum):
@@ -43,6 +44,7 @@ class ApplicationBaseCommon(BaseModel):
     video_url: Optional[str] = None
     payment_capacity: Optional[str] = None
     github_profile: Optional[str] = None
+    minting_link: Optional[str] = None
 
     hackathon_interest: Optional[bool] = None
     host_session: Optional[str] = None
@@ -108,6 +110,7 @@ class Application(InternalApplicationCreate):
     attendees: Optional[list[Attendee]] = None
     discount_assigned: Optional[int] = None
     products: Optional[list[Product]] = None
+    credit: Optional[float] = None
 
     model_config = ConfigDict(
         from_attributes=True,

@@ -13,6 +13,12 @@ class EmailStatus(str, Enum):
     CANCELLED = 'cancelled'
 
 
+class EmailEvent(str, Enum):
+    APPLICATION_RECEIVED = 'application-received'
+    AUTH_CITIZEN_PORTAL = 'auth-citizen-portal'
+    PAYMENT_CONFIRMED = 'payment-confirmed'
+
+
 class EmailLogFilter(BaseModel):
     receiver_email: Optional[str] = None
     template: Optional[str] = None
@@ -29,12 +35,14 @@ class EmailLogFilter(BaseModel):
 class EmailLogBase(BaseModel):
     receiver_email: str
     template: str
+    event: str
     params: dict
     status: EmailStatus
     send_at: Optional[datetime] = None
     entity_type: Optional[str] = None
     entity_id: Optional[int] = None
     error_message: Optional[str] = None
+    popup_city_id: Optional[int] = None
     created_at: Optional[datetime] = None
 
     @field_serializer('params')

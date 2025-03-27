@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as applications_crud
 from app.api.applications.schemas import ApplicationCreate
+from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.citizens.crud import citizen as citizens_crud
 from app.api.citizens.schemas import CitizenCreate
@@ -58,7 +59,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         self,
         group: models.Group,
         citizen_id: int,
-        application: Optional[models.Application] = None,
+        application: Optional[Application] = None,
     ) -> None:
         """Validate if a citizen can be added to a group"""
         if citizen_id in group.members:

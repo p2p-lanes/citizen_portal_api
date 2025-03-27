@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.citizens import schemas
@@ -67,3 +67,14 @@ def get_citizen(
     db: Session = Depends(get_db),
 ):
     return citizen_crud.get(db=db, id=citizen_id, user=current_user)
+
+
+@router.get('/email/{email}', response_model=schemas.Citizen)
+def get_citizen_by_email(
+    email: str,
+    db: Session = Depends(get_db),
+):
+    citizen = citizen_crud.get_by_email(db=db, email=email)
+    if not citizen:
+        raise HTTPException(status_code=404, detail="Citizen not found")
+    return citizen

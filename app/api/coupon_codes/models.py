@@ -1,8 +1,9 @@
+from typing import Optional
+
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Float,
     ForeignKey,
     Integer,
     String,
@@ -13,8 +14,8 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 
-class DiscountCode(Base):
-    __tablename__ = 'discount_codes'
+class CouponCode(Base):
+    __tablename__ = 'coupon_codes'
     __table_args__ = (
         UniqueConstraint('code', 'popup_city_id', name='uix_code_popup_city'),
     )
@@ -28,7 +29,7 @@ class DiscountCode(Base):
     )
     code = Column(String, index=True)
     popup_city_id = Column(Integer, ForeignKey('popups.id'), index=True, nullable=False)
-    discount_value = Column(Float)
+    _discount_value = Column('discount_value', String)
     max_uses = Column(Integer)
     current_uses = Column(Integer, default=0)
     start_date = Column(DateTime)
@@ -39,3 +40,13 @@ class DiscountCode(Base):
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
     created_by = Column(String)
     updated_by = Column(String)
+
+    @property
+    def discount_value(self) -> Optional[float]:
+        if not self._discount_value:
+            return None
+        return float(self._discount_value)
+
+    @discount_value.setter
+    def discount_value(self, value: Optional[float]) -> None:
+        self._discount_value = str(value) if value is not None else None
