@@ -57,7 +57,7 @@ class Group(Base):
         'Citizen', secondary='group_leaders', backref='led_groups'
     )
     members: Mapped[List['Citizen']] = relationship(
-        'Citizen', secondary='group_members', backref='groups'
+        'Citizen', secondary='group_members', back_populates='groups_as_member'
     )
     products: Mapped[List['Product']] = relationship(
         'Product', secondary='group_products', backref='groups'
