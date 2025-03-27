@@ -35,7 +35,6 @@ class Citizen(Base):
     last_name = Column(String)
     x_user = Column(String)
     telegram = Column(String)
-    point_of_contact = Column(String)
     organization = Column(String)
     role = Column(String)
     residence = Column(String)
