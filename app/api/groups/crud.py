@@ -4,7 +4,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as applications_crud
-from app.api.applications.models import Application as ApplicationModel
 from app.api.applications.schemas import (
     Application,
     ApplicationCreate,
@@ -68,12 +67,12 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         application: Optional[Application] = None,
     ) -> None:
         """Validate if a citizen can be added to a group"""
-        members_ids = [member.id for member in group.members]
-        if citizen_id in members_ids:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Citizen already in group',
-            )
+        # members_ids = [member.id for member in group.members]
+        # if citizen_id in members_ids:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail='Citizen already in group',
+        #     )
 
         leaders_ids = [leader.id for leader in group.leaders]
         if citizen_id in leaders_ids:
@@ -88,16 +87,16 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 detail='Group is full',
             )
 
-        if application and application.group_id:
-            err_msg = (
-                'Citizen already has an application in this group'
-                if application.group_id == group.id
-                else 'Citizen already has an application in another group'
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=err_msg,
-            )
+        # if application and application.group_id:
+        #     err_msg = (
+        #         'Citizen already has an application in this group'
+        #         if application.group_id == group.id
+        #         else 'Citizen already has an application in another group'
+        #     )
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail=err_msg,
+        #     )
 
     def _get_by_slug(self, db: Session, slug: str) -> models.Group:
         group = db.query(self.model).filter(self.model.slug == slug).first()
