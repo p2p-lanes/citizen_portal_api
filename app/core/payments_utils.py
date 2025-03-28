@@ -147,6 +147,9 @@ def create_payment(
             products,
             products_data,
             discount_value=group.discount_percentage,
+            application=application,
+            already_patreon=already_patreon,
+            edit_passes=obj.edit_passes,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
