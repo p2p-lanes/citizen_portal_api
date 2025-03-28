@@ -110,7 +110,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: Union[int, str],
         member: schemas.GroupMember,
         user: TokenData,
-    ):
+    ) -> Application:
         try:
             group_id = int(group_id)
             group = self.get(db, group_id, user)
@@ -152,7 +152,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         db.commit()
         db.refresh(group)
 
-        return group
+        return application
 
     def remove_member(
         self,

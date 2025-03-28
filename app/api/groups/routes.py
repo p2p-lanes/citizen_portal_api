@@ -3,6 +3,7 @@ from typing import Union
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.api.applications.schemas import Application
 from app.api.groups import schemas
 from app.api.groups.crud import group as group_crud
 from app.core.config import settings
@@ -42,7 +43,7 @@ def get_group(
     return group_crud.get(db=db, id=group_id, user=current_user)
 
 
-@router.post('/{group_id}/new_member', response_model=schemas.Group)
+@router.post('/{group_id}/new_member', response_model=Application)
 def new_member(
     group_id: Union[int, str],
     member: schemas.GroupMember,
