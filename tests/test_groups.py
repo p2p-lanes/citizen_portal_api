@@ -195,11 +195,13 @@ def test_add_new_member_success(client, db_session, test_group, identifier_type)
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
+    application_id = data['id']
     assert data['group_id'] == test_group.id
     assert data['email'] == email
     assert data['first_name'] == member_data['first_name']
     assert data['last_name'] == member_data['last_name']
-    application_id = data['id']
+    assert data['authorization']['token_type'] == 'Bearer'
+    assert data['authorization']['access_token'] is not None
 
     citizen = db_session.query(Citizen).filter(Citizen.primary_email == email).first()
     assert citizen is not None

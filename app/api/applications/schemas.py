@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.api.attendees.schemas import Attendee
 from app.api.products.schemas import Product
+from app.core.security import Token
 
 
 class ApplicationStatus(str, Enum):
@@ -85,6 +86,7 @@ class ApplicationBase(ApplicationBaseCommon):
     popup_city_id: int
     group_id: Optional[int] = None
 
+
 class ApplicationCreate(ApplicationBase):
     status: Optional[UserSettableStatus] = None
 
@@ -115,6 +117,10 @@ class Application(InternalApplicationCreate):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class ApplicationWithAuth(Application):
+    authorization: Token
 
 
 HIDDEN_VALUE = '*'

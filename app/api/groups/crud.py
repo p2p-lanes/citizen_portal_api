@@ -4,8 +4,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as applications_crud
-from app.api.applications.models import Application
-from app.api.applications.schemas import ApplicationCreate
+from app.api.applications.models import Application as ApplicationModel
+from app.api.applications.schemas import (
+    Application,
+    ApplicationCreate,
+    ApplicationWithAuth,
+)
 from app.api.base_crud import CRUDBase
 from app.api.citizens.crud import citizen as citizens_crud
 from app.api.citizens.schemas import CitizenCreate
@@ -110,7 +114,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: Union[int, str],
         member: schemas.GroupMember,
         user: TokenData,
-    ) -> Application:
+    ) -> ApplicationWithAuth:
         try:
             group_id = int(group_id)
             group = self.get(db, group_id, user)
@@ -151,8 +155,13 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group.members.append(citizen)
         db.commit()
         db.refresh(group)
+        db.refresh(application)
 
-        return application
+        app = Application.model_validate(application)
+        return ApplicationWithAuth(
+            **app.model_dump(),
+            authorization=citizen.get_authorization(),
+        )
 
     def remove_member(
         self,

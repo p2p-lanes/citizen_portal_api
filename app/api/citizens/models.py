@@ -13,6 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
+from app.core.security import Token, create_access_token
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
@@ -72,6 +73,13 @@ class Citizen(Base):
             if group.popup_city_id == popup_city_id:
                 return group
         return None
+
+    def get_authorization(self) -> Token:
+        data = {'citizen_id': self.id, 'email': self.primary_email}
+        return Token(
+            access_token=create_access_token(data=data),
+            token_type='Bearer',
+        )
 
     __table_args__ = (
         Index(
