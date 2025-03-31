@@ -39,8 +39,11 @@ def calculate_status(
     submitted_at = application.submitted_at
     requested_a_discount = _requested_a_discount(application, requires_approval)
 
-    if reviews_status == schemas.ApplicationStatus.REJECTED:
-        return schemas.ApplicationStatus.REJECTED, requested_a_discount
+    if reviews_status in [
+        schemas.ApplicationStatus.REJECTED,
+        schemas.ApplicationStatus.WITHDRAWN,
+    ]:
+        return reviews_status, requested_a_discount
 
     discount_assigned = getattr(application, 'discount_assigned', None)
     missing_discount = requested_a_discount and discount_assigned is None
