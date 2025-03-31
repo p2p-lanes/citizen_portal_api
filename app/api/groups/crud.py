@@ -67,12 +67,9 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         application: Optional[Application] = None,
     ) -> None:
         """Validate if a citizen can be added to a group"""
-        # members_ids = [member.id for member in group.members]
-        # if citizen_id in members_ids:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_400_BAD_REQUEST,
-        #         detail='Citizen already in group',
-        #     )
+        members_ids = [member.id for member in group.members]
+        if citizen_id in members_ids:
+            return
 
         leaders_ids = [leader.id for leader in group.leaders]
         if citizen_id in leaders_ids:
