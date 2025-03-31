@@ -151,7 +151,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             application.group_id = group.id
             db.refresh(application)
 
-        if citizen.id not in group.members:
+        if citizen.id not in [m.id for m in group.members]:
             group.members.append(citizen)
 
         db.commit()
