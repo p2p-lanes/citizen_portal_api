@@ -70,6 +70,8 @@ async def update_status_webhook(
         group = application.citizen.get_group(application.popup_city_id)
         if group:
             calculated_status = ApplicationStatus.ACCEPTED
+            if reviews_status == ApplicationStatus.WITHDRAWN.value:
+                calculated_status = ApplicationStatus.WITHDRAWN
             requested_discount = False
         else:
             calculated_status, requested_discount = calculate_status(
