@@ -95,7 +95,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         #         detail=err_msg,
         #     )
 
-    def _get_by_slug(self, db: Session, slug: str) -> models.Group:
+    def get_by_slug(self, db: Session, slug: str) -> models.Group:
         group = db.query(self.model).filter(self.model.slug == slug).first()
         if not group:
             raise HTTPException(
@@ -115,7 +115,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             group_id = int(group_id)
             group = self.get(db, group_id, user)
         except ValueError:
-            group = self._get_by_slug(db, group_id)
+            group = self.get_by_slug(db, group_id)
 
         citizen = citizens_crud.get_or_create(
             db,

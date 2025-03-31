@@ -43,15 +43,15 @@ def get_group(
     return group_crud.get(db=db, id=group_id, user=current_user)
 
 
-@router.get('/aux/{group_id}', response_model=schemas.Group)
+@router.get('/aux/{group_slug}', response_model=schemas.Group)
 def get_group_aux(
-    group_id: int,
+    group_slug: str,
     api_key: str = Header(None, alias='api-key'),
     db: Session = Depends(get_db),
 ):
     if api_key != settings.GROUPS_API_KEY:
         raise HTTPException(status_code=401, detail='Unauthorized')
-    return group_crud.get(db=db, id=group_id, user=SYSTEM_TOKEN)
+    return group_crud.get_by_slug(db=db, slug=group_slug)
 
 
 @router.post('/{group_id}/new_member', response_model=ApplicationWithAuth)
