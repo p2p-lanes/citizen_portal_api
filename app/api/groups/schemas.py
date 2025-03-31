@@ -46,9 +46,11 @@ class GroupBase(BaseModel):
 
 class Group(GroupBase):
     id: int
+    popup_name: str
 
     model_config = ConfigDict(
         from_attributes=True,
+        populate_by_name=True,
     )
 
 

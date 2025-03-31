@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
+from app.api.popup_city.models import PopUpCity
 from app.core.database import Base
 from app.core.utils import current_time
 
@@ -63,6 +64,11 @@ class Group(Base):
     products: Mapped[List['Product']] = relationship(
         'Product', secondary='group_products', backref='groups'
     )
+    popup_city: Mapped['PopUpCity'] = relationship('PopUpCity', lazy='joined')
+
+    @property
+    def popup_name(self) -> str:
+        return self.popup_city.name
 
     def is_leader(self, citizen_id: int) -> bool:
         return any(leader.id == citizen_id for leader in self.leaders)

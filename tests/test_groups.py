@@ -67,6 +67,17 @@ def test_get_group_by_id_success(client, auth_headers, test_group):
     assert data['name'] == test_group.name
 
 
+def test_get_group_by_slug_success(client, test_group):
+    """Test getting a specific group by slug"""
+    headers = {'api-key': settings.GROUPS_API_KEY}
+    response = client.get(f'/groups/aux/{test_group.slug}', headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data['id'] == test_group.id
+    assert data['name'] == test_group.name
+    assert data['popup_name'] == test_group.popup_city.name
+
+
 def test_get_group_by_id_not_found(client, auth_headers):
     """Test getting a non-existent group"""
     response = client.get('/groups/999', headers=auth_headers)
