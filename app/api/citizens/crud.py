@@ -1,6 +1,6 @@
 import random
 from datetime import timedelta
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -46,13 +46,11 @@ class CRUDCitizen(
     def create(
         self,
         db: Session,
-        obj: schemas.CitizenCreate,
+        obj: Union[schemas.CitizenCreate, schemas.InternalCitizenCreate],
         user: Optional[TokenData] = None,
     ) -> models.Citizen:
-        to_create = schemas.InternalCitizenCreate(
-            **obj.model_dump(),
-            spice=create_spice(),
-        )
+        to_create = schemas.InternalCitizenCreate(**obj.model_dump())
+        to_create.spice = create_spice()
         citizen = super().create(db, to_create)
         return citizen
 
