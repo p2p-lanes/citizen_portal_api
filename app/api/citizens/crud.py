@@ -1,4 +1,5 @@
 import random
+from datetime import timedelta
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -9,7 +10,7 @@ from app.api.citizens import models, schemas
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
 from app.core.security import TokenData
-from app.core.utils import create_spice
+from app.core.utils import create_spice, current_time
 
 
 class CRUDCitizen(
@@ -77,6 +78,7 @@ class CRUDCitizen(
             citizen.spice = create_spice()
             if code:
                 citizen.code = code
+                citizen.code_expiration = current_time() + timedelta(minutes=10)
             db.commit()
             db.refresh(citizen)
 
@@ -120,11 +122,17 @@ class CRUDCitizen(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid spice',
             )
-        if code and citizen.code != code:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid code',
-            )
+        if code:
+            if citizen.code != code:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail='Invalid code',
+                )
+            if citizen.code_expiration < current_time():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail='Code expired',
+                )
 
         citizen.email_validated = True
         db.commit()

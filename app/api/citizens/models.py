@@ -50,6 +50,8 @@ class Citizen(Base):
     email_validated = Column(Boolean, default=False)
     spice = Column(String)
     code = Column(Integer)
+    code_expiration = Column(DateTime)
+
     applications: Mapped[List['Application']] = relationship(
         'Application', back_populates='citizen'
     )
