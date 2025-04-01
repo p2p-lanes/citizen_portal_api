@@ -141,6 +141,10 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                     group_id=group.id,
                     first_name=member.first_name,
                     last_name=member.last_name,
+                    role=member.role,
+                    organization=member.organization,
+                    gender=member.gender,
+                    telegram=member.telegram,
                 ),
                 user,
             )
