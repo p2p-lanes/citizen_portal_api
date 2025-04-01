@@ -1,3 +1,4 @@
+import random
 from typing import List, Optional
 
 from fastapi import HTTPException
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.base_crud import CRUDBase
 from app.api.citizens import models, schemas
 from app.api.email_logs.crud import email_log
+from app.api.email_logs.schemas import EmailEvent
 from app.core.security import TokenData
 from app.core.utils import create_spice
 
@@ -64,16 +66,34 @@ class CRUDCitizen(
         *,
         email: str,
         popup_slug: Optional[str] = None,
+        use_code: bool = False,
     ) -> models.Citizen:
         citizen = self.get_by_email(db, email)
+        code = random.randint(100000, 999999) if use_code else None
         if not citizen:
             to_create = schemas.CitizenCreate(primary_email=email)
             citizen = self.create(db, to_create)
         else:
             citizen.spice = create_spice()
+            if code:
+                citizen.code = code
             db.commit()
             db.refresh(citizen)
-        email_log.send_login_mail(email, citizen.spice, citizen.id, popup_slug)
+
+        if code:
+            email_log.send_mail(
+                email,
+                event=EmailEvent.AUTH_CITIZEN_BY_CODE.value,
+                popup_slug=popup_slug,
+                params={'code': code},
+                spice=citizen.spice,
+                entity_type='citizen',
+                entity_id=citizen.id,
+                citizen_id=citizen.id,
+            )
+        else:
+            email_log.send_login_mail(email, citizen.spice, citizen.id, popup_slug)
+
         return {'message': 'Mail sent successfully'}
 
     def login(
@@ -81,13 +101,22 @@ class CRUDCitizen(
         db: Session,
         *,
         email: str,
-        spice: str,
+        spice: Optional[str] = None,
+        code: Optional[int] = None,
     ) -> models.Citizen:
+        if not spice and not code:
+            raise HTTPException(
+                status_code=400, detail='Either spice or code must be provided'
+            )
+
         citizen = self.get_by_email(db, email)
         if not citizen:
             raise HTTPException(status_code=404, detail='Citizen not found')
-        if citizen.spice != spice:
+        if spice and citizen.spice != spice:
             raise HTTPException(status_code=401, detail='Invalid spice')
+        if code and citizen.code != code:
+            raise HTTPException(status_code=401, detail='Invalid code')
+
         citizen.email_validated = True
         db.commit()
         db.refresh(citizen)

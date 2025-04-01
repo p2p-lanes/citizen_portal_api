@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -23,17 +25,26 @@ def authenticate(
     db: Session = Depends(get_db),
 ):
     return citizen_crud.authenticate(
-        db=db, email=data.email, popup_slug=data.popup_slug
+        db=db,
+        email=data.email,
+        popup_slug=data.popup_slug,
+        use_code=data.use_code,
     )
 
 
 @router.post('/login')
 def login(
     email: str,
-    spice: str,
+    spice: Optional[str] = None,
+    code: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    citizen = citizen_crud.login(db=db, email=email, spice=spice)
+    if not spice and not code:
+        raise HTTPException(
+            status_code=400, detail='Either spice or code must be provided'
+        )
+
+    citizen = citizen_crud.login(db=db, email=email, spice=spice, code=code)
     return citizen.get_authorization()
 
 
