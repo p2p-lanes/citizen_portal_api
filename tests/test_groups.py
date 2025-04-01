@@ -69,7 +69,7 @@ def test_get_group_by_id_success(client, auth_headers, test_group):
 
 def test_get_group_by_slug_success(client, test_group):
     """Test getting a specific group by slug"""
-    headers = {'api-key': settings.FAST_CHECKOUT_API_KEY}
+    headers = {'api-key': settings.GROUPS_API_KEY}
     response = client.get(f'/groups/aux/{test_group.slug}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -201,7 +201,7 @@ def test_add_new_member_success(client, db_session, test_group, identifier_type)
     response = client.post(
         f'/groups/{group_identifier}/new_member',
         json=member_data,
-        headers={'api-key': settings.FAST_CHECKOUT_API_KEY},
+        headers={'api-key': settings.GROUPS_API_KEY},
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -211,6 +211,8 @@ def test_add_new_member_success(client, db_session, test_group, identifier_type)
     assert data['email'] == email
     assert data['first_name'] == member_data['first_name']
     assert data['last_name'] == member_data['last_name']
+    assert data['authorization']['token_type'] == 'Bearer'
+    assert data['authorization']['access_token'] is not None
 
     citizen = db_session.query(Citizen).filter(Citizen.primary_email == email).first()
     assert citizen is not None
@@ -272,7 +274,7 @@ def test_add_new_member_invalid_data(client, test_group):
     response = client.post(
         f'/groups/{test_group.id}/new_member',
         json=invalid_member_data,
-        headers={'api-key': settings.FAST_CHECKOUT_API_KEY},
+        headers={'api-key': settings.GROUPS_API_KEY},
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -289,7 +291,7 @@ def test_add_new_member_nonexistent_group(client):
     response = client.post(
         '/groups/99999/new_member',  # Non-existent group ID
         json=member_data,
-        headers={'api-key': settings.FAST_CHECKOUT_API_KEY},
+        headers={'api-key': settings.GROUPS_API_KEY},
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -298,7 +300,7 @@ def test_add_new_member_nonexistent_group(client):
     response = client.post(
         '/groups/non-existent-slug/new_member',  # Non-existent group slug
         json=member_data,
-        headers={'api-key': settings.FAST_CHECKOUT_API_KEY},
+        headers={'api-key': settings.GROUPS_API_KEY},
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND

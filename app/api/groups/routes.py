@@ -3,7 +3,7 @@ from typing import Union
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.applications.schemas import Application
+from app.api.applications.schemas import ApplicationWithAuth
 from app.api.groups import schemas
 from app.api.groups.crud import group as group_crud
 from app.core.config import settings
@@ -49,19 +49,19 @@ def get_group_aux(
     api_key: str = Header(None, alias='api-key'),
     db: Session = Depends(get_db),
 ):
-    if api_key != settings.FAST_CHECKOUT_API_KEY:
+    if api_key != settings.GROUPS_API_KEY:
         raise HTTPException(status_code=401, detail='Unauthorized')
     return group_crud.get_by_slug(db=db, slug=group_slug)
 
 
-@router.post('/{group_id}/new_member', response_model=Application)
+@router.post('/{group_id}/new_member', response_model=ApplicationWithAuth)
 def new_member(
     group_id: Union[int, str],
     member: schemas.GroupMember,
     api_key: str = Header(None, alias='api-key'),
     db: Session = Depends(get_db),
 ):
-    if api_key != settings.FAST_CHECKOUT_API_KEY:
+    if api_key != settings.GROUPS_API_KEY:
         raise HTTPException(status_code=401, detail='Unauthorized')
 
     return group_crud.add_member(

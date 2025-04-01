@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.payments import schemas
 from app.api.payments.crud import payment as payment_crud
-from app.core.config import settings
+from app.api.payments import schemas
 from app.core.database import get_db
-from app.core.security import SYSTEM_TOKEN, TokenData, get_current_user
+from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
 
@@ -43,14 +42,3 @@ def create_payment(
     db: Session = Depends(get_db),
 ):
     return payment_crud.create(db=db, obj=payment, user=current_user)
-
-
-@router.post('/fast_checkout', response_model=schemas.Payment)
-def create_payment_fast_checkout(
-    payment: schemas.PaymentCreate,
-    api_key: str = Header(None, alias='api-key'),
-    db: Session = Depends(get_db),
-):
-    if api_key != settings.FAST_CHECKOUT_API_KEY:
-        raise HTTPException(status_code=401, detail='Unauthorized')
-    return payment_crud.create(db=db, obj=payment, user=SYSTEM_TOKEN)
