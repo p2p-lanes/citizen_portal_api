@@ -154,14 +154,11 @@ class Application(Base):
 
     def get_status(self) -> Optional[str]:
         """Compute the effective status based on validation rules"""
-        if not self._status:
+        if not self._status or self._status != ApplicationStatus.ACCEPTED.value:
             return self._status
 
-        if (
-            self._status != ApplicationStatus.ACCEPTED.value
-            and self.group_id is not None
-        ):
-            return self._status
+        if self.group_id is not None:
+            return ApplicationStatus.ACCEPTED.value
 
         if self.requested_discount and self.discount_assigned is None:
             return ApplicationStatus.IN_REVIEW.value
