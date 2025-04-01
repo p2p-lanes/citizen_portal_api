@@ -85,7 +85,7 @@ class CRUDCitizen(
                 email,
                 event=EmailEvent.AUTH_CITIZEN_BY_CODE.value,
                 popup_slug=popup_slug,
-                params={'code': code},
+                params={'code': code, 'email': email},
                 spice=citizen.spice,
                 entity_type='citizen',
                 entity_id=citizen.id,
