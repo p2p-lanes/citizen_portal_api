@@ -183,7 +183,9 @@ def test_get_groups_invalid_sort_field(client, auth_headers):
 
 
 @pytest.mark.parametrize('identifier_type', ['id', 'slug'])
-def test_add_new_member_success(client, db_session, test_group, identifier_type):
+def test_add_new_member_success(
+    client, db_session, auth_headers, test_group, identifier_type
+):
     """Test successfully adding a new member to a group using either ID or slug"""
     # validate that the citizen does not exist
     email = 'john.doe@example.com'
@@ -201,7 +203,7 @@ def test_add_new_member_success(client, db_session, test_group, identifier_type)
     response = client.post(
         f'/groups/{group_identifier}/new_member',
         json=member_data,
-        headers={'api-key': settings.GROUPS_API_KEY},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -232,7 +234,7 @@ def test_add_new_member_success(client, db_session, test_group, identifier_type)
 
 
 def test_add_new_member_unauthorized(client, test_group):
-    """Test adding a member without API key fails"""
+    """Test adding a member without token fails"""
     member_data = {
         'first_name': 'New',
         'last_name': 'Member',
@@ -242,10 +244,10 @@ def test_add_new_member_unauthorized(client, test_group):
     response = client.post(f'/groups/{test_group.id}/new_member', json=member_data)
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert response.json()['detail'] == 'Unauthorized'
+    assert response.json()['detail'] == 'Not authenticated'
 
 
-def test_add_new_member_invalid_api_key(client, test_group):
+def test_add_new_member_invalid_token(client, test_group):
     """Test adding a member with invalid API key fails"""
     member_data = {
         'first_name': 'New',
@@ -256,14 +258,14 @@ def test_add_new_member_invalid_api_key(client, test_group):
     response = client.post(
         f'/groups/{test_group.id}/new_member',
         json=member_data,
-        headers={'api-key': 'invalid_key'},
+        headers={'Authorization': 'Bearer invalid_key'},
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert response.json()['detail'] == 'Unauthorized'
+    assert response.json()['detail'] == 'Could not validate credentials'
 
 
-def test_add_new_member_invalid_data(client, test_group):
+def test_add_new_member_invalid_data(client, test_group, auth_headers):
     """Test adding a member with invalid data fails"""
     invalid_member_data = {
         'first_name': '',  # Empty first name should fail validation
@@ -274,13 +276,13 @@ def test_add_new_member_invalid_data(client, test_group):
     response = client.post(
         f'/groups/{test_group.id}/new_member',
         json=invalid_member_data,
-        headers={'api-key': settings.GROUPS_API_KEY},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_add_new_member_nonexistent_group(client):
+def test_add_new_member_nonexistent_group(client, auth_headers):
     """Test adding a member to a non-existent group fails"""
     member_data = {
         'first_name': 'John',
@@ -291,7 +293,7 @@ def test_add_new_member_nonexistent_group(client):
     response = client.post(
         '/groups/99999/new_member',  # Non-existent group ID
         json=member_data,
-        headers={'api-key': settings.GROUPS_API_KEY},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -300,7 +302,7 @@ def test_add_new_member_nonexistent_group(client):
     response = client.post(
         '/groups/non-existent-slug/new_member',  # Non-existent group slug
         json=member_data,
-        headers={'api-key': settings.GROUPS_API_KEY},
+        headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
