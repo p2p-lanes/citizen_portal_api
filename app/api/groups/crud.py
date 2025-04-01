@@ -8,6 +8,7 @@ from app.api.applications.schemas import (
     Application,
     ApplicationCreate,
     ApplicationWithAuth,
+    ApplicationStatus,
 )
 from app.api.base_crud import CRUDBase
 from app.api.citizens.crud import citizen as citizens_crud
@@ -138,6 +139,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 ApplicationCreate(
                     citizen_id=citizen.id,
                     popup_city_id=group.popup_city_id,
+                    status=ApplicationStatus.ACCEPTED,
                     group_id=group.id,
                     first_name=member.first_name,
                     last_name=member.last_name,
@@ -150,6 +152,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             )
         else:
             application.group_id = group.id
+            application.status = ApplicationStatus.ACCEPTED
             application.first_name = member.first_name
             application.last_name = member.last_name
             application.role = member.role
