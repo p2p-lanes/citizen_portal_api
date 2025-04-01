@@ -48,7 +48,7 @@ class Group(Base):
     description = Column(String, nullable=True)
     discount_percentage = Column(Float, nullable=False)
     popup_city_id = Column(Integer, ForeignKey('popups.id'), index=True, nullable=False)
-    max_members = Column(Integer, nullable=False)
+    max_members = Column(Integer)
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)

@@ -38,7 +38,7 @@ class GroupBase(BaseModel):
     description: Optional[str] = None
     discount_percentage: float
     popup_city_id: int
-    max_members: int
+    max_members: Optional[int] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
