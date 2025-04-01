@@ -70,15 +70,22 @@ class CRUDCitizen(
         use_code: bool = False,
     ) -> models.Citizen:
         citizen = self.get_by_email(db, email)
+
         code = random.randint(100000, 999999) if use_code else None
+        code_expiration = current_time() + timedelta(minutes=10) if use_code else None
+
         if not citizen:
-            to_create = schemas.CitizenCreate(primary_email=email)
+            to_create = schemas.InternalCitizenCreate(
+                primary_email=email,
+                code=code,
+                code_expiration=code_expiration,
+            )
             citizen = self.create(db, to_create)
         else:
             citizen.spice = create_spice()
             if code:
                 citizen.code = code
-                citizen.code_expiration = current_time() + timedelta(minutes=10)
+                citizen.code_expiration = code_expiration
             db.commit()
             db.refresh(citizen)
 

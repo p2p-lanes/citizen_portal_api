@@ -19,7 +19,7 @@ class Authenticate(BaseModel):
     @classmethod
     def decode_email(cls, value: str) -> str:
         if not value:
-            raise ValueError("Email cannot be empty")
+            raise ValueError('Email cannot be empty')
         return unquote(value)
 
 
@@ -52,6 +52,8 @@ class CitizenCreate(CitizenBase):
 
 class InternalCitizenCreate(CitizenCreate):
     spice: Optional[str] = None
+    code: Optional[int] = None
+    code_expiration: Optional[datetime] = None
 
 
 class Citizen(CitizenBase):
