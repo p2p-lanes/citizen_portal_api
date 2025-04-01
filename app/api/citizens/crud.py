@@ -1,7 +1,7 @@
 import random
 from typing import List, Optional
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
@@ -111,11 +111,20 @@ class CRUDCitizen(
 
         citizen = self.get_by_email(db, email)
         if not citizen:
-            raise HTTPException(status_code=404, detail='Citizen not found')
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Citizen not found',
+            )
         if spice and citizen.spice != spice:
-            raise HTTPException(status_code=401, detail='Invalid spice')
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid spice',
+            )
         if code and citizen.code != code:
-            raise HTTPException(status_code=401, detail='Invalid code')
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid code',
+            )
 
         citizen.email_validated = True
         db.commit()
