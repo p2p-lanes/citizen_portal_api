@@ -150,6 +150,12 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             )
         else:
             application.group_id = group.id
+            application.first_name = member.first_name
+            application.last_name = member.last_name
+            application.role = member.role
+            application.organization = member.organization
+            application.gender = member.gender
+            application.telegram = member.telegram
 
         if citizen.id not in [m.id for m in group.members]:
             group.members.append(citizen)
