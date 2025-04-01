@@ -4,11 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as applications_crud
-from app.api.applications.schemas import (
-    Application,
-    ApplicationCreate,
-    ApplicationWithAuth,
-)
+from app.api.applications.schemas import Application, ApplicationCreate
 from app.api.base_crud import CRUDBase
 from app.api.citizens.crud import citizen as citizens_crud
 from app.api.citizens.schemas import CitizenCreate
@@ -60,12 +56,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         query = query.order_by(order_by)
         return query.offset(skip).limit(limit).all()
 
-    def _validate_member_addition(
-        self,
-        group: models.Group,
-        citizen_id: int,
-        application: Optional[Application] = None,
-    ) -> None:
+    def _validate_member_addition(self, group: models.Group, citizen_id: int) -> None:
         """Validate if a citizen can be added to a group"""
         members_ids = [member.id for member in group.members]
         if citizen_id in members_ids:
@@ -110,7 +101,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: Union[int, str],
         member: schemas.GroupMember,
         user: TokenData,
-    ) -> ApplicationWithAuth:
+    ) -> Application:
         try:
             group_id = int(group_id)
             group = self.get(db, group_id, user)
@@ -130,7 +121,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             db, citizen.id, group.popup_city_id
         )
 
-        self._validate_member_addition(group, citizen.id, application)
+        self._validate_member_addition(group, citizen.id)
 
         if not application:
             application = applications_crud.create(
@@ -155,11 +146,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         db.refresh(group)
         db.refresh(application)
 
-        app = Application.model_validate(application)
-        return ApplicationWithAuth(
-            **app.model_dump(),
-            authorization=citizen.get_authorization(),
-        )
+        return application
 
     def remove_member(
         self,
