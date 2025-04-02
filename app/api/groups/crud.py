@@ -139,7 +139,6 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 ApplicationCreate(
                     citizen_id=citizen.id,
                     popup_city_id=group.popup_city_id,
-                    status=ApplicationStatus.ACCEPTED,
                     group_id=group.id,
                     first_name=member.first_name,
                     last_name=member.last_name,

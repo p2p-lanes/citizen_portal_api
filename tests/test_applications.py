@@ -530,9 +530,23 @@ def test_application_status_validation(
     application = (
         db_session.query(Application).filter(Application.id == application_id).first()
     )
-    application.status = ApplicationStatus.ACCEPTED.value
+    application.status = ApplicationStatus.IN_REVIEW.value
     application.discount_assigned = None
-    application.scholarship_request = False
+    db_session.commit()
+
+    to_update = {'scholarship_request': False}
+    response = client.put(
+        f'/applications/{application_id}', json=to_update, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['status'] == ApplicationStatus.IN_REVIEW.value
+    assert response.json()['scholarship_request'] is False
+    assert response.json()['requested_discount'] is False
+
+    application = (
+        db_session.query(Application).filter(Application.id == application_id).first()
+    )
+    application.status = ApplicationStatus.ACCEPTED.value
     db_session.commit()
 
     response = client.get(f'/applications/{application_id}', headers=auth_headers)
