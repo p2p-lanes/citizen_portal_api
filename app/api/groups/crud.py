@@ -7,13 +7,14 @@ from app.api.applications.crud import application as applications_crud
 from app.api.applications.schemas import (
     Application,
     ApplicationCreate,
-    ApplicationWithAuth,
     ApplicationStatus,
+    ApplicationWithAuth,
 )
 from app.api.base_crud import CRUDBase
 from app.api.citizens.crud import citizen as citizens_crud
 from app.api.citizens.schemas import CitizenCreate
 from app.api.groups import models, schemas
+from app.core.logger import logger
 from app.core.security import SYSTEM_TOKEN, TokenData
 
 
@@ -134,22 +135,21 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         self._validate_member_addition(group, citizen.id, application)
 
         if not application:
-            application = applications_crud.create(
-                db,
-                ApplicationCreate(
-                    citizen_id=citizen.id,
-                    popup_city_id=group.popup_city_id,
-                    group_id=group.id,
-                    first_name=member.first_name,
-                    last_name=member.last_name,
-                    role=member.role,
-                    organization=member.organization,
-                    gender=member.gender,
-                    telegram=member.telegram,
-                ),
-                user,
+            new_application = ApplicationCreate(
+                citizen_id=citizen.id,
+                popup_city_id=group.popup_city_id,
+                group_id=group.id,
+                first_name=member.first_name,
+                last_name=member.last_name,
+                role=member.role,
+                organization=member.organization,
+                gender=member.gender,
+                telegram=member.telegram,
             )
+            logger.info('Application not found, creating: %s', new_application)
+            application = applications_crud.create(db, new_application, user)
         else:
+            logger.info('Application found, updating: %s', application.id)
             application.group_id = group.id
             application.status = ApplicationStatus.ACCEPTED
             application.first_name = member.first_name
@@ -161,7 +161,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
 
         if citizen.id not in [m.id for m in group.members]:
             group.members.append(citizen)
-
+            logger.info('Citizen added to group: %s', citizen.id)
         db.commit()
         db.refresh(group)
         db.refresh(application)

@@ -9,6 +9,7 @@ from app.api.base_crud import CRUDBase
 from app.api.citizens import models, schemas
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
+from app.core.logger import logger
 from app.core.security import TokenData
 from app.core.utils import create_spice, current_time
 
@@ -41,6 +42,7 @@ class CRUDCitizen(
         existing_citizen = self.get_by_email(db, citizen.primary_email)
         if existing_citizen:
             return existing_citizen
+        logger.info('Citizen not found, creating: %s', citizen)
         return self.create(db, citizen)
 
     def create(
