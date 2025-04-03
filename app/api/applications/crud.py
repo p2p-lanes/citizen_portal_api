@@ -1,11 +1,12 @@
 from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 
 from app.api.applications import models, schemas
 from app.api.attendees import schemas as attendees_schemas
 from app.api.attendees.crud import attendee as attendees_crud
+from app.api.attendees.models import Attendee
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
 from app.api.email_logs.crud import email_log
@@ -307,51 +308,51 @@ class CRUDApplication(
         limit: int,
         user: TokenData,
     ) -> Tuple[List[dict], int]:
-        filters = schemas.ApplicationFilter(popup_city_id=popup_city_id)
+        # Query applications with main attendees that have products
+        base_query = (
+            db.query(models.Application)
+            .join(models.Application.attendees.and_(Attendee.category == 'main'))
+            .options(contains_eager(models.Application.attendees.of_type(Attendee)))
+            .join(Attendee.products)  # This ensures attendees have products
+            .filter(models.Application.popup_city_id == popup_city_id)
+            .distinct()
+        )
+
+        total = base_query.count()
+        applications = base_query.offset(skip).limit(limit).all()
+
         attendees = []
-        _skip = 0
-        _limit = 100
-        done = False
-        while not done:
-            done = True
-            for application in self.find(db, skip=_skip, limit=_limit, filters=filters):
-                done = False
-                main_attendee = next(
-                    (a for a in application.attendees if a.category == 'main')
-                )
-                if not main_attendee.products:
-                    continue
+        for application in applications:
+            # Since we filtered for main attendees in the join, there should be exactly one
+            main_attendee = application.attendees[0]
 
-                check_in, check_out = None, None
-                for p in main_attendee.products:
-                    if not check_in or (p.start_date and p.start_date < check_in):
-                        check_in = p.start_date
-                    if not check_out or (p.end_date and p.end_date > check_out):
-                        check_out = p.end_date
+            check_in, check_out = None, None
+            for p in main_attendee.products:
+                if not check_in or (p.start_date and p.start_date < check_in):
+                    check_in = p.start_date
+                if not check_out or (p.end_date and p.end_date > check_out):
+                    check_out = p.end_date
 
-                a = {
-                    'first_name': application.first_name,
-                    'last_name': application.last_name,
-                    'email': application.email,
-                    'telegram': application.telegram,
-                    'brings_kids': application.brings_kids,
-                    'role': application.role,
-                    'organization': application.organization,
-                    'participation': main_attendee.products,
-                    'check_in': check_in,
-                    'check_out': check_out,
-                }
+            a = {
+                'first_name': application.first_name,
+                'last_name': application.last_name,
+                'email': application.email,
+                'telegram': application.telegram,
+                'brings_kids': application.brings_kids,
+                'role': application.role,
+                'organization': application.organization,
+                'participation': main_attendee.products,
+                'check_in': check_in,
+                'check_out': check_out,
+            }
 
-                if application.info_not_shared:
-                    for f in application.info_not_shared:
-                        a[f] = schemas.HIDDEN_VALUE
+            if application.info_not_shared:
+                for f in application.info_not_shared:
+                    a[f] = schemas.HIDDEN_VALUE
 
-                attendees.append(a)
+            attendees.append(a)
 
-            _skip += _limit
-
-        total = len(attendees)
-        return attendees[skip : skip + limit], total
+        return attendees, total
 
 
 application = CRUDApplication(models.Application)
