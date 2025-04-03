@@ -147,7 +147,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 telegram=member.telegram,
             )
             logger.info('Application not found, creating: %s', new_application)
-            application = applications_crud.create(db, new_application, user)
+            application = applications_crud.create(db, new_application, SYSTEM_TOKEN)
         else:
             logger.info('Application found, updating: %s', application.id)
             application.group_id = group.id
@@ -162,6 +162,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         if citizen.id not in [m.id for m in group.members]:
             group.members.append(citizen)
             logger.info('Citizen added to group: %s', citizen.id)
+
         db.commit()
         db.refresh(group)
         db.refresh(application)
