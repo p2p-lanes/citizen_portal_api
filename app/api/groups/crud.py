@@ -16,6 +16,7 @@ from app.api.citizens.schemas import CitizenCreate
 from app.api.groups import models, schemas
 from app.core.logger import logger
 from app.core.security import SYSTEM_TOKEN, TokenData
+from app.core.utils import current_time
 
 
 class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
@@ -161,6 +162,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             application.organization = member.organization
             application.gender = member.gender
             application.telegram = member.telegram
+            application.submitted_at = current_time()
 
         if citizen.id not in [m.id for m in group.members]:
             group.members.append(citizen)
