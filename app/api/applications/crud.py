@@ -303,7 +303,7 @@ class CRUDApplication(
         skip: int,
         limit: int,
         user: TokenData,
-    ):
+    ) -> Tuple[List[dict], int]:
         filters = schemas.ApplicationFilter(popup_city_id=popup_city_id)
         attendees = []
         for application in self.find(db, filters=filters):
@@ -339,7 +339,8 @@ class CRUDApplication(
 
             attendees.append(a)
 
-        return attendees[skip : skip + limit]
+        total = len(attendees)
+        return attendees[skip : skip + limit], total
 
 
 application = CRUDApplication(models.Application)

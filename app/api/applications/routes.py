@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.applications import schemas
 from app.api.applications.crud import application as application_crud
 from app.api.attendees import schemas as attendees_schemas
+from app.api.common.schemas import PaginatedResponse, PaginationMetadata
 from app.core.database import get_db
 from app.core.logger import logger
 from app.core.security import TokenData, get_current_user
@@ -53,12 +54,20 @@ def get_attendees_directory(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return application_crud.get_attendees_directory(
+    attendees, total = application_crud.get_attendees_directory(
         db=db,
         popup_city_id=popup_city_id,
         skip=skip,
         limit=limit,
         user=current_user,
+    )
+    return PaginatedResponse(
+        items=attendees,
+        pagination=PaginationMetadata(
+            skip=skip,
+            limit=limit,
+            total=total,
+        ),
     )
 
 
