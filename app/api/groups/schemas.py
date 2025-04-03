@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.api.citizens.schemas import Citizen
+from app.api.applications.schemas import Application
 
 
 class GroupMember(BaseModel):
@@ -56,8 +56,8 @@ class Group(GroupBase):
     )
 
 
-class GroupWithApplications(Group):
-    members: List[Citizen]
+class GroupWithMembers(Group):
+    members: List[Application]
 
 
 class GroupFilter(BaseModel):

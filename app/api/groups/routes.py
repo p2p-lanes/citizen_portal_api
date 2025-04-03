@@ -35,13 +35,13 @@ def get_groups(
     )
 
 
-@router.get('/{group_id}', response_model=schemas.GroupWithApplications)
+@router.get('/{group_id}', response_model=schemas.GroupWithMembers)
 def get_group(
     group_id: int,
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return group_crud.get(db=db, id=group_id, user=current_user)
+    return group_crud.get_with_members(db=db, id=group_id, user=current_user)
 
 
 @router.get('/aux/{group_slug}', response_model=schemas.Group)

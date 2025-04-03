@@ -84,9 +84,12 @@ def test_get_group_by_id_success(client, auth_headers, test_group):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data['id'] == test_group.id
-    assert data['name'] == test_group.name
     assert len(data['members']) == 1
-    assert data['members'][0]['primary_email'] == new_member_data['email']
+    assert data['name'] == test_group.name
+    assert data['members'][0]['status'] == ApplicationStatus.ACCEPTED
+    assert data['members'][0]['group_id'] == test_group.id
+    assert data['members'][0]['email'] == new_member_data['email']
+    assert 'products' in data['members'][0]
 
 
 def test_get_group_by_slug_success(client, test_group):

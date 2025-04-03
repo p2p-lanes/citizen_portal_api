@@ -110,6 +110,21 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             )
         return group
 
+    def get_with_members(
+        self, db: Session, id: int, user: TokenData
+    ) -> schemas.GroupWithMembers:
+        group = super().get(db, id, user)
+        members = []
+        for member in group.members:
+            # products = member.get_products(group.popup_city_id)
+            application = member.get_application(group.popup_city_id)
+            members.append(Application.model_validate(application).model_dump())
+
+        return schemas.GroupWithMembers(
+            **schemas.Group.model_validate(group).model_dump(),
+            members=members,
+        )
+
     def add_member(
         self,
         db: Session,

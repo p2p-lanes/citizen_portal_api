@@ -77,6 +77,12 @@ class Citizen(Base):
                 return group
         return None
 
+    def get_application(self, popup_city_id: int) -> Optional['Application']:
+        for application in self.applications:
+            if application.popup_city_id == popup_city_id:
+                return application
+        return None
+
     def get_authorization(self) -> Token:
         data = {'citizen_id': self.id, 'email': self.primary_email}
         return Token(
