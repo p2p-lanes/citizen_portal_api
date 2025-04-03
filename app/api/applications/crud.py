@@ -145,11 +145,14 @@ class CRUDApplication(
 
         logger.info('Citizen found: %s %s', citizen.id, citizen.primary_email)
         email = citizen.primary_email
-        submitted_at = (
-            current_time()
-            if obj.status == schemas.ApplicationStatus.IN_REVIEW
-            else None
-        )
+
+        submitted_at = None
+        if obj.status in [
+            schemas.ApplicationStatus.IN_REVIEW,
+            schemas.ApplicationStatus.ACCEPTED,
+        ]:
+            submitted_at = current_time()
+
         obj = schemas.InternalApplicationCreate(
             **obj.model_dump(),
             email=email,
