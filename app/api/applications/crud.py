@@ -309,38 +309,46 @@ class CRUDApplication(
     ) -> Tuple[List[dict], int]:
         filters = schemas.ApplicationFilter(popup_city_id=popup_city_id)
         attendees = []
-        for application in self.find(db, filters=filters):
-            main_attendee = next(
-                (a for a in application.attendees if a.category == 'main')
-            )
-            if not main_attendee.products:
-                continue
+        _skip = 0
+        _limit = 100
+        while True:
+            for application in self.find(db, skip=_skip, limit=_limit, filters=filters):
+                main_attendee = next(
+                    (a for a in application.attendees if a.category == 'main')
+                )
+                if not main_attendee.products:
+                    continue
 
-            check_in, check_out = None, None
-            for p in main_attendee.products:
-                if not check_in or (p.start_date and p.start_date < check_in):
-                    check_in = p.start_date
-                if not check_out or (p.end_date and p.end_date > check_out):
-                    check_out = p.end_date
+                check_in, check_out = None, None
+                for p in main_attendee.products:
+                    if not check_in or (p.start_date and p.start_date < check_in):
+                        check_in = p.start_date
+                    if not check_out or (p.end_date and p.end_date > check_out):
+                        check_out = p.end_date
 
-            a = {
-                'first_name': application.first_name,
-                'last_name': application.last_name,
-                'email': application.email,
-                'telegram': application.telegram,
-                'brings_kids': application.brings_kids,
-                'role': application.role,
-                'organization': application.organization,
-                'participation': main_attendee.products,
-                'check_in': check_in,
-                'check_out': check_out,
-            }
+                a = {
+                    'first_name': application.first_name,
+                    'last_name': application.last_name,
+                    'email': application.email,
+                    'telegram': application.telegram,
+                    'brings_kids': application.brings_kids,
+                    'role': application.role,
+                    'organization': application.organization,
+                    'participation': main_attendee.products,
+                    'check_in': check_in,
+                    'check_out': check_out,
+                }
 
-            if application.info_not_shared:
-                for f in application.info_not_shared:
-                    a[f] = schemas.HIDDEN_VALUE
+                if application.info_not_shared:
+                    for f in application.info_not_shared:
+                        a[f] = schemas.HIDDEN_VALUE
 
-            attendees.append(a)
+                attendees.append(a)
+
+            if len(attendees) >= limit:
+                break
+
+            _skip += _limit
 
         total = len(attendees)
         return attendees[skip : skip + limit], total
