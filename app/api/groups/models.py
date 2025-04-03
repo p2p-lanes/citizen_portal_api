@@ -8,6 +8,7 @@ from app.core.database import Base
 from app.core.utils import current_time
 
 if TYPE_CHECKING:
+    from app.api.applications.models import Application
     from app.api.citizens.models import Citizen
     from app.api.products.models import Product
 
@@ -55,6 +56,9 @@ class Group(Base):
     created_by = Column(String)
     updated_by = Column(String)
 
+    applications: Mapped[List['Application']] = relationship(
+        'Application', back_populates='group'
+    )
     leaders: Mapped[List['Citizen']] = relationship(
         'Citizen', secondary='group_leaders', backref='led_groups'
     )

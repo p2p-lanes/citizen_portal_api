@@ -80,7 +80,10 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 detail='Citizen is a leader',
             )
 
-        if group.max_members is not None and len(group.members) >= group.max_members:
+        if (
+            group.max_members is not None
+            and len(group.applications) >= group.max_members
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Group is full',
