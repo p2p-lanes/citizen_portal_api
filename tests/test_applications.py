@@ -616,3 +616,11 @@ def test_create_application_with_existing_organization(
     # Verify no new organization was created
     organizations = db_session.query(Organization).all()
     assert len(organizations) == 1
+
+
+def test_get_attendees_directory(client, auth_headers, test_application):
+    response = client.get('/applications/attendees_directory/1', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert 'pagination' in data
+    assert 'items' in data

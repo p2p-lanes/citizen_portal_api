@@ -45,7 +45,7 @@ def get_applications(
 
 @router.get(
     '/attendees_directory/{popup_city_id}',
-    response_model=list[schemas.AttendeesDirectory],
+    response_model=PaginatedResponse[schemas.AttendeesDirectory],
 )
 def get_attendees_directory(
     popup_city_id: int,
