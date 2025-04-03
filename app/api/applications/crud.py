@@ -311,8 +311,11 @@ class CRUDApplication(
         attendees = []
         _skip = 0
         _limit = 100
-        while True:
+        done = False
+        while not done:
+            done = True
             for application in self.find(db, skip=_skip, limit=_limit, filters=filters):
+                done = False
                 main_attendee = next(
                     (a for a in application.attendees if a.category == 'main')
                 )
@@ -344,9 +347,6 @@ class CRUDApplication(
                         a[f] = schemas.HIDDEN_VALUE
 
                 attendees.append(a)
-
-            if len(attendees) >= limit:
-                break
 
             _skip += _limit
 
