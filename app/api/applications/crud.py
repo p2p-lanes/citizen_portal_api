@@ -1,12 +1,13 @@
 from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException, status
+from sqlalchemy import case, desc, exists
 from sqlalchemy.orm import Session, contains_eager
 
 from app.api.applications import models, schemas
 from app.api.attendees import schemas as attendees_schemas
 from app.api.attendees.crud import attendee as attendees_crud
-from app.api.attendees.models import Attendee
+from app.api.attendees.models import Attendee, AttendeeProduct
 from app.api.base_crud import CRUDBase
 from app.api.citizens.models import Citizen as CitizenModel
 from app.api.email_logs.crud import email_log
@@ -308,22 +309,45 @@ class CRUDApplication(
         limit: int,
         user: TokenData,
     ) -> Tuple[List[dict], int]:
+        # Create the ordering expressions
+        info_not_shared_order = case(
+            (models.Application._info_not_shared.is_(None), 0),
+            (models.Application._info_not_shared.like('%brings_kids%'), 1),
+            else_=0,
+        ).label('info_not_shared_order')
+
+        # Handle nulls explicitly in the brings_kids ordering
+        brings_kids_order = case(
+            (models.Application.brings_kids.is_(None), 0),
+            (models.Application.brings_kids.is_(True), 2),
+            (models.Application.brings_kids.is_(False), 1),
+        ).label('brings_kids_order')
+
         # Query applications with main attendees that have products
         base_query = (
-            db.query(models.Application)
+            db.query(
+                models.Application,
+                info_not_shared_order,
+                brings_kids_order,
+            )
             .join(models.Application.attendees.and_(Attendee.category == 'main'))
             .options(contains_eager(models.Application.attendees.of_type(Attendee)))
-            .join(Attendee.products)  # This ensures attendees have products
-            .filter(models.Application.popup_city_id == popup_city_id)
-            .distinct()
+            .filter(
+                models.Application.popup_city_id == popup_city_id,
+                # Check if the attendee has any products using EXISTS
+                exists()
+                .where(AttendeeProduct.attendee_id == Attendee.id)
+                .correlate(Attendee),
+            )
+            .order_by(info_not_shared_order, desc(brings_kids_order))
         )
 
         total = base_query.count()
-        applications = base_query.offset(skip).limit(limit).all()
+        query_results = base_query.offset(skip).limit(limit).all()
 
         attendees = []
-        for application in applications:
-            # Since we filtered for main attendees in the join, there should be exactly one
+        for result in query_results:
+            application = result[0]  # The Application object is the first element
             main_attendee = application.attendees[0]
 
             check_in, check_out = None, None
