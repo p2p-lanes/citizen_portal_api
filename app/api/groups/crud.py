@@ -115,7 +115,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
     ) -> ApplicationWithAuth:
         try:
             group_id = int(group_id)
-            group = self.get(db, group_id, user)
+            group = self.get(db, group_id, SYSTEM_TOKEN)
         except ValueError:
             group = self.get_by_slug(db, group_id)
 
