@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.payments.crud import payment as payment_crud
 from app.api.payments import schemas
+from app.api.payments.crud import payment as payment_crud
 from app.core.database import get_db
+from app.core.logger import logger
 from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
@@ -41,4 +42,5 @@ def create_payment(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Creating payment: %s', payment)
     return payment_crud.create(db=db, obj=payment, user=current_user)

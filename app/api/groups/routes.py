@@ -8,6 +8,7 @@ from app.api.groups import schemas
 from app.api.groups.crud import group as group_crud
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.logger import logger
 from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
@@ -61,6 +62,7 @@ def new_member(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Adding new member to group %s: %s', group_id, member)
     return group_crud.add_member(
         db=db,
         group_id=group_id,

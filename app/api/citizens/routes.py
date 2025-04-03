@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.citizens import schemas
 from app.api.citizens.crud import citizen as citizen_crud
 from app.core.database import get_db
+from app.core.logger import logger
 from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
@@ -16,6 +17,7 @@ def signup(
     citizen: schemas.CitizenCreate,
     db: Session = Depends(get_db),
 ):
+    logger.info('Signing up citizen: %s', citizen)
     return citizen_crud.signup(db=db, obj=citizen)
 
 
@@ -24,6 +26,7 @@ def authenticate(
     data: schemas.Authenticate,
     db: Session = Depends(get_db),
 ):
+    logger.info('Authenticating citizen: %s', data)
     return citizen_crud.authenticate(
         db=db,
         email=data.email,
@@ -39,7 +42,9 @@ def login(
     code: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
+    logger.info('Logging in citizen: %s', email)
     if not spice and not code:
+        logger.error('Either spice or code must be provided')
         raise HTTPException(
             status_code=400, detail='Either spice or code must be provided'
         )

@@ -5,6 +5,7 @@ from app.api.attendees import schemas
 from app.api.attendees.crud import attendee as attendee_crud
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.logger import logger
 from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
@@ -17,6 +18,7 @@ def create_attendee(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    logger.info('Creating attendee: %s', attendee)
     return attendee_crud.create(db=db, obj=attendee, user=current_user)
 
 
@@ -51,6 +53,7 @@ def update_attendee(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    logger.info('Updating attendee: %s: %s', attendee_id, attendee)
     updated_attendee = attendee_crud.update(db=db, id=attendee_id, obj=attendee)
     if not updated_attendee:
         raise HTTPException(status_code=404, detail='Attendee not found')
@@ -64,6 +67,7 @@ def delete_attendee(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    logger.info('Deleting attendee: %s', attendee_id)
     result = attendee_crud.delete(db=db, id=attendee_id)
     if not result:
         raise HTTPException(status_code=404, detail='Attendee not found')

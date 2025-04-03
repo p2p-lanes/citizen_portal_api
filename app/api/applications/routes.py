@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.applications import schemas
-from app.api.attendees import schemas as attendees_schemas
 from app.api.applications.crud import application as application_crud
+from app.api.attendees import schemas as attendees_schemas
 from app.core.database import get_db
+from app.core.logger import logger
 from app.core.security import TokenData, get_current_user
 
 router = APIRouter()
@@ -20,6 +21,7 @@ def create_application(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Creating application: %s', application)
     return application_crud.create(db=db, obj=application, user=current_user)
 
 
@@ -72,6 +74,7 @@ def update_application(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Updating application: %s: %s', application_id, application)
     return application_crud.update(
         db=db,
         id=application_id,
@@ -87,6 +90,7 @@ def create_attendee(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Creating attendee: %s', attendee)
     return application_crud.create_attendee(
         db=db,
         application_id=application_id,
@@ -106,6 +110,7 @@ def update_attendee(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Updating attendee: %s: %s', attendee_id, attendee)
     return application_crud.update_attendee(
         db=db,
         application_id=application_id,
@@ -125,6 +130,7 @@ def delete_attendee(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info('Deleting attendee: %s: %s', application_id, attendee_id)
     return application_crud.delete_attendee(
         db=db,
         application_id=application_id,
