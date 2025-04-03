@@ -65,6 +65,28 @@ def test_get_group_by_id_success(client, auth_headers, test_group):
     data = response.json()
     assert data['id'] == test_group.id
     assert data['name'] == test_group.name
+    assert len(data['members']) == 0
+
+    # add a member to the group
+    new_member_data = {
+        'email': 'john.doe@example.com',
+        'first_name': 'John',
+        'last_name': 'Doe',
+    }
+    response = client.post(
+        f'/groups/{test_group.id}/new_member',
+        json=new_member_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client.get(f'/groups/{test_group.id}', headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data['id'] == test_group.id
+    assert data['name'] == test_group.name
+    assert len(data['members']) == 1
+    assert data['members'][0]['primary_email'] == new_member_data['email']
 
 
 def test_get_group_by_slug_success(client, test_group):

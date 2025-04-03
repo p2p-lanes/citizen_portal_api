@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from app.api.citizens.schemas import Citizen
+
 
 class GroupMember(BaseModel):
     first_name: str
@@ -52,6 +54,10 @@ class Group(GroupBase):
         from_attributes=True,
         populate_by_name=True,
     )
+
+
+class GroupWithApplications(Group):
+    members: List[Citizen]
 
 
 class GroupFilter(BaseModel):
