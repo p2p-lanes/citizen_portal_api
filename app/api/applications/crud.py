@@ -296,17 +296,17 @@ class CRUDApplication(
         attendees_crud.delete(db, attendee_id, user)
         return application
 
-    def get_attendees_directory(self, db: Session, popup_city_id: int, user: TokenData):
+    def get_attendees_directory(
+        self,
+        db: Session,
+        popup_city_id: int,
+        skip: int,
+        limit: int,
+        user: TokenData,
+    ):
         filters = schemas.ApplicationFilter(popup_city_id=popup_city_id)
-        skip = 0
-        limit = 100
         attendees = []
-        for application in self.find(
-            db,
-            skip=skip,
-            limit=limit,
-            filters=filters,
-        ):
+        for application in self.find(db, filters=filters):
             main_attendee = next(
                 (a for a in application.attendees if a.category == 'main')
             )
@@ -338,9 +338,8 @@ class CRUDApplication(
                     a[f] = schemas.HIDDEN_VALUE
 
             attendees.append(a)
-            skip += limit
 
-        return attendees
+        return attendees[skip : skip + limit]
 
 
 application = CRUDApplication(models.Application)
