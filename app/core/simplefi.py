@@ -27,5 +27,6 @@ def create_payment(
         json=body,
         headers={'Authorization': f'Bearer {simplefi_api_key}'},
     )
+    logger.info('Simplefi response status: %s', response.status_code)
     response.raise_for_status()
     return response.json()
