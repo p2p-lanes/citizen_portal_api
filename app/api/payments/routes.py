@@ -42,5 +42,5 @@ def create_payment(
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    logger.info('Creating payment: %s', payment)
+    logger.info('%s Creating payment: %s', current_user.email, payment)
     return payment_crud.create(db=db, obj=payment, user=current_user)
