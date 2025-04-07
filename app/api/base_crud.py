@@ -69,7 +69,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 error_detail = orig.split('DETAIL: ')[1].split('\n')[0].strip()
                 if '(' in error_detail and ')' in error_detail:
                     keys = error_detail.split('(')[1].split(')')[0]
-                    detail = f'It already exists a resource with this {keys}'
+                    resource = self.model.__name__
+                    detail = f'It already exists a {resource} with this {keys}'
             logger.error('Integrity error: %s', detail)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
