@@ -169,8 +169,8 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             ),
         )
 
-        application = applications_crud.get_by_citizen_and_popup_city(
-            db, citizen.id, group.popup_city_id
+        application = next(
+            (a for a in citizen.applications if a.group_id == group.id), None
         )
 
         self._validate_member_addition(group, citizen.id, application)
@@ -355,8 +355,8 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         self._validate_member_exists(group, citizen_id)
         citizen = citizens_crud.get(db, citizen_id, SYSTEM_TOKEN)
 
-        application = applications_crud.get_by_citizen_and_popup_city(
-            db, citizen_id, group.popup_city_id
+        application = next(
+            (a for a in citizen.applications if a.group_id == group.id), None
         )
         if application:
             if application.get_products():

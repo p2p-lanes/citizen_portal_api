@@ -104,18 +104,6 @@ class CRUDApplication(
         is_leader = db_obj.group.is_leader(user_id) if db_obj.group else False
         return user == SYSTEM_TOKEN or db_obj.citizen_id == user_id or is_leader
 
-    def get_by_citizen_and_popup_city(
-        self, db: Session, citizen_id: int, popup_city_id: int
-    ) -> Optional[models.Application]:
-        return (
-            db.query(models.Application)
-            .filter(
-                models.Application.citizen_id == citizen_id,
-                models.Application.popup_city_id == popup_city_id,
-            )
-            .first()
-        )
-
     def create(
         self,
         db: Session,
