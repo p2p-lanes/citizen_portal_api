@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -91,6 +91,28 @@ def create_member(
         db=db,
         group_id=group_id,
         member=member,
+        user=current_user,
+    )
+
+
+@router.post(
+    '/{group_id}/members/batch',
+    response_model=List[schemas.MemberBatchResult],
+    status_code=status.HTTP_207_MULTI_STATUS,
+)
+def create_members_batch(
+    group_id: int,
+    batch: schemas.GroupMemberBatch,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create multiple members in a group at once, with partial success handling"""
+    logger.info('Adding %d members to group %s', len(batch.members), group_id)
+
+    return group_crud.create_members_batch(
+        db=db,
+        group_id=group_id,
+        members=batch.members,
         user=current_user,
     )
 

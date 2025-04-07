@@ -718,3 +718,199 @@ def test_delete_member_as_regular_member(client, db_session, test_group):
     data = response.json()
     member_ids = [member['id'] for member in data['members']]
     assert member2_id in member_ids, 'Member should not have been deleted'
+
+
+def test_create_members_batch_success(client, db_session, auth_headers, test_group):
+    """Test successfully creating multiple members in a batch"""
+    batch_data = {
+        'members': [
+            {
+                'first_name': 'John',
+                'last_name': 'Doe',
+                'email': 'john.doe@example.com',
+                'telegram': '@johndoe',
+                'organization': 'Test Org',
+                'role': 'member',
+                'gender': 'male',
+            },
+            {
+                'first_name': 'Jane',
+                'last_name': 'Smith',
+                'email': 'jane.smith@example.com',
+                'telegram': '@janesmith',
+                'organization': 'Test Org',
+                'role': 'member',
+                'gender': 'female',
+            },
+        ]
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members/batch',
+        json=batch_data,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_207_MULTI_STATUS
+    data = response.json()
+    assert len(data) == 2
+
+    # Check first member
+    assert data[0]['success'] is True
+    assert data[0]['err_msg'] is None
+    assert data[0]['first_name'] == 'John'
+    assert data[0]['email'] == 'john.doe@example.com'
+    assert data[0]['id'] > 0
+
+    # Check second member
+    assert data[1]['success'] is True
+    assert data[1]['err_msg'] is None
+    assert data[1]['first_name'] == 'Jane'
+    assert data[1]['email'] == 'jane.smith@example.com'
+    assert data[1]['id'] > 0
+
+    # Verify members were added to the group
+    group = db_session.query(Group).filter(Group.id == test_group.id).first()
+    assert len(group.members) == 2
+
+
+def test_create_members_batch_partial_success(
+    client, db_session, auth_headers, test_group
+):
+    """Test batch creation with some members failing"""
+    # First create a member to test duplicate email
+    existing_member_data = {
+        'first_name': 'Existing',
+        'last_name': 'Member',
+        'email': 'existing@example.com',
+    }
+    client.post(
+        f'/groups/{test_group.id}/members',
+        json=existing_member_data,
+        headers=auth_headers,
+    )
+
+    batch_data = {
+        'members': [
+            {
+                'first_name': 'John',
+                'last_name': 'Doe',
+                'email': 'existing@example.com',  # This should fail as email exists
+                'telegram': '@johndoe',
+            },
+            {
+                'first_name': 'Jane',
+                'last_name': 'Smith',
+                'email': 'jane.smith@example.com',  # This should succeed
+                'telegram': '@janesmith',
+            },
+        ]
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members/batch',
+        json=batch_data,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_207_MULTI_STATUS
+    data = response.json()
+    assert len(data) == 2
+
+    # Check first member (should fail)
+    assert data[0]['success'] is False
+    assert data[0]['err_msg'] is not None
+    assert data[0]['id'] == 0
+
+    # Check second member (should succeed)
+    assert data[1]['success'] is True
+    assert data[1]['err_msg'] is None
+    assert data[1]['id'] > 0
+    assert data[1]['email'] == 'jane.smith@example.com'
+
+    # Verify only one new member was added
+    group = db_session.query(Group).filter(Group.id == test_group.id).first()
+    assert len(group.members) == 2  # existing member + successful new member
+
+
+def test_create_members_batch_validation(client, auth_headers, test_group):
+    """Test batch creation with invalid member data"""
+    batch_data = {
+        'members': [
+            {
+                'first_name': '',  # Empty first name should fail validation
+                'last_name': 'Doe',
+                'email': 'john.doe@example.com',
+            },
+            {
+                'first_name': 'Jane',
+                'last_name': 'Smith',
+                'email': 'invalid-email',  # Invalid email should fail validation
+            },
+        ]
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members/batch',
+        json=batch_data,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_members_batch_empty_list(client, auth_headers, test_group):
+    """Test batch creation with empty members list"""
+    batch_data = {'members': []}
+
+    response = client.post(
+        f'/groups/{test_group.id}/members/batch',
+        json=batch_data,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_members_batch_unauthorized(client, test_group):
+    """Test batch creation without authentication"""
+    batch_data = {
+        'members': [
+            {
+                'first_name': 'John',
+                'last_name': 'Doe',
+                'email': 'john.doe@example.com',
+            }
+        ]
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members/batch',
+        json=batch_data,
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_create_members_batch_forbidden(client, create_test_citizen, test_group):
+    """Test batch creation by non-leader user"""
+    non_leader = create_test_citizen(2)
+    headers = get_auth_headers_for_citizen(non_leader.id)
+
+    batch_data = {
+        'members': [
+            {
+                'first_name': 'John',
+                'last_name': 'Doe',
+                'email': 'john.doe@example.com',
+            }
+        ]
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members/batch',
+        json=batch_data,
+        headers=headers,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN

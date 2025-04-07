@@ -72,7 +72,10 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         """Validate if a citizen can be added to a group"""
         members_ids = [member.id for member in group.members]
         if citizen_id in members_ids:
-            return
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Citizen is already a member',
+            )
 
         leaders_ids = [leader.id for leader in group.leaders]
         if citizen_id in leaders_ids:
@@ -81,13 +84,18 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 detail='Citizen is a leader',
             )
 
-        if (
-            group.max_members is not None
-            and len(group.applications) >= group.max_members
-        ):
+        if group.max_members is not None and len(group.members) >= group.max_members:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Group is full',
+            )
+
+        # Check for duplicate email in the group
+        member_emails = [member.primary_email for member in group.members]
+        if application and application.email in member_emails:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Email is already in use in this group',
             )
 
         # if application and application.group_id:
@@ -221,6 +229,58 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             role=application.role,
             gender=application.gender,
         )
+
+    def create_members_batch(
+        self,
+        db: Session,
+        group_id: int,
+        members: List[schemas.GroupMember],
+        user: TokenData,
+    ) -> List[schemas.MemberBatchResult]:
+        """Create multiple members in a group at once, handling partial success"""
+        results = []
+
+        for member in members:
+            try:
+                created_member = self.create_member(db, group_id, member, user)
+                # Convert MemberWithProducts to MemberBatchResult
+                result = schemas.MemberBatchResult(
+                    **created_member.model_dump(), success=True, err_msg=None
+                )
+                results.append(result)
+                db.commit()
+            except HTTPException as e:
+                if e.status_code == status.HTTP_403_FORBIDDEN:
+                    logger.warning(
+                        'User %s does not have permission to add member %s to group %s',
+                        user.citizen_id,
+                        member.email,
+                        group_id,
+                    )
+                    db.rollback()
+                    raise e
+
+                # Create error result for this member
+                result = schemas.MemberBatchResult(
+                    id=0,  # Use 0 as a placeholder for failed creation
+                    products=[],
+                    success=False,
+                    err_msg=str(e.detail),
+                    **member.model_dump(),
+                )
+                results.append(result)
+                db.rollback()  # Rollback only this member's transaction
+            except Exception as e:
+                db.rollback()  # Rollback only this member's transaction
+                logger.error(
+                    'Error creating member %s: %s',
+                    member.email,
+                    str(e),
+                    exc_info=True,
+                )
+                raise e
+
+        return results
 
     def _validate_member_exists(
         self,

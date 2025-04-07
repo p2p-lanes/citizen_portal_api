@@ -53,9 +53,25 @@ class GroupMemberUpdate(BaseModel, GroupMemberValidatorMixin):
     gender: Optional[str] = None
 
 
+class GroupMemberBatch(BaseModel):
+    members: List[GroupMember]
+
+    @field_validator('members')
+    @classmethod
+    def validate_members_list(cls, value: List[GroupMember]) -> List[GroupMember]:
+        if not value:
+            raise ValueError('Members list cannot be empty')
+        return value
+
+
 class MemberWithProducts(GroupMember):
     id: int
     products: List[Product]
+
+
+class MemberBatchResult(MemberWithProducts):
+    success: bool
+    err_msg: Optional[str] = None
 
 
 class GroupBase(BaseModel):
