@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import case, desc, exists
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, contains_eager
 
 from app.api.applications import models, schemas
@@ -368,6 +369,37 @@ class CRUDApplication(
             attendees.append(a)
 
         return attendees, total
+
+    def delete(self, db: Session, id: int, user: TokenData) -> models.Application:
+        """Delete a record."""
+        try:
+            application = self.get(db, id, user)  # This will raise 404 if not found
+
+            # Check if any attendees have associated payments
+            for attendee in application.attendees:
+                if attendee.payment_products:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail='Cannot delete application because it has attendees with payment history',
+                    )
+
+            # First delete all AttendeeProduct records
+            for attendee in application.attendees:
+                db.query(AttendeeProduct).filter(
+                    AttendeeProduct.attendee_id == attendee.id
+                ).delete(synchronize_session=False)
+
+            db.delete(application)
+            db.commit()
+            return application
+
+        except IntegrityError as e:
+            db.rollback()
+            logger.error('IntegrityError in delete: %s', e)
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='Cannot delete this application because it is referenced by other records',
+            )
 
 
 application = CRUDApplication(models.Application)

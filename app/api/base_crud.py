@@ -162,7 +162,4 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     detail='Cannot delete this record because it is referenced by other records',
                 )
 
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Database integrity error occurred',
-            )
+            raise e

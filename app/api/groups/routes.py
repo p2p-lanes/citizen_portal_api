@@ -114,6 +114,7 @@ def create_members_batch(
         group_id=group_id,
         members=batch.members,
         user=current_user,
+        update_existing=batch.update_existing,
     )
 
 

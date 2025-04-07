@@ -102,7 +102,7 @@ class Application(Base):
         'Payment', back_populates='application'
     )
     attendees: Mapped[List['Attendee']] = relationship(
-        'Attendee', back_populates='application'
+        'Attendee', back_populates='application', cascade='all, delete-orphan'
     )
 
     citizen_id = Column(Integer, ForeignKey('humans.id'), nullable=False)

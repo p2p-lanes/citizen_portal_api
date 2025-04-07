@@ -68,10 +68,11 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group: models.Group,
         citizen_id: int,
         application: Optional[Application] = None,
+        update_existing: bool = False,
     ) -> None:
         """Validate if a citizen can be added to a group"""
         members_ids = [member.id for member in group.members]
-        if citizen_id in members_ids:
+        if not update_existing and citizen_id in members_ids:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Citizen is already a member',
@@ -153,6 +154,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: Union[int, str],
         member: schemas.GroupMember,
         user: TokenData,
+        update_existing: bool = False,
     ) -> ApplicationModel:
         try:
             group_id = int(group_id)
@@ -174,7 +176,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
 
         application = citizen.get_application(group.popup_city_id)
 
-        self._validate_member_addition(group, citizen.id, application)
+        self._validate_member_addition(group, citizen.id, application, update_existing)
 
         if not application:
             new_application = ApplicationCreate(
@@ -218,8 +220,9 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: int,
         member: schemas.GroupMember,
         user: TokenData,
+        update_existing: bool = False,
     ) -> schemas.MemberWithProducts:
-        application = self.add_member(db, group_id, member, user)
+        application = self.add_member(db, group_id, member, user, update_existing)
         return schemas.MemberWithProducts(
             id=application.citizen_id,
             products=application.get_products(),
@@ -238,13 +241,16 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: int,
         members: List[schemas.GroupMember],
         user: TokenData,
+        update_existing: bool = False,
     ) -> List[schemas.MemberBatchResult]:
         """Create multiple members in a group at once, handling partial success"""
         results = []
 
         for member in members:
             try:
-                created_member = self.create_member(db, group_id, member, user)
+                created_member = self.create_member(
+                    db, group_id, member, user, update_existing
+                )
                 # Convert MemberWithProducts to MemberBatchResult
                 result = schemas.MemberBatchResult(
                     **created_member.model_dump(), success=True, err_msg=None

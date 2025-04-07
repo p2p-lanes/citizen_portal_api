@@ -55,6 +55,7 @@ class GroupMemberUpdate(BaseModel, GroupMemberValidatorMixin):
 
 class GroupMemberBatch(BaseModel):
     members: List[GroupMember]
+    update_existing: bool = False
 
     @field_validator('members')
     @classmethod
