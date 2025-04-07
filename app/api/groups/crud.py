@@ -172,10 +172,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             ),
         )
 
-        application = next(
-            (a for a in citizen.applications if a.popup_city_id == group.popup_city_id),
-            None,
-        )
+        application = citizen.get_application(group.popup_city_id)
 
         self._validate_member_addition(group, citizen.id, application)
 

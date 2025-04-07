@@ -119,9 +119,11 @@ class CRUDApplication(
             raise HTTPException(status_code=404, detail='Citizen not found')
 
         group = None
+        created_by_leader = False
         if obj.group_id:
             group = groups_crud.get(db, obj.group_id, user)
-            if user != SYSTEM_TOKEN and not group.is_leader(user.citizen_id):
+            created_by_leader = group.is_leader(user.citizen_id)
+            if user != SYSTEM_TOKEN and not created_by_leader:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail='Not authorized to create application for another citizen',
@@ -147,6 +149,7 @@ class CRUDApplication(
             **obj.model_dump(),
             email=email,
             submitted_at=submitted_at,
+            created_by_leader=created_by_leader,
         )
 
         if obj.status != schemas.ApplicationStatus.DRAFT and not group:
