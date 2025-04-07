@@ -1,15 +1,15 @@
 from typing import Union
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.applications.schemas import ApplicationWithAuth
+from app.api.applications.schemas import Application, ApplicationWithAuth
 from app.api.groups import schemas
 from app.api.groups.crud import group as group_crud
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.logger import logger
-from app.core.security import TokenData, get_current_user
+from app.core.security import SYSTEM_TOKEN, TokenData, get_current_user
 
 router = APIRouter()
 
@@ -67,5 +67,64 @@ def new_member(
         db=db,
         group_id=group_id,
         member=member,
+        user=SYSTEM_TOKEN,
+    )
+
+
+@router.post(
+    '/{group_id}/members',
+    response_model=Application,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_member(
+    group_id: int,
+    member: schemas.GroupMember,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    logger.info('Adding new member to group %s: %s', group_id, member)
+    return group_crud.add_member(
+        db=db,
+        group_id=group_id,
+        member=member,
+        user=current_user,
+    )
+
+
+@router.put(
+    '/{group_id}/members/{citizen_id}',
+    response_model=Application,
+    status_code=status.HTTP_200_OK,
+)
+def update_member(
+    group_id: int,
+    citizen_id: int,
+    member: schemas.GroupMemberUpdate,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return group_crud.update_member(
+        db=db,
+        group_id=group_id,
+        citizen_id=citizen_id,
+        member=member,
+        user=current_user,
+    )
+
+
+@router.delete(
+    '/{group_id}/members/{citizen_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_member(
+    group_id: int,
+    citizen_id: int,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return group_crud.remove_member(
+        db=db,
+        group_id=group_id,
+        citizen_id=citizen_id,
         user=current_user,
     )

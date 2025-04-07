@@ -6,7 +6,25 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from app.api.applications.schemas import Application
 
 
-class GroupMember(BaseModel):
+class GroupMemberValidatorMixin:
+    """Mixin class for shared group member validators"""
+
+    @field_validator('telegram', 'organization', 'role', 'gender')
+    @classmethod
+    def validate_optional_fields(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value:
+            raise ValueError('This field cannot be empty if provided')
+        return value
+
+    @field_validator('email')
+    @classmethod
+    def clean_email(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            return value.lower()
+        return value
+
+
+class GroupMember(BaseModel, GroupMemberValidatorMixin):
     first_name: str
     last_name: str
     email: str
@@ -16,22 +34,23 @@ class GroupMember(BaseModel):
     gender: Optional[str] = None
 
     @field_validator('first_name', 'last_name', 'email')
+    @classmethod
     def validate_required_fields(cls, value: str) -> str:
         if not value:
             raise ValueError('This field cannot be empty')
         return value
 
-    @field_validator('telegram', 'organization', 'role', 'gender')
-    def validate_optional_fields(cls, value: Optional[str]) -> Optional[str]:
-        if value is not None and not value:
-            raise ValueError('This field cannot be empty if provided')
-        return value
-
-    @field_validator('email')
-    def clean_email(cls, value: str) -> str:
-        return value.lower()
-
     model_config = ConfigDict(str_strip_whitespace=True)
+
+
+class GroupMemberUpdate(BaseModel, GroupMemberValidatorMixin):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    telegram: Optional[str] = None
+    organization: Optional[str] = None
+    role: Optional[str] = None
+    gender: Optional[str] = None
 
 
 class GroupBase(BaseModel):

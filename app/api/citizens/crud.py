@@ -10,7 +10,7 @@ from app.api.citizens import models, schemas
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
 from app.core.logger import logger
-from app.core.security import TokenData
+from app.core.security import SYSTEM_TOKEN, TokenData
 from app.core.utils import create_spice, current_time
 
 
@@ -18,7 +18,7 @@ class CRUDCitizen(
     CRUDBase[models.Citizen, schemas.CitizenCreate, schemas.CitizenCreate]
 ):
     def _check_permission(self, db_obj: models.Citizen, user: TokenData) -> bool:
-        return db_obj.id == user.citizen_id
+        return user == SYSTEM_TOKEN or db_obj.id == user.citizen_id
 
     def find(
         self,

@@ -332,3 +332,369 @@ def test_add_new_member_nonexistent_group(client, auth_headers):
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()['detail'] == 'Group not found'
+
+
+def test_create_member_success(client, db_session, auth_headers, test_group):
+    """Test successfully creating a new member in a group"""
+    # Verify the user is actually a leader of the group
+    leader = (
+        db_session.query(GroupLeader)
+        .filter(
+            GroupLeader.group_id == test_group.id,
+            GroupLeader.citizen_id == test_group.leaders[0].id,
+        )
+        .first()
+    )
+    assert leader is not None, 'Test user should be a leader of the group'
+    leader_headers = get_auth_headers_for_citizen(leader.citizen_id)
+
+    member_data = {
+        'first_name': 'Jane',
+        'last_name': 'Smith',
+        'email': 'jane.smith@example.com',
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member_data,
+        headers=leader_headers,
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    assert data['group_id'] == test_group.id
+    assert data['email'] == member_data['email']
+    assert data['first_name'] == member_data['first_name']
+    assert data['last_name'] == member_data['last_name']
+
+
+def test_create_member_as_regular_member(client, db_session, test_group):
+    """Test that a regular member (non-leader) can't create new members"""
+    # First create a regular member
+    member_data = {
+        'first_name': 'Regular',
+        'last_name': 'Member',
+        'email': 'regular.member@example.com',
+    }
+
+    # Add member using the leader's auth
+    leader_headers = get_auth_headers_for_citizen(test_group.leaders[0].id)
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member_data,
+        headers=leader_headers,
+    )
+    created_member = create_response.json()
+
+    # Verify the member exists but is not a leader
+    member_headers = get_auth_headers_for_citizen(created_member['citizen_id'])
+    leader = (
+        db_session.query(GroupLeader)
+        .filter(
+            GroupLeader.group_id == test_group.id,
+            GroupLeader.citizen_id == created_member['citizen_id'],
+        )
+        .first()
+    )
+    assert leader is None, 'Regular member should not be a leader'
+
+    # Try to create another member as a regular member
+    new_member_data = {
+        'first_name': 'Another',
+        'last_name': 'Member',
+        'email': 'another.member@example.com',
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=new_member_data,
+        headers=member_headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_create_member_unauthorized(client, test_group):
+    """Test creating a member without authentication"""
+    member_data = {
+        'first_name': 'Jane',
+        'last_name': 'Smith',
+        'email': 'jane.smith@example.com',
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member_data,
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_create_member_forbidden(client, create_test_citizen, test_group):
+    """Test that non-leaders can't create members"""
+    non_leader = create_test_citizen(2)
+    headers = get_auth_headers_for_citizen(non_leader.id)
+
+    member_data = {
+        'first_name': 'Jane',
+        'last_name': 'Smith',
+        'email': 'jane.smith@example.com',
+    }
+
+    response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member_data,
+        headers=headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_update_member_success(client, db_session, auth_headers, test_group):
+    """Test successfully updating a member in a group"""
+    # Verify the user is actually a leader of the group
+    leader = (
+        db_session.query(GroupLeader)
+        .filter(
+            GroupLeader.group_id == test_group.id,
+            GroupLeader.citizen_id == test_group.leaders[0].id,
+        )
+        .first()
+    )
+    assert leader is not None, 'Test user should be a leader of the group'
+    leader_headers = get_auth_headers_for_citizen(leader.citizen_id)
+
+    # First create a member
+    member_data = {
+        'first_name': 'Jane',
+        'last_name': 'Smith',
+        'email': 'jane.smith@example.com',
+    }
+
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member_data,
+        headers=leader_headers,
+    )
+    created_member = create_response.json()
+    citizen_id = created_member['citizen_id']
+
+    # Now update the member
+    updated_data = {
+        'first_name': 'Jane Updated',
+        'last_name': 'Smith Updated',
+        'email': 'jane.updated@example.com',
+    }
+
+    response = client.put(
+        f'/groups/{test_group.id}/members/{citizen_id}',
+        json=updated_data,
+        headers=leader_headers,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data['group_id'] == test_group.id
+    assert data['email'] == updated_data['email']
+    assert data['first_name'] == updated_data['first_name']
+    assert data['last_name'] == updated_data['last_name']
+
+
+def test_update_member_unauthorized(client, test_group):
+    """Test updating a member without authentication"""
+    response = client.put(
+        f'/groups/{test_group.id}/members/1',
+        json={'first_name': 'Test'},
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_update_member_forbidden(client, create_test_citizen, test_group):
+    """Test that non-leaders can't update members"""
+    non_leader = create_test_citizen(2)
+    headers = get_auth_headers_for_citizen(non_leader.id)
+
+    member_data = {
+        'first_name': 'Test',
+        'last_name': 'User',
+        'email': 'test.user@example.com',
+        'role': 'member',
+        'organization': 'Test Org',
+        'gender': 'other',
+        'telegram': '@testuser',
+    }
+
+    response = client.put(
+        f'/groups/{test_group.id}/members/1',
+        json=member_data,
+        headers=headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_update_member_as_regular_member(client, db_session, test_group):
+    """Test that a regular member (non-leader) can't update other members"""
+    # First create two regular members using the leader's auth
+    leader_headers = get_auth_headers_for_citizen(test_group.leaders[0].id)
+
+    # Create first member
+    member1_data = {
+        'first_name': 'Regular',
+        'last_name': 'Member',
+        'email': 'regular.member@example.com',
+    }
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member1_data,
+        headers=leader_headers,
+    )
+    member1 = create_response.json()
+
+    # Create second member
+    member2_data = {
+        'first_name': 'Another',
+        'last_name': 'Member',
+        'email': 'another.member@example.com',
+    }
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member2_data,
+        headers=leader_headers,
+    )
+    member2 = create_response.json()
+
+    # Verify the first member exists but is not a leader
+    member1_headers = get_auth_headers_for_citizen(member1['citizen_id'])
+    leader = (
+        db_session.query(GroupLeader)
+        .filter(
+            GroupLeader.group_id == test_group.id,
+            GroupLeader.citizen_id == member1['citizen_id'],
+        )
+        .first()
+    )
+    assert leader is None, 'Regular member should not be a leader'
+
+    # Try to update the second member as a regular member
+    update_data = {
+        'first_name': 'Updated',
+        'last_name': 'Name',
+        'email': 'updated.email@example.com',
+    }
+
+    response = client.put(
+        f'/groups/{test_group.id}/members/{member2["citizen_id"]}',
+        json=update_data,
+        headers=member1_headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_delete_member_success(client, db_session, auth_headers, test_group):
+    """Test successfully deleting a member from a group"""
+    # Verify the user is actually a leader of the group
+    leader = (
+        db_session.query(GroupLeader)
+        .filter(
+            GroupLeader.group_id == test_group.id,
+            GroupLeader.citizen_id == test_group.leaders[0].id,
+        )
+        .first()
+    )
+    assert leader is not None, 'Test user should be a leader of the group'
+
+    # First create a member
+    member_data = {
+        'first_name': 'Jane',
+        'last_name': 'Smith',
+        'email': 'jane.smith@example.com',
+    }
+
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member_data,
+        headers=auth_headers,
+    )
+    created_member = create_response.json()
+    citizen_id = created_member['citizen_id']
+
+    # Now delete the member
+    response = client.delete(
+        f'/groups/{test_group.id}/members/{citizen_id}',
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_delete_member_unauthorized(client, test_group):
+    """Test deleting a member without authentication"""
+    response = client.delete(f'/groups/{test_group.id}/members/1')
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_delete_member_forbidden(client, create_test_citizen, test_group):
+    """Test that non-leaders can't delete members"""
+    non_leader = create_test_citizen(2)
+    headers = get_auth_headers_for_citizen(non_leader.id)
+
+    response = client.delete(
+        f'/groups/{test_group.id}/members/1',
+        headers=headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_delete_member_as_regular_member(client, db_session, test_group):
+    """Test that a regular member (non-leader) can't delete other members"""
+    # First create two regular members using the leader's auth
+    leader_headers = get_auth_headers_for_citizen(test_group.leaders[0].id)
+
+    # Create first member
+    member1_data = {
+        'first_name': 'Regular',
+        'last_name': 'Member',
+        'email': 'regular.member@example.com',
+    }
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member1_data,
+        headers=leader_headers,
+    )
+    member1 = create_response.json()
+
+    # Create second member
+    member2_data = {
+        'first_name': 'Another',
+        'last_name': 'Member',
+        'email': 'another.member@example.com',
+    }
+    create_response = client.post(
+        f'/groups/{test_group.id}/members',
+        json=member2_data,
+        headers=leader_headers,
+    )
+    member2 = create_response.json()
+
+    # Verify the first member exists but is not a leader
+    member1_headers = get_auth_headers_for_citizen(member1['citizen_id'])
+    leader = (
+        db_session.query(GroupLeader)
+        .filter(
+            GroupLeader.group_id == test_group.id,
+            GroupLeader.citizen_id == member1['citizen_id'],
+        )
+        .first()
+    )
+    assert leader is None, 'Regular member should not be a leader'
+
+    # Try to delete the second member as a regular member
+    response = client.delete(
+        f'/groups/{test_group.id}/members/{member2["citizen_id"]}',
+        headers=member1_headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # Verify the second member still exists
+    response = client.get(f'/groups/{test_group.id}', headers=leader_headers)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    member_ids = [member['citizen_id'] for member in data['members']]
+    assert member2['citizen_id'] in member_ids, 'Member should not have been deleted'

@@ -134,7 +134,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
     ) -> ApplicationWithAuth:
         try:
             group_id = int(group_id)
-            group = self.get(db, group_id, SYSTEM_TOKEN)
+            group = self.get(db, group_id, user)
         except ValueError:
             group = self.get_by_slug(db, group_id)
 
@@ -166,7 +166,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 telegram=member.telegram,
             )
             logger.info('Application not found, creating: %s', new_application)
-            application = applications_crud.create(db, new_application, SYSTEM_TOKEN)
+            application = applications_crud.create(db, new_application, user)
         else:
             logger.info('Application found, updating: %s', application.id)
             application.group_id = group.id
@@ -193,6 +193,61 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             authorization=citizen.get_authorization(),
         )
 
+    def _validate_member_exists(
+        self,
+        group: models.Group,
+        citizen_id: int,
+    ) -> None:
+        """Validate that a citizen is a member of the group"""
+        if citizen_id not in [m.id for m in group.members]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Member not found in group',
+            )
+
+    def update_member(
+        self,
+        db: Session,
+        group_id: int,
+        citizen_id: int,
+        member: schemas.GroupMember,
+        user: TokenData,
+    ) -> Application:
+        """Update a member's information in a group"""
+        group = self.get(db, group_id, user)
+
+        self._validate_member_exists(group, citizen_id)
+
+        citizen = citizens_crud.get(db, citizen_id, SYSTEM_TOKEN)
+        citizen.first_name = member.first_name
+        citizen.last_name = member.last_name
+        citizen.primary_email = member.email
+
+        application = next(
+            (a for a in citizen.applications if a.group_id == group_id), None
+        )
+
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Application not found',
+            )
+
+        application.first_name = member.first_name
+        application.last_name = member.last_name
+        application.email = member.email
+        application.role = member.role
+        application.organization = member.organization
+        application.gender = member.gender
+        application.telegram = member.telegram
+        application.submitted_at = current_time()
+
+        db.commit()
+        db.refresh(citizen)
+        db.refresh(application)
+
+        return Application.model_validate(application)
+
     def remove_member(
         self,
         db: Session,
@@ -201,6 +256,10 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         user: TokenData,
     ):
         group = self.get(db, group_id, user)
+
+        self._validate_member_exists(group, citizen_id)
+        citizen = citizens_crud.get(db, citizen_id, SYSTEM_TOKEN)
+
         application = applications_crud.get_by_citizen_and_popup_city(
             db, citizen_id, group.popup_city_id
         )
@@ -218,7 +277,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 db.commit()
                 db.refresh(application)
 
-        group.members.remove(citizen_id)
+        group.members.remove(citizen)
         db.commit()
         db.refresh(group)
         return group
