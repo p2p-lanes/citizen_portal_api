@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from app.api.organizations.models import Organization
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity
+    from app.api.products.models import Product
 
 
 class Application(Base):
@@ -177,3 +178,6 @@ class Application(Base):
         self.tela_review = None
         self.sophie_review = None
         self.devon_review = None
+
+    def get_products(self) -> List['Product']:
+        return [product for attendee in self.attendees for product in attendee.products]

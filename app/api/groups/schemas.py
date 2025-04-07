@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.api.applications.schemas import Application
+from app.api.products.schemas import Product
 
 
 class GroupMemberValidatorMixin:
@@ -53,6 +53,11 @@ class GroupMemberUpdate(BaseModel, GroupMemberValidatorMixin):
     gender: Optional[str] = None
 
 
+class MemberWithProducts(GroupMember):
+    id: int
+    products: List[Product]
+
+
 class GroupBase(BaseModel):
     name: str
     slug: str
@@ -76,7 +81,7 @@ class Group(GroupBase):
 
 
 class GroupWithMembers(Group):
-    members: List[Application]
+    members: List[MemberWithProducts]
 
 
 class GroupFilter(BaseModel):

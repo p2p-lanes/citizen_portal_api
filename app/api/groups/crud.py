@@ -4,11 +4,11 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.applications.crud import application as applications_crud
+from app.api.applications.models import Application as ApplicationModel
 from app.api.applications.schemas import (
     Application,
     ApplicationCreate,
     ApplicationStatus,
-    ApplicationWithAuth,
 )
 from app.api.base_crud import CRUDBase
 from app.api.citizens.crud import citizen as citizens_crud
@@ -116,9 +116,23 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group = super().get(db, id, user)
         members = []
         for member in group.members:
-            # products = member.get_products(group.popup_city_id)
             application = member.get_application(group.popup_city_id)
-            members.append(Application.model_validate(application).model_dump())
+            products = []
+            for attendee in application.attendees:
+                products.extend(attendee.products)
+
+            group_member = schemas.MemberWithProducts(
+                id=member.id,
+                first_name=application.first_name,
+                last_name=application.last_name,
+                email=application.email,
+                telegram=application.telegram,
+                organization=application.organization,
+                role=application.role,
+                gender=application.gender,
+                products=products,
+            )
+            members.append(group_member)
 
         return schemas.GroupWithMembers(
             **schemas.Group.model_validate(group).model_dump(),
@@ -131,7 +145,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         group_id: Union[int, str],
         member: schemas.GroupMember,
         user: TokenData,
-    ) -> ApplicationWithAuth:
+    ) -> ApplicationModel:
         try:
             group_id = int(group_id)
             group = self.get(db, group_id, user)
@@ -186,11 +200,26 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         db.commit()
         db.refresh(group)
         db.refresh(application)
+        return application
 
-        app = Application.model_validate(application)
-        return ApplicationWithAuth(
-            **app.model_dump(),
-            authorization=citizen.get_authorization(),
+    def create_member(
+        self,
+        db: Session,
+        group_id: int,
+        member: schemas.GroupMember,
+        user: TokenData,
+    ) -> schemas.MemberWithProducts:
+        application = self.add_member(db, group_id, member, user)
+        return schemas.MemberWithProducts(
+            id=application.citizen_id,
+            products=application.get_products(),
+            first_name=application.first_name,
+            last_name=application.last_name,
+            email=application.email,
+            telegram=application.telegram,
+            organization=application.organization,
+            role=application.role,
+            gender=application.gender,
         )
 
     def _validate_member_exists(
@@ -212,7 +241,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         citizen_id: int,
         member: schemas.GroupMember,
         user: TokenData,
-    ) -> Application:
+    ) -> schemas.MemberWithProducts:
         """Update a member's information in a group"""
         group = self.get(db, group_id, user)
 
@@ -246,7 +275,13 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         db.refresh(citizen)
         db.refresh(application)
 
-        return Application.model_validate(application)
+        return schemas.MemberWithProducts(
+            id=citizen.id,
+            products=application.get_products(),
+            first_name=application.first_name,
+            last_name=application.last_name,
+            email=application.email,
+        )
 
     def remove_member(
         self,

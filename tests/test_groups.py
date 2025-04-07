@@ -58,7 +58,7 @@ def test_get_groups_empty_for_non_leader(client, create_test_citizen, test_group
     assert len(data) == 0
 
 
-def test_get_group_by_id_success(client, auth_headers, test_group):
+def test_get_group_by_id_success(client, auth_headers, test_group, db_session):
     """Test getting a specific group by ID"""
     response = client.get(f'/groups/{test_group.id}', headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
@@ -86,10 +86,17 @@ def test_get_group_by_id_success(client, auth_headers, test_group):
     assert data['id'] == test_group.id
     assert len(data['members']) == 1
     assert data['name'] == test_group.name
-    assert data['members'][0]['status'] == ApplicationStatus.ACCEPTED
-    assert data['members'][0]['group_id'] == test_group.id
-    assert data['members'][0]['email'] == new_member_data['email']
     assert 'products' in data['members'][0]
+    assert data['members'][0]['email'] == new_member_data['email']
+
+    citizen_id = data['members'][0]['id']
+    citizen = db_session.query(Citizen).filter(Citizen.id == citizen_id).first()
+    assert citizen is not None
+    assert citizen.primary_email == new_member_data['email']
+    assert citizen.first_name == new_member_data['first_name']
+    assert citizen.last_name == new_member_data['last_name']
+    assert citizen.applications[0].status == ApplicationStatus.ACCEPTED
+    assert citizen.applications[0].group_id == test_group.id
 
 
 def test_get_group_by_slug_success(client, test_group):
@@ -362,10 +369,14 @@ def test_create_member_success(client, db_session, auth_headers, test_group):
 
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
-    assert data['group_id'] == test_group.id
     assert data['email'] == member_data['email']
     assert data['first_name'] == member_data['first_name']
     assert data['last_name'] == member_data['last_name']
+
+    group = db_session.query(Group).filter(Group.id == test_group.id).first()
+    assert group is not None
+    assert len(group.members) == 1
+    assert group.members[0].id == data['id']
 
 
 def test_create_member_as_regular_member(client, db_session, test_group):
@@ -385,14 +396,15 @@ def test_create_member_as_regular_member(client, db_session, test_group):
         headers=leader_headers,
     )
     created_member = create_response.json()
+    member_id = created_member['id']
 
     # Verify the member exists but is not a leader
-    member_headers = get_auth_headers_for_citizen(created_member['citizen_id'])
+    member_headers = get_auth_headers_for_citizen(member_id)
     leader = (
         db_session.query(GroupLeader)
         .filter(
             GroupLeader.group_id == test_group.id,
-            GroupLeader.citizen_id == created_member['citizen_id'],
+            GroupLeader.citizen_id == member_id,
         )
         .first()
     )
@@ -474,7 +486,7 @@ def test_update_member_success(client, db_session, auth_headers, test_group):
         headers=leader_headers,
     )
     created_member = create_response.json()
-    citizen_id = created_member['citizen_id']
+    citizen_id = created_member['id']
 
     # Now update the member
     updated_data = {
@@ -491,10 +503,14 @@ def test_update_member_success(client, db_session, auth_headers, test_group):
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data['group_id'] == test_group.id
     assert data['email'] == updated_data['email']
     assert data['first_name'] == updated_data['first_name']
     assert data['last_name'] == updated_data['last_name']
+
+    group = db_session.query(Group).filter(Group.id == test_group.id).first()
+    assert group is not None
+    assert len(group.members) == 1
+    assert group.members[0].id == citizen_id
 
 
 def test_update_member_unauthorized(client, test_group):
@@ -561,12 +577,12 @@ def test_update_member_as_regular_member(client, db_session, test_group):
     member2 = create_response.json()
 
     # Verify the first member exists but is not a leader
-    member1_headers = get_auth_headers_for_citizen(member1['citizen_id'])
+    member1_headers = get_auth_headers_for_citizen(member1['id'])
     leader = (
         db_session.query(GroupLeader)
         .filter(
             GroupLeader.group_id == test_group.id,
-            GroupLeader.citizen_id == member1['citizen_id'],
+            GroupLeader.citizen_id == member1['id'],
         )
         .first()
     )
@@ -580,7 +596,7 @@ def test_update_member_as_regular_member(client, db_session, test_group):
     }
 
     response = client.put(
-        f'/groups/{test_group.id}/members/{member2["citizen_id"]}',
+        f'/groups/{test_group.id}/members/{member2["id"]}',
         json=update_data,
         headers=member1_headers,
     )
@@ -613,7 +629,7 @@ def test_delete_member_success(client, db_session, auth_headers, test_group):
         headers=auth_headers,
     )
     created_member = create_response.json()
-    citizen_id = created_member['citizen_id']
+    citizen_id = created_member['id']
 
     # Now delete the member
     response = client.delete(
@@ -658,7 +674,9 @@ def test_delete_member_as_regular_member(client, db_session, test_group):
         json=member1_data,
         headers=leader_headers,
     )
+    assert create_response.status_code == status.HTTP_201_CREATED
     member1 = create_response.json()
+    member1_id = member1['id']
 
     # Create second member
     member2_data = {
@@ -671,15 +689,17 @@ def test_delete_member_as_regular_member(client, db_session, test_group):
         json=member2_data,
         headers=leader_headers,
     )
+    assert create_response.status_code == status.HTTP_201_CREATED
     member2 = create_response.json()
+    member2_id = member2['id']
 
     # Verify the first member exists but is not a leader
-    member1_headers = get_auth_headers_for_citizen(member1['citizen_id'])
+    member1_headers = get_auth_headers_for_citizen(member1_id)
     leader = (
         db_session.query(GroupLeader)
         .filter(
             GroupLeader.group_id == test_group.id,
-            GroupLeader.citizen_id == member1['citizen_id'],
+            GroupLeader.citizen_id == member1_id,
         )
         .first()
     )
@@ -687,7 +707,7 @@ def test_delete_member_as_regular_member(client, db_session, test_group):
 
     # Try to delete the second member as a regular member
     response = client.delete(
-        f'/groups/{test_group.id}/members/{member2["citizen_id"]}',
+        f'/groups/{test_group.id}/members/{member2_id}',
         headers=member1_headers,
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -696,5 +716,5 @@ def test_delete_member_as_regular_member(client, db_session, test_group):
     response = client.get(f'/groups/{test_group.id}', headers=leader_headers)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    member_ids = [member['citizen_id'] for member in data['members']]
-    assert member2['citizen_id'] in member_ids, 'Member should not have been deleted'
+    member_ids = [member['id'] for member in data['members']]
+    assert member2_id in member_ids, 'Member should not have been deleted'
