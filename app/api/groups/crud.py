@@ -299,12 +299,11 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             db, citizen_id, group.popup_city_id
         )
         if application:
-            for payment in application.payments:
-                if payment.group_id == group.id and payment.status == 'approved':
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail='Cannot remove member with existing group payments',
-                    )
+            if application.get_products():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Cannot remove member with products',
+                )
             if application.created_by_leader:
                 applications_crud.delete(db, application.id, user)
             else:
