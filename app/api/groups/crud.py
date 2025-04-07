@@ -173,7 +173,8 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         )
 
         application = next(
-            (a for a in citizen.applications if a.group_id == group.id), None
+            (a for a in citizen.applications if a.popup_city_id == group.popup_city_id),
+            None,
         )
 
         self._validate_member_addition(group, citizen.id, application)
@@ -316,9 +317,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         citizen.last_name = member.last_name
         citizen.primary_email = member.email
 
-        application = next(
-            (a for a in citizen.applications if a.group_id == group_id), None
-        )
+        application = citizen.get_application(group.popup_city_id)
 
         if not application:
             raise HTTPException(
@@ -359,9 +358,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         self._validate_member_exists(group, citizen_id)
         citizen = citizens_crud.get(db, citizen_id, SYSTEM_TOKEN)
 
-        application = next(
-            (a for a in citizen.applications if a.group_id == group.id), None
-        )
+        application = citizen.get_application(group.popup_city_id)
         if application:
             if application.get_products():
                 raise HTTPException(
