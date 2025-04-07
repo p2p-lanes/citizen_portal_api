@@ -300,7 +300,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         )
         if application:
             for payment in application.payments:
-                if payment.group_id == group.id:
+                if payment.group_id == group.id and payment.status == 'approved':
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail='Cannot remove member with existing group payments',
