@@ -8,6 +8,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Table,
     event,
 )
 from sqlalchemy.orm import Mapped, relationship
@@ -20,6 +21,17 @@ if TYPE_CHECKING:
     from app.api.applications.models import Application
     from app.api.groups.models import Group
     from app.api.organizations.models import Organization
+
+# Association table for citizen-organization many-to-many relationship
+citizen_organizations = Table(
+    'citizen_organizations',
+    Base.metadata,
+    Column('citizen_id', Integer, ForeignKey('humans.id'), primary_key=True),
+    Column(
+        'organization_id', Integer, ForeignKey('organizations.id'), primary_key=True
+    ),
+    Column('created_at', DateTime, default=current_time),
+)
 
 
 class Citizen(Base):
@@ -59,11 +71,11 @@ class Citizen(Base):
         'Group', secondary='group_members', back_populates='members'
     )
 
-    organization_id = Column(
-        Integer, ForeignKey('organizations.id'), nullable=True, index=True
-    )
-    organization_rel: Mapped[Optional['Organization']] = relationship(
-        'Organization', lazy='joined'
+    # Replace the single organization relationship with many-to-many
+    organizations: Mapped[List['Organization']] = relationship(
+        'Organization',
+        secondary=citizen_organizations,
+        back_populates='citizens',
     )
 
     created_at = Column(DateTime, default=current_time)
