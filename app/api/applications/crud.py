@@ -75,7 +75,7 @@ def _send_application_received_mail(application: models.Application):
 class CRUDApplication(
     CRUDBase[models.Application, schemas.ApplicationCreate, schemas.ApplicationCreate]
 ):
-    def _update_citizen_profile(self, db: Session, application: models.Application):
+    def update_citizen_profile(self, db: Session, application: models.Application):
         citizen = application.citizen
 
         citizen.first_name = application.first_name
@@ -171,7 +171,7 @@ class CRUDApplication(
         if application.status == schemas.ApplicationStatus.IN_REVIEW:
             _send_application_received_mail(application)
 
-        self._update_citizen_profile(db, application)
+        self.update_citizen_profile(db, application)
         return application
 
     def update(
@@ -198,7 +198,7 @@ class CRUDApplication(
             requested_discount = _requested_a_discount(application, requires_approval)
             application.requested_discount = requested_discount
 
-        self._update_citizen_profile(db, application)
+        self.update_citizen_profile(db, application)
 
         db.add(application)
         db.commit()

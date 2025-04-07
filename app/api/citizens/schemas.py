@@ -31,6 +31,8 @@ class CitizenBase(BaseModel):
     last_name: Optional[str] = None
     x_user: Optional[str] = None
     telegram: Optional[str] = None
+    gender: Optional[str] = None
+    role: Optional[str] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

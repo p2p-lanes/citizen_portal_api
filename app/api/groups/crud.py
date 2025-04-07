@@ -166,6 +166,9 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 primary_email=member.email,
                 first_name=member.first_name,
                 last_name=member.last_name,
+                gender=member.gender,
+                role=member.role,
+                telegram=member.telegram,
             ),
         )
 
@@ -200,6 +203,7 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             application.gender = member.gender
             application.telegram = member.telegram
             application.submitted_at = current_time()
+            applications_crud.update_citizen_profile(db, application)
 
         if citizen.id not in [m.id for m in group.members]:
             group.members.append(citizen)
