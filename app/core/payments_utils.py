@@ -118,7 +118,7 @@ def create_payment(
         ),
         user=user,
     )
-    if len(products) != len(product_ids):
+    if set(p.id for p in products) != set(product_ids):
         logger.error(
             'Some products are not available. User: %s, Available products: %s, Requested products: %s',
             user.email,
