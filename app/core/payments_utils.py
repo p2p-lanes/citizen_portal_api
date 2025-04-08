@@ -8,7 +8,6 @@ from app.api.applications.models import Application
 from app.api.applications.schemas import ApplicationStatus
 from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.payments import schemas
-from app.api.payments.models import PaymentProduct
 from app.api.payments.schemas import InternalPaymentCreate
 from app.api.products.crud import product as product_crud
 from app.api.products.models import Product
@@ -40,8 +39,8 @@ def _get_credit(application: Application, discount_value: float) -> float:
 
 
 def _calculate_price(
-    products: List[Product],
-    products_data: dict[int, PaymentProduct],
+    db: Session,
+    requested_products: List[schemas.PaymentProduct],
     discount_value: float,
     application: Application,
     already_patreon: bool,
@@ -50,25 +49,36 @@ def _calculate_price(
     credit = _get_credit(application, discount_value) if edit_passes else 0
     logger.info('Credit: %s', credit)
     attendees = {}
-    for p in products:
-        quantity = products_data[p.id].quantity
-        attendee_id = products_data[p.id].attendee_id
+
+    product_ids = list(set(rp.product_id for rp in requested_products))
+    product_models = {
+        p.id: p for p in db.query(Product).filter(Product.id.in_(product_ids)).all()
+    }
+
+    for req_prod in requested_products:
+        product_model = product_models.get(req_prod.product_id)
+        if not product_model:
+            logger.error(f'Product model not found for ID: {req_prod.product_id}')
+            continue
+
+        quantity = req_prod.quantity
+        attendee_id = req_prod.attendee_id
         if attendee_id not in attendees:
             attendees[attendee_id] = {'standard': 0, 'supporter': 0, 'patreon': 0}
 
         if attendees[attendee_id]['patreon'] > 0:
             continue
 
-        if p.category == 'patreon':
+        if product_model.category == 'patreon':
             attendees[attendee_id]['patreon'] = (
-                p.price * quantity if not already_patreon else 0
+                product_model.price * quantity if not already_patreon else 0
             )
             attendees[attendee_id]['standard'] = 0
             attendees[attendee_id]['supporter'] = 0
-        elif p.category == 'supporter':
-            attendees[attendee_id]['supporter'] += p.price * quantity
+        elif product_model.category == 'supporter':
+            attendees[attendee_id]['supporter'] += product_model.price * quantity
         else:
-            attendees[attendee_id]['standard'] += p.price * quantity
+            attendees[attendee_id]['standard'] += product_model.price * quantity
 
     standard_amount = sum(a['standard'] for a in attendees.values())
     supporter_amount = sum(a['supporter'] for a in attendees.values())
@@ -107,29 +117,31 @@ def create_payment(
             status_code=400, detail='Popup city does not have a Simplefi API key'
         )
 
-    product_ids = [p.product_id for p in obj.products]
-    products_data = {p.product_id: p for p in obj.products}
-    products = product_crud.find(
+    requested_product_ids = [p.product_id for p in obj.products]
+    valid_products = product_crud.find(
         db=db,
         filters=ProductFilter(
-            id_in=product_ids,
+            id_in=requested_product_ids,
             popup_city_id=application.popup_city_id,
             is_active=True,
         ),
         user=user,
     )
-    if set(p.id for p in products) != set(product_ids):
+    if set(p.id for p in valid_products) != set(requested_product_ids):
+        err_msg = 'Some products are not available or inactive.'
         logger.error(
-            'Some products are not available. User: %s, Available products: %s, Requested products: %s',
+            '%s User: %s, Requested products: %s',
+            err_msg,
             user.email,
-            [p.id for p in products],
-            product_ids,
+            requested_product_ids,
         )
-        raise HTTPException(status_code=400, detail='Some products are not available')
+        raise HTTPException(status_code=400, detail=err_msg)
 
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.category == 'patreon' for p in application_products)
-    is_buying_patreon = any(p.category == 'patreon' for p in products)
+    is_buying_patreon = any(
+        p.category == 'patreon' for p in valid_products if p.id in requested_product_ids
+    )
 
     if obj.edit_passes and is_buying_patreon and not already_patreon:
         logger.error('Cannot edit passes for Patreon products. %s', user.email)
@@ -147,8 +159,8 @@ def create_payment(
     discount_assigned = application.discount_assigned or 0
 
     response.amount = _calculate_price(
-        products,
-        products_data,
+        db,
+        obj.products,
         discount_value=discount_assigned,
         application=application,
         already_patreon=already_patreon,
@@ -158,8 +170,8 @@ def create_payment(
     group = application.citizen.get_group(application.popup_city_id)
     if group:
         discounted_amount = _calculate_price(
-            products,
-            products_data,
+            db,
+            obj.products,
             discount_value=group.discount_percentage,
             application=application,
             already_patreon=already_patreon,
@@ -176,8 +188,8 @@ def create_payment(
             popup_city_id=application.popup_city_id,
         )
         discounted_amount = _calculate_price(
-            products,
-            products_data,
+            db,
+            obj.products,
             discount_value=coupon_code.discount_value,
             application=application,
             already_patreon=already_patreon,
@@ -201,17 +213,22 @@ def create_payment(
 
         return response
 
+    # --- Create a lookup for product names --- #
+    valid_products_dict = {p.id: p for p in valid_products}
+
     reference = {
         'email': application.email,
         'application_id': application.id,
         'products': [
             {
-                'product_id': product.id,
-                'name': product.name,
-                'quantity': products_data[product.id].quantity,
-                'attendee_id': products_data[product.id].attendee_id,
+                'product_id': req_prod.product_id,
+                'name': valid_products_dict[
+                    req_prod.product_id
+                ].name,  # Get name from lookup
+                'quantity': req_prod.quantity,  # Get quantity from request
+                'attendee_id': req_prod.attendee_id,  # Get attendee_id from request
             }
-            for product in products
+            for req_prod in obj.products  # Iterate over requested products
         ],
     }
 
