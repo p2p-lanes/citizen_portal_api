@@ -175,6 +175,98 @@ def test_get_payment_other_citizen(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
+def test_create_payment_two_kids_same_ticket(
+    client,
+    auth_headers,
+    test_application,  # Using the base application fixture
+    test_products,
+    db_session,
+    mock_create_payment,
+):
+    """Test creating a payment with the same ticket for two different kids."""
+    from app.api.applications.models import Application
+    from app.api.products.models import Product
+
+    # --- 1. Create and Accept Application ---
+    response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    application_data = response.json()
+    application_id = application_data['id']
+
+    # Mark application as accepted
+    application = db_session.get(Application, application_id)
+    assert application is not None
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.scholarship_request = False
+    application.discount_assigned = None
+    db_session.commit()
+    db_session.refresh(application)
+
+    # --- 2. Add Two Kid Attendees ---
+    kid1_data = {'name': 'Kid One', 'category': 'kid', 'age': 10}
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=kid1_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    updated_application = response.json()
+    kid1_id = next(
+        att['id']
+        for att in updated_application['attendees']
+        if att['name'] == 'Kid One'
+    )
+
+    kid2_data = {'name': 'Kid Two', 'category': 'kid', 'age': 12}
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=kid2_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    updated_application = response.json()
+    kid2_id = next(
+        att['id']
+        for att in updated_application['attendees']
+        if att['name'] == 'Kid Two'
+    )
+
+    # --- 3. Define Payment Payload ---
+    kid_product_id = 2  # Assuming product ID 2 is for kids
+    payment_data = {
+        'application_id': application_id,
+        'products': [
+            {'product_id': kid_product_id, 'attendee_id': kid1_id, 'quantity': 1},
+            {'product_id': kid_product_id, 'attendee_id': kid2_id, 'quantity': 1},
+        ],
+    }
+
+    # --- 4. Create Payment ---
+    response = client.post('/payments/', json=payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    # --- 5. Assertions ---
+    data = response.json()
+    assert data['application_id'] == application_id
+    assert data['status'] == 'pending'
+    assert data['external_id'] is not None
+    assert data['checkout_url'] is not None
+
+    # Verify amount (assumes product ID 2 exists and has a price)
+    kid_product = db_session.get(Product, kid_product_id)
+    assert kid_product is not None, f'Product with ID {kid_product_id} not found in DB.'
+    expected_amount = kid_product.price * 2
+    assert data['amount'] == expected_amount
+
+    # Verify simplefi.create_payment mock call
+    mock_create_payment.assert_called_once()
+    call_args = mock_create_payment.call_args
+    assert call_args.args[0] == expected_amount
+    assert 'reference' in call_args.kwargs
+
+
 def test_simplefi_webhook_payment_approval(
     client,
     auth_headers,
