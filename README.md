@@ -10,11 +10,6 @@ This repository contains the code for the **EdgeOS API**, a FastAPI-based applic
 - Docker Compose for simplified multi-container deployment.
 
 
-## Project Purpose
-
-[**TODO:** Add a brief description of what the EdgeOS API does, the problem it solves, or its main goal.]
-
-
 ## Requirements
 - [Docker](https://www.docker.com/get-started) installed on your machine.
 - [Docker Compose](https://docs.docker.com/compose/) installed.
@@ -142,8 +137,3 @@ If the API or NocoDB does not start:
 2. Ensure your `.env` file is correctly configured and all environment variables are set.
 
 Make sure no other services are running on ports `8000`, `8080`, or `5432`.
-
-
-## License
-
-[**TODO:** Add license information here. Consider adding a `LICENSE` file to the repository (e.g., MIT, Apache 2.0).]
