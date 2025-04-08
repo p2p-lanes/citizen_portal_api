@@ -17,7 +17,7 @@ class PaymentProduct(Base):
 
     payment_id = Column(Integer, ForeignKey('payments.id'), primary_key=True)
     product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
-    attendee_id = Column(Integer, ForeignKey('attendees.id'), nullable=False)
+    attendee_id = Column(Integer, ForeignKey('attendees.id'), primary_key=True)
     quantity = Column(Integer, default=1)
 
     product_name = Column(String)
