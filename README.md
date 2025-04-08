@@ -137,3 +137,8 @@ If the API or NocoDB does not start:
 2. Ensure your `.env` file is correctly configured and all environment variables are set.
 
 Make sure no other services are running on ports `8000`, `8080`, or `5432`.
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
