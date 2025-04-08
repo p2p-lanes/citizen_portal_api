@@ -72,11 +72,15 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
     ) -> None:
         """Validate if a citizen can be added to a group"""
         members_ids = [member.id for member in group.members]
-        if not update_existing and citizen_id in members_ids:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Citizen is already a member',
-            )
+        is_member = citizen_id in members_ids
+        if is_member:
+            if not update_existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Citizen is already a member',
+                )
+            else:
+                return
 
         leaders_ids = [leader.id for leader in group.leaders]
         if citizen_id in leaders_ids:
@@ -89,14 +93,6 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Group is full',
-            )
-
-        # Check for duplicate email in the group
-        member_emails = [member.primary_email for member in group.members]
-        if application and application.email in member_emails:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Email is already in use in this group',
             )
 
         # if application and application.group_id:
