@@ -1,6 +1,6 @@
-# Citizen Portal API
+# EdgeOS API
 
-This repository contains the code for the **Citizen Portal API**, a FastAPI-based application that interacts with a PostgreSQL database. It also includes a **NocoDB** service for database management through an intuitive UI. The setup is containerized using Docker Compose for easy deployment.
+This repository contains the code for the **EdgeOS API**, a FastAPI-based application that interacts with a PostgreSQL database. It also includes a **NocoDB** service for database management through an intuitive UI. The setup is containerized using Docker Compose for easy deployment.
 
 
 ## Features
@@ -8,6 +8,11 @@ This repository contains the code for the **Citizen Portal API**, a FastAPI-base
 - **PostgreSQL** for relational database storage.
 - **NocoDB** as a no-code interface for managing the database.
 - Docker Compose for simplified multi-container deployment.
+
+
+## Project Purpose
+
+[**TODO:** Add a brief description of what the EdgeOS API does, the problem it solves, or its main goal.]
 
 
 ## Requirements
@@ -19,13 +24,32 @@ This repository contains the code for the **Citizen Portal API**, a FastAPI-base
 Create a `.env` file in the root directory with the following content:
 
 ```env
+ENVIRONMENT=development # Or testing, production
+
 DB_USERNAME=myuser
 DB_PASSWORD=secret
-DB_HOST=postgres
+DB_HOST=postgres # Should match the service name in docker-compose.yml
 DB_PORT=5432
 NOCO_DB_NAME=noco_db
-DB_NAME=citizen_portal
-SECRET_KEY=your_secret_key
+DB_NAME=edgeos_db
+
+BACKEND_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
+
+NOCODB_URL=...
+NOCODB_TOKEN=...
+NOCODB_WEBHOOK_SECRET=...
+
+SECRET_KEY=your_super_secret_and_long_random_key # Generate a strong random key
+COUPON_API_KEY=your_coupon_api_key # Generate a strong random key
+ATTENDEES_API_KEY=your_attendees_api_key # Generate a strong random key
+GROUPS_API_KEY=your_groups_api_key # Generate a strong random key
+
+POSTMARK_API_TOKEN=your_postmark_api_token
+EMAIL_FROM_ADDRESS=...
+EMAIL_FROM_NAME=...
+EMAIL_REPLY_TO=...
+SIMPLEFI_API_URL=https://api.simplefi.tech
 ```
 
 
@@ -53,33 +77,45 @@ Follow these steps to run the application:
     - **API**: http://localhost:8000
     - **NocoDB**: http://localhost:8080
 
+### API Documentation
 
-## Configuring NocoDB to Connect to the Database
-Follow these steps to connect NocoDB to your PostgreSQL database:
+Once the API is running, you can access the automatically generated documentation:
 
-1. **Open NocoDB** in your browser by navigating to http://localhost:8080.
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
-2. **Sign Up** with an email and password. This email will act as the Super Admin account.
+These interfaces allow you to explore and interact with the available API endpoints.
 
-3. Go to **"Integrations"** -> **PostgreSQL**, and fill in the connection details:
 
-    - **Connection Name**: Enter a name for this connection (e.g., `Citizen Portal DB`). This is simply a label to identify the connection in NocoDB.
-    - **Host Address**: `postgres` (This matches the `DB_HOST` value in your `.env` file, which corresponds to the service name defined in the Docker Compose file.)
-    - **Port Number**: `5432` (This matches the `DB_PORT` value in your `.env` file.)
-    - **Username**: `myuser` (Replace this with the `DB_USERNAME` value from your `.env` file.)
-    - **Password**: `secret` (This matches the `DB_PASSWORD` value in your `.env` file.)
-    - **Database Name**: `citizen_portal` (This matches the `DB_NAME` value in your `.env` file.)
-    - **Schema Name**: `public` (Keep this as `public` unless you are using a different schema.)
+## Configuring NocoDB
 
-4. Click on **"Test Connection"** to verify the provided details. If the test is successful, click **"Create Connection"** to save it.
+For detailed steps on connecting NocoDB to the PostgreSQL database, please refer to the [NocoDB Setup Guide](docs/nocodb_setup.md).
 
-5. Next, go to **"Create Base"** and assign a name for the Base.
 
-6. Navigate to **"Connect External Data"**, and select the PostgreSQL connection you created earlier.
+## Local Development
 
-7. Click on **"Test Connection"** to confirm the setup, then click **"Add Source"** to complete the process.
+If you want to run the API locally for development purposes without Docker:
 
-Your database is now connected to NocoDB, and you can start managing your data through the NocoDB interface.
+1.  **Ensure Python 3.x is installed.**
+2.  **Create and activate a virtual environment:**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  **Set up environment variables:** You can either:
+    *   Set the variables directly in your shell (less convenient).
+    *   Use a `.env` file and a library like `python-dotenv` (if not already used in `main.py`) to load them. Ensure your local `.env` points to a locally running PostgreSQL instance if you're not using the Docker one.
+5.  **Run the FastAPI development server:**
+    ```bash
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ```
+    (Assuming your FastAPI instance is named `app` in `main.py`)
+
+This will start the API on `http://localhost:8000` and automatically reload when you save code changes.
 
 
 ## Stopping the Application
@@ -106,3 +142,8 @@ If the API or NocoDB does not start:
 2. Ensure your `.env` file is correctly configured and all environment variables are set.
 
 Make sure no other services are running on ports `8000`, `8080`, or `5432`.
+
+
+## License
+
+[**TODO:** Add license information here. Consider adding a `LICENSE` file to the repository (e.g., MIT, Apache 2.0).]
