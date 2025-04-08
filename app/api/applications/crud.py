@@ -93,7 +93,8 @@ class CRUDApplication(
         if application.organization:
             org = organization_crud.get_or_create(db, application.organization)
             application.organization_id = org.id
-            citizen.organizations.append(org)
+            if org not in citizen.organizations:
+                citizen.organizations.append(org)
 
         db.commit()
         db.refresh(citizen)
