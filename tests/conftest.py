@@ -27,6 +27,24 @@ def check_test_environment():
         )
 
 
+@pytest.fixture(scope='session', autouse=True)
+def setup_test_api_keys():
+    """Set default API keys for testing to avoid None values in headers"""
+    # Save original values
+    original_coupon_key = settings.COUPON_API_KEY
+    original_groups_key = settings.GROUPS_API_KEY
+
+    # Set test values
+    settings.COUPON_API_KEY = 'test_coupon_api_key'
+    settings.GROUPS_API_KEY = 'test_groups_api_key'
+
+    yield
+
+    # Restore original values after tests
+    settings.COUPON_API_KEY = original_coupon_key
+    settings.GROUPS_API_KEY = original_groups_key
+
+
 @pytest.fixture(scope='session')
 def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
