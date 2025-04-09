@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional, Union
 
 from fastapi import HTTPException, status
@@ -137,8 +138,11 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
                 gender=application.gender,
                 products=products,
             )
-            members.append(group_member)
+            d = application.accepted_at or application.submitted_at or datetime.min
+            members.append((group_member, d))
 
+        members.sort(key=lambda x: x[1], reverse=True)
+        members = [m[0] for m in members]
         return schemas.GroupWithMembers(
             **schemas.Group.model_validate(group).model_dump(),
             members=members,
