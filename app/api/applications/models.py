@@ -19,7 +19,6 @@ from app.core.utils import current_time
 if TYPE_CHECKING:
     from app.api.attendees.models import Attendee
     from app.api.citizens.models import Citizen
-    from app.api.groups.models import Group
     from app.api.organizations.models import Organization
     from app.api.payments.models import Payment
     from app.api.popup_city.models import PopUpCity
@@ -117,7 +116,7 @@ class Application(Base):
     )
 
     group_id = Column(Integer, ForeignKey('groups.id'), nullable=True)
-    group: Mapped[Optional['Group']] = relationship('Group', lazy='joined')
+    group = None
 
     created_by_leader = Column(Boolean, nullable=False, default=False)
 
@@ -177,3 +176,10 @@ class Application(Base):
         self.tela_review = None
         self.sophie_review = None
         self.devon_review = None
+
+
+def setup_relationships():
+    from app.api.groups.models import Group
+
+    if not hasattr(Application, 'group') or Application.group is None:
+        Application.group = relationship('Group', lazy='joined')
