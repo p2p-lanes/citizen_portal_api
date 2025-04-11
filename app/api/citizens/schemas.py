@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from urllib.parse import unquote
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -75,3 +75,20 @@ class CitizenFilter(BaseModel):
     @classmethod
     def decode_primary_email(cls, value: str) -> str:
         return unquote(value) if value else None
+
+
+class PoapClaim(BaseModel):
+    attendee_id: int
+    attendee_name: str
+    attendee_email: str
+    poap_url: str
+
+
+class CitizenPoapsByPopup(BaseModel):
+    popup_id: int
+    popup_name: str
+    poaps: List[PoapClaim]
+
+
+class CitizenPoaps(BaseModel):
+    results: List[CitizenPoapsByPopup]

@@ -41,6 +41,7 @@ class Attendee(Base):
     name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     email = Column(String)
+    poap_url = Column(String)
 
     application: Mapped['Application'] = relationship(
         'Application', back_populates='attendees'

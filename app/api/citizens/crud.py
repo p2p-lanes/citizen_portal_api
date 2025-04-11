@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
 from app.api.citizens import models, schemas
+from app.api.citizens.schemas import CitizenPoaps, CitizenPoapsByPopup, PoapClaim
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
 from app.core.logger import logger
@@ -145,6 +146,32 @@ class CRUDCitizen(
         db.commit()
         db.refresh(citizen)
         return citizen
+
+    def get_poaps_from_citizen(self, db: Session, user: TokenData) -> CitizenPoaps:
+        citizen: models.Citizen = self.get(db, user.citizen_id, user)
+        response = CitizenPoaps(results=[])
+        for application in citizen.applications:
+            poaps = []
+            for attendee in application.attendees:
+                if attendee.poap_url:
+                    poaps.append(
+                        PoapClaim(
+                            attendee_id=attendee.id,
+                            attendee_name=attendee.name,
+                            attendee_email=attendee.email,
+                            poap_url=attendee.poap_url,
+                        )
+                    )
+            if poaps:
+                response.results.append(
+                    CitizenPoapsByPopup(
+                        popup_id=application.popup_city_id,
+                        popup_name=application.popup_city.name,
+                        poaps=poaps,
+                    )
+                )
+
+        return response
 
 
 citizen = CRUDCitizen(models.Citizen)

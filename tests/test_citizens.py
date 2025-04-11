@@ -1,6 +1,9 @@
 import pytest
 from fastapi import status
 
+from app.api.applications.models import Application
+from app.api.applications.schemas import ApplicationStatus
+from app.api.attendees.models import Attendee
 from tests.conftest import get_auth_headers_for_citizen
 
 
@@ -107,3 +110,121 @@ def test_get_citizens_success(client, auth_headers):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert len(data) == 0
+
+
+def test_get_my_poaps_success(client, test_citizen, test_popup_city, db_session):
+    # Create an application for the citizen
+    application = Application(
+        citizen_id=test_citizen.id,
+        popup_city_id=test_popup_city.id,
+        first_name=test_citizen.first_name,
+        last_name=test_citizen.last_name,
+        email=test_citizen.primary_email,
+        status=ApplicationStatus.ACCEPTED,
+    )
+    db_session.add(application)
+    db_session.flush()
+
+    # Create an attendee with a POAP URL
+    attendee1 = Attendee(
+        application_id=application.id,
+        name=f'{test_citizen.first_name} {test_citizen.last_name}',
+        category='main',
+        email=test_citizen.primary_email,
+        poap_url='https://example.com/poap/123',
+    )
+    db_session.add(attendee1)
+
+    # Create an attendee without a POAP URL
+    attendee2 = Attendee(
+        application_id=application.id,
+        name=f'{test_citizen.first_name} {test_citizen.last_name}',
+        category='kid',
+        email=test_citizen.primary_email,
+        poap_url=None,
+    )
+    db_session.add(attendee2)
+
+    # Create an attendee with a POAP URL for a different application
+    attendee3 = Attendee(
+        application_id=application.id,
+        name=f'{test_citizen.first_name} {test_citizen.last_name}',
+        category='spouse',
+        email=test_citizen.primary_email,
+        poap_url='https://example.com/poap/456',
+    )
+    db_session.add(attendee3)
+
+    db_session.commit()
+
+    # Get auth headers for the citizen
+    headers = get_auth_headers_for_citizen(test_citizen.id)
+
+    # Call the endpoint
+    response = client.get('/citizens/my-poaps', headers=headers)
+
+    # Assert the response
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Check the structure of the response
+    assert 'results' in data
+    assert len(data['results']) == 1
+
+    # Check the popup details
+    popup_data = data['results'][0]
+    assert popup_data['popup_id'] == test_popup_city.id
+    assert popup_data['popup_name'] == test_popup_city.name
+
+    # Check the POAP details
+    assert len(popup_data['poaps']) == 2
+    poap1 = popup_data['poaps'][0]
+    assert poap1['attendee_id'] == attendee1.id
+    assert poap1['attendee_name'] == attendee1.name
+    assert poap1['attendee_email'] == attendee1.email
+    assert poap1['poap_url'] == attendee1.poap_url
+
+    poap2 = popup_data['poaps'][1]
+    assert poap2['attendee_id'] == attendee3.id
+    assert poap2['attendee_name'] == attendee3.name
+    assert poap2['attendee_email'] == attendee3.email
+    assert poap2['poap_url'] == attendee3.poap_url
+
+
+def test_get_my_poaps_no_poaps(client, test_citizen, test_popup_city, db_session):
+    # Create an application for the citizen
+    application = Application(
+        citizen_id=test_citizen.id,
+        popup_city_id=test_popup_city.id,
+        first_name=test_citizen.first_name,
+        last_name=test_citizen.last_name,
+        email=test_citizen.primary_email,
+        status=ApplicationStatus.ACCEPTED,
+    )
+    db_session.add(application)
+    db_session.flush()
+
+    # Create an attendee WITHOUT a POAP URL
+    attendee = Attendee(
+        application_id=application.id,
+        name=f'{test_citizen.first_name} {test_citizen.last_name}',
+        category='main',
+        email=test_citizen.primary_email,
+        poap_url=None,  # No POAP URL
+    )
+    db_session.add(attendee)
+    db_session.commit()
+
+    # Get auth headers for the citizen
+    headers = get_auth_headers_for_citizen(test_citizen.id)
+
+    # Call the endpoint
+    response = client.get('/citizens/my-poaps', headers=headers)
+
+    # Assert the response
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Check that there are no results since no POAPs are available
+    assert 'results' in data
+    assert len(data['results']) == 0
