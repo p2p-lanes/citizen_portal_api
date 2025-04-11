@@ -81,7 +81,10 @@ async def update_status_webhook(
             )
 
         if current_status == calculated_status:
-            logger.info('Status is the same as calculated status. Skipping...')
+            logger.info(
+                'Status is the same as calculated status (%s). Skipping...',
+                calculated_status,
+            )
             continue
 
         email_log.cancel_scheduled_emails(
