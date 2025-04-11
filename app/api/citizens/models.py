@@ -83,12 +83,6 @@ class Citizen(Base):
     created_by = Column(String)
     updated_by = Column(String)
 
-    def get_group(self, popup_city_id: int) -> Optional['Group']:
-        for group in self.groups_as_member:
-            if group.popup_city_id == popup_city_id:
-                return group
-        return None
-
     def get_application(self, popup_city_id: int) -> Optional['Application']:
         for application in self.applications:
             if application.popup_city_id == popup_city_id:

@@ -167,19 +167,18 @@ def create_payment(
         edit_passes=obj.edit_passes,
     )
 
-    group = application.citizen.get_group(application.popup_city_id)
-    if group:
+    if application.group:
         discounted_amount = _calculate_price(
             db,
             obj.products,
-            discount_value=group.discount_percentage,
+            discount_value=application.group.discount_percentage,
             application=application,
             already_patreon=already_patreon,
             edit_passes=obj.edit_passes,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
-            response.group_id = group.id
+            response.group_id = application.group.id
 
     if obj.coupon_code:
         coupon_code = coupon_code_crud.get_by_code(

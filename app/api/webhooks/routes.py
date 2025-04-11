@@ -67,8 +67,10 @@ async def update_status_webhook(
         reviews_status = row_dict.get('calculated_status')
         current_status = row_dict.get('status')
 
-        group = application.citizen.get_group(application.popup_city_id)
-        if group:
+        if application.group:
+            logger.info(
+                'Application is in group %s. Skipping...', application.group.slug
+            )
             calculated_status = ApplicationStatus.ACCEPTED
             if reviews_status == ApplicationStatus.WITHDRAWN.value:
                 calculated_status = ApplicationStatus.WITHDRAWN
