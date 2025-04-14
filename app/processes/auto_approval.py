@@ -25,7 +25,7 @@ def process_popup_city(db: Session, popup_city: PopUpCity):
         .filter(Application.status == ApplicationStatus.IN_REVIEW)
         .filter(
             Application.submitted_at
-            > current_time() - timedelta(minutes=auto_approval_time)
+            < current_time() - timedelta(minutes=auto_approval_time)
         )
         .all()
     )
