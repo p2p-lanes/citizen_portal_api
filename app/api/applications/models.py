@@ -87,6 +87,7 @@ class Application(Base):
     tela_review = Column(String)
     sophie_review = Column(String)
     devon_review = Column(String)
+    lina_review = Column(String)
 
     auto_approved = Column(Boolean, nullable=False, default=False)
 
@@ -179,6 +180,7 @@ class Application(Base):
         self.tela_review = None
         self.sophie_review = None
         self.devon_review = None
+        self.lina_review = None
 
     def get_products(self) -> List['Product']:
         return [product for attendee in self.attendees for product in attendee.products]
