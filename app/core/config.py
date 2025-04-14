@@ -43,5 +43,7 @@ class Settings:
     ATTENDEES_API_KEY: str = os.getenv('ATTENDEES_API_KEY')
     GROUPS_API_KEY: str = os.getenv('GROUPS_API_KEY')
 
+    APPLICATIONS_TABLE_ID: str = os.getenv('APPLICATIONS_TABLE_ID')
+
 
 settings = Settings()

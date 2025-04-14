@@ -1,12 +1,14 @@
 import time
 from datetime import timedelta
 
+import requests
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
 from app.api.applications.schemas import ApplicationStatus
 from app.api.popup_city.models import PopUpCity
 from app.core import models
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logger import logger
 from app.core.utils import current_time
@@ -30,9 +32,22 @@ def process_popup_city(db: Session, popup_city: PopUpCity):
 
     for application in applications:
         logger.info('Approving application %s %s', application.id, application.email)
-        application.auto_approved = True
-
-    db.commit()
+        data = {
+            'id': application.id,
+            'auto_approved': True,
+        }
+        url = f'{settings.NOCODB_URL}/api/v2/tables/{settings.APPLICATIONS_TABLE_ID}/records'
+        headers = {
+            'accept': 'application/json',
+            'xc-token': settings.NOCODB_TOKEN,
+            'Content-Type': 'application/json',
+        }
+        response = requests.patch(url, headers=headers, json=data)
+        if response.status_code != 200:
+            logger.error(
+                'Error approving application %s %s', application.id, application.email
+            )
+            logger.error(response.json())
 
 
 def main():
