@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
@@ -51,6 +52,28 @@ class CRUDAttendees(
             obj.category = attendee.category
 
         return super().update(db, id, obj, user)
+
+    def delete(self, db: Session, id: int, user: TokenData) -> models.Attendee:
+        """Delete an attendee and its related payment products."""
+        try:
+            attendee = self.get(db, id, user)  # This will raise 404 if not found
+
+            if attendee.products:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Attendee has products',
+                )
+
+            if attendee.payment_products:
+                for payment_product in attendee.payment_products:
+                    db.delete(payment_product)
+
+            db.delete(attendee)
+            db.commit()
+            return attendee
+        except Exception as e:
+            db.rollback()
+            raise e
 
 
 attendee = CRUDAttendees(models.Attendee)
