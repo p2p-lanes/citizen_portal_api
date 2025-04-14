@@ -121,14 +121,13 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
     ) -> schemas.GroupWithMembers:
         group = super().get(db, id, user)
         members = []
-        for member in group.members:
-            application = member.get_application(group.popup_city_id)
+        for application in group.applications:
             products = []
             for attendee in application.attendees:
                 products.extend(attendee.products)
 
             group_member = schemas.MemberWithProducts(
-                id=member.id,
+                id=application.citizen_id,
                 first_name=application.first_name,
                 last_name=application.last_name,
                 email=application.email,
