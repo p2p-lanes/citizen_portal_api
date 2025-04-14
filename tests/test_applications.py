@@ -624,3 +624,109 @@ def test_get_attendees_directory(client, auth_headers, test_application):
     data = response.json()
     assert 'pagination' in data
     assert 'items' in data
+
+
+def test_delete_attendee_with_products(
+    client, auth_headers, test_application, test_products, db_session
+):
+    """Test that an attendee with products cannot be deleted."""
+    from app.api.attendees.models import AttendeeProduct
+
+    # First create an application
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    # Create a test attendee
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'kid',
+        'email': 'kid@test.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    attendee_id = response.json()['attendees'][1]['id']
+
+    product = test_products[0]
+    attendee_product = AttendeeProduct(
+        attendee_id=attendee_id, product_id=product.id, quantity=1
+    )
+    db_session.add(attendee_product)
+    db_session.commit()
+
+    # Try to delete the attendee, should fail
+    response = client.delete(
+        f'/applications/{application_id}/attendees/{attendee_id}',
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()['detail'] == 'Attendee has products'
+
+
+def test_delete_attendee_with_payment_products(
+    client, auth_headers, test_application, test_products, db_session
+):
+    """Test that an attendee with payment_products but no products can be deleted."""
+    from app.api.attendees.models import Attendee
+    from app.api.payments.models import Payment, PaymentProduct
+
+    # First create an application
+    create_response = client.post(
+        '/applications/', json=test_application, headers=auth_headers
+    )
+    application_id = create_response.json()['id']
+
+    # Create a test attendee
+    attendee_data = {
+        'name': 'Test Attendee',
+        'category': 'kid',
+        'email': 'kid@test.com',
+    }
+    response = client.post(
+        f'/applications/{application_id}/attendees',
+        json=attendee_data,
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    attendee_id = response.json()['attendees'][1]['id']
+
+    product = test_products[0]
+    payment = Payment(
+        application_id=application_id, status='completed', amount=10.0, currency='USD'
+    )
+    db_session.add(payment)
+    db_session.commit()
+
+    # Create a payment_product that references the attendee
+    payment_product = PaymentProduct(
+        payment_id=payment.id,
+        product_id=product.id,
+        attendee_id=attendee_id,
+        product_name='Test Product',
+        product_price=10.0,
+        product_category='ticket',
+    )
+    db_session.add(payment_product)
+    db_session.commit()
+
+    # Now delete the attendee, which should succeed and cascade delete the payment_product
+    response = client.delete(
+        f'/applications/{application_id}/attendees/{attendee_id}',
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # Verify payment_product was deleted
+    payment_products = (
+        db_session.query(PaymentProduct).filter_by(attendee_id=attendee_id).all()
+    )
+    assert len(payment_products) == 0
+
+    # Verify attendee was deleted
+    attendee = db_session.query(Attendee).filter_by(id=attendee_id).first()
+    assert attendee is None
