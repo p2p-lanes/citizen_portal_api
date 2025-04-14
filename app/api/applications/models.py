@@ -88,6 +88,8 @@ class Application(Base):
     sophie_review = Column(String)
     devon_review = Column(String)
 
+    auto_approved = Column(Boolean, nullable=False, default=False)
+
     credit = Column(Float, default=0, nullable=False)
 
     submitted_at = Column(DateTime, nullable=True)

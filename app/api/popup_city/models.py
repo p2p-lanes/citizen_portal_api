@@ -50,6 +50,7 @@ class PopUpCity(Base):
     clickable_in_portal = Column(Boolean, nullable=True, default=False)
     visible_in_portal = Column(Boolean, nullable=True, default=False)
     requires_approval = Column(Boolean, nullable=False, default=True)
+    auto_approval_time = Column(Integer, nullable=True)  # in minutes
     portal_order = Column(Float, nullable=False, default=0)
     simplefi_api_key = Column(String)
 
