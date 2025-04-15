@@ -101,6 +101,7 @@ class InternalApplicationCreate(ApplicationBase):
     email: str
     submitted_at: Optional[datetime] = None
     created_by_leader: Optional[bool] = None
+    auto_approved: Optional[bool] = None
 
     @field_validator('email')
     @classmethod
