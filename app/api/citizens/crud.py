@@ -77,6 +77,7 @@ def _get_poap_qr(qr_hash: str, db: Session):
 
     return {
         'claimed': response.json()['claimed'],
+        'is_active': response.json()['is_active'],
         'name': response.json()['event']['name'],
         'description': response.json()['event']['description'],
         'image_url': response.json()['event']['image_url'],
@@ -233,6 +234,8 @@ class CRUDCitizen(
                             poap_name=poap_data['name'],
                             poap_description=poap_data['description'],
                             poap_image_url=poap_data['image_url'],
+                            poap_claimed=poap_data['claimed'],
+                            poap_is_active=poap_data['is_active'],
                         )
                     )
             if poaps:

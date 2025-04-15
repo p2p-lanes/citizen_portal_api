@@ -85,6 +85,8 @@ class PoapClaim(BaseModel):
     poap_name: str
     poap_description: str
     poap_image_url: str
+    poap_claimed: bool
+    poap_is_active: bool
 
 
 class CitizenPoapsByPopup(BaseModel):
