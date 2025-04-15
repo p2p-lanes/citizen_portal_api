@@ -85,9 +85,10 @@ def _get_poap_qr(qr_hash: str, db: Session):
     }
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        raise Exception(
-            f'Failed to get POAP QR: {response.status_code} {response.text}'
+        logger.error(
+            'Failed to get POAP QR: %s %s', response.status_code, response.text
         )
+        return None
 
     return {
         'claimed': response.json()['claimed'],
@@ -239,6 +240,8 @@ class CRUDCitizen(
                 if attendee.poap_url:
                     qr_hash = attendee.poap_url.split('/')[-1]
                     poap_data = _get_poap_qr(qr_hash, db)
+                    if not poap_data:
+                        continue
                     poaps.append(
                         PoapClaim(
                             attendee_id=attendee.id,
