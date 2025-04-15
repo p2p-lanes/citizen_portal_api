@@ -45,5 +45,9 @@ class Settings:
 
     APPLICATIONS_TABLE_ID: str = os.getenv('APPLICATIONS_TABLE_ID')
 
+    POAP_API_KEY: str = os.getenv('POAP_API_KEY')
+    POAP_CLIENT_ID: str = os.getenv('POAP_CLIENT_ID')
+    POAP_CLIENT_SECRET: str = os.getenv('POAP_CLIENT_SECRET')
+
 
 settings = Settings()

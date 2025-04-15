@@ -82,6 +82,9 @@ class PoapClaim(BaseModel):
     attendee_name: str
     attendee_email: str
     poap_url: str
+    poap_name: str
+    poap_description: str
+    poap_image_url: str
 
 
 class CitizenPoapsByPopup(BaseModel):
