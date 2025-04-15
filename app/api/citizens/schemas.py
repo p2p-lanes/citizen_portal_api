@@ -81,6 +81,7 @@ class PoapClaim(BaseModel):
     attendee_id: int
     attendee_name: str
     attendee_email: str
+    attendee_category: str
     poap_url: str
     poap_name: str
     poap_description: str

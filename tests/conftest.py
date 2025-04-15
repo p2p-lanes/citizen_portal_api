@@ -249,3 +249,52 @@ def mock_simplefi_response():
         'status': 'pending',
         'checkout_url': 'https://test.checkout.url',
     }
+
+
+@pytest.fixture(scope='function', autouse=True)
+def mock_poap_refresh_lock():
+    """Mock the POAP refresh lock for tests since SQLite doesn't support pg_advisory_lock"""
+    from contextlib import contextmanager
+
+    from app.api.citizens.crud import POAP_REFRESH_LOCK
+
+    @contextmanager
+    def mock_acquire(db, timeout_seconds=None):
+        yield
+
+    with patch.object(POAP_REFRESH_LOCK, 'acquire', mock_acquire):
+        yield
+
+
+@pytest.fixture(scope='function', autouse=True)
+def mock_poap_api():
+    """Mock POAP API calls for tests"""
+
+    def mock_response_factory(*args, **kwargs):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+
+        url = args[0] if args else kwargs.get('url', '')
+        if 'auth.accounts.poap.xyz/oauth/token' in url:
+            mock_response.json.return_value = {
+                'access_token': 'test_access_token',
+                'expires_in': 3600,
+            }
+        else:
+            mock_response.json.return_value = {
+                'claimed': False,
+                'is_active': True,
+                'event': {
+                    'name': 'Test POAP',
+                    'description': 'Test POAP Description',
+                    'image_url': 'https://test.poap.image',
+                },
+            }
+        return mock_response
+
+    with (
+        patch('requests.get', side_effect=mock_response_factory),
+        patch('requests.post', side_effect=mock_response_factory),
+    ):
+        yield

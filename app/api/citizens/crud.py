@@ -14,11 +14,13 @@ from app.api.citizens.schemas import CitizenPoaps, CitizenPoapsByPopup, PoapClai
 from app.api.email_logs.crud import email_log
 from app.api.email_logs.schemas import EmailEvent
 from app.core.config import settings
+from app.core.locks import DistributedLock
 from app.core.logger import logger
 from app.core.security import SYSTEM_TOKEN, TokenData
 from app.core.utils import create_spice, current_time
 
 POAP_TOKEN_ID = 'poap'
+POAP_REFRESH_LOCK = DistributedLock('poap_token_refresh')
 
 
 def _refresh_poap_token():
@@ -43,21 +45,33 @@ def _refresh_poap_token():
 def _get_poap_token(db: Session):
     poap_token = access_token_crud.get_by_name(db, POAP_TOKEN_ID)
     if not poap_token:
-        logger.info('POAP token not found, creating new one')
-        token, expires_at = _refresh_poap_token()
-        update_obj = access_token_schemas.AccessTokenCreate(
-            name=POAP_TOKEN_ID, value=token, expires_at=expires_at
-        )
-        poap_token = access_token_crud.create(db, update_obj)
-        logger.info('POAP token created. Expires at: %s', poap_token.expires_at)
+        # If token doesn't exist, acquire lock and create it
+        with POAP_REFRESH_LOCK.acquire(db):
+            # Check again after acquiring lock in case another process created it
+            poap_token = access_token_crud.get_by_name(db, POAP_TOKEN_ID)
+            if poap_token:
+                return poap_token.value
+            logger.info('POAP token not found, creating new one')
+            token, expires_at = _refresh_poap_token()
+            update_obj = access_token_schemas.AccessTokenCreate(
+                name=POAP_TOKEN_ID, value=token, expires_at=expires_at
+            )
+            poap_token = access_token_crud.create(db, update_obj)
+            logger.info('POAP token created. Expires at: %s', poap_token.expires_at)
     elif poap_token.expires_at < current_time() + timedelta(minutes=10):
-        logger.info('Refreshing POAP token. Expires at: %s', poap_token.expires_at)
-        token, expires_at = _refresh_poap_token()
-        update_obj = access_token_schemas.AccessTokenUpdate(
-            value=token, expires_at=expires_at
-        )
-        poap_token = access_token_crud.update_by_name(db, POAP_TOKEN_ID, update_obj)
-        logger.info('POAP token updated. Expires at: %s', poap_token.expires_at)
+        # If token is about to expire, acquire lock and refresh it
+        with POAP_REFRESH_LOCK.acquire(db):
+            # Check expiration again after acquiring lock in case another process refreshed it
+            poap_token = access_token_crud.get_by_name(db, POAP_TOKEN_ID)
+            if poap_token.expires_at >= current_time() + timedelta(minutes=10):
+                return poap_token.value
+            logger.info('Refreshing POAP token. Expires at: %s', poap_token.expires_at)
+            token, expires_at = _refresh_poap_token()
+            update_obj = access_token_schemas.AccessTokenUpdate(
+                value=token, expires_at=expires_at
+            )
+            poap_token = access_token_crud.update_by_name(db, POAP_TOKEN_ID, update_obj)
+            logger.info('POAP token updated. Expires at: %s', poap_token.expires_at)
     return poap_token.value
 
 
@@ -230,6 +244,7 @@ class CRUDCitizen(
                             attendee_id=attendee.id,
                             attendee_name=attendee.name,
                             attendee_email=attendee.email,
+                            attendee_category=attendee.category,
                             poap_url=attendee.poap_url,
                             poap_name=poap_data['name'],
                             poap_description=poap_data['description'],

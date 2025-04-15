@@ -182,12 +182,14 @@ def test_get_my_poaps_success(client, test_citizen, test_popup_city, db_session)
     assert poap1['attendee_id'] == attendee1.id
     assert poap1['attendee_name'] == attendee1.name
     assert poap1['attendee_email'] == attendee1.email
+    assert poap1['attendee_category'] == attendee1.category
     assert poap1['poap_url'] == attendee1.poap_url
 
     poap2 = popup_data['poaps'][1]
     assert poap2['attendee_id'] == attendee3.id
     assert poap2['attendee_name'] == attendee3.name
     assert poap2['attendee_email'] == attendee3.email
+    assert poap2['attendee_category'] == attendee3.category
     assert poap2['poap_url'] == attendee3.poap_url
 
 
