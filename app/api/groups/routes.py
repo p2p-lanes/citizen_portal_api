@@ -68,6 +68,7 @@ def new_member(
         group_id=group_id,
         member=member,
         user=current_user,
+        update_existing=True,
     )
     return ApplicationWithAuth(
         **Application.model_validate(application).model_dump(),
