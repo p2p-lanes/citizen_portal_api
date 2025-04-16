@@ -29,16 +29,21 @@ class DistributedLock:
         Acquire a distributed lock using PostgreSQL advisory locks.
         If timeout_seconds is None, it will wait indefinitely.
         """
-        timeout_clause = (
-            f'TIMEOUT {timeout_seconds * 1000}' if timeout_seconds is not None else ''
-        )
         acquired = False
 
         try:
-            # Try to acquire the advisory lock
-            result = db.execute(
-                text(f'SELECT pg_try_advisory_lock({self.lock_id}) {timeout_clause}')
-            ).scalar()
+            # Try to acquire the advisory lock with timeout
+            if timeout_seconds is not None:
+                result = db.execute(
+                    text(
+                        f'SELECT pg_try_advisory_lock_with_timeout({self.lock_id}, {timeout_seconds * 1000})'
+                    )
+                ).scalar()
+            else:
+                # If no timeout specified, use regular advisory lock which waits indefinitely
+                result = db.execute(
+                    text(f'SELECT pg_try_advisory_lock({self.lock_id})')
+                ).scalar()
 
             acquired = bool(result)
             if not acquired:
