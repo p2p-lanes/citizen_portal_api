@@ -8,26 +8,6 @@ from app.core.config import settings
 from tests.conftest import get_auth_headers_for_citizen
 
 
-@pytest.fixture
-def test_group(db_session, test_popup_city, test_citizen):
-    """Create a test group with the test citizen as leader"""
-    group = Group(
-        name='Test Group',
-        slug='test-group',
-        description='Test Description',
-        discount_percentage=10.0,
-        popup_city_id=test_popup_city.id,
-        max_members=5,
-    )
-    db_session.add(group)
-    db_session.flush()
-
-    group_leader = GroupLeader(citizen_id=test_citizen.id, group_id=group.id)
-    db_session.add(group_leader)
-    db_session.commit()
-    return group
-
-
 def test_get_groups_success(client, auth_headers, test_group):
     """Test getting all groups where user is leader"""
     response = client.get('/groups', headers=auth_headers)

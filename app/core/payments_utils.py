@@ -168,6 +168,7 @@ def create_payment(
     )
 
     if application.group:
+        response.group_id = application.group.id
         discounted_amount = _calculate_price(
             db,
             obj.products,
@@ -178,7 +179,6 @@ def create_payment(
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
-            response.group_id = application.group.id
 
     if obj.coupon_code:
         coupon_code = coupon_code_crud.get_by_code(

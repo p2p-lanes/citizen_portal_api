@@ -2,6 +2,7 @@ import pytest
 from fastapi import status
 
 from app.api.applications.schemas import ApplicationStatus
+from app.api.payments.models import Payment
 from app.api.payments.schemas import PaymentSource
 from tests.conftest import get_auth_headers_for_citizen
 
@@ -79,6 +80,38 @@ def test_create_payment_success(
     call_args = mock_create_payment.call_args
     assert call_args.args[0] == data['amount']
     assert 'reference' in call_args.kwargs
+
+
+def test_create_payment_with_group_success(
+    client,
+    auth_headers,
+    test_payment_data,
+    test_application,
+    test_group,
+    test_products,
+    db_session,
+    mock_create_payment,
+):
+    from app.api.applications.models import Application
+
+    application = db_session.get(Application, test_payment_data['application_id'])
+    application.status = ApplicationStatus.ACCEPTED.value
+    application.scholarship_request = False
+    application.discount_assigned = 100
+    application.group_id = test_group.id
+    db_session.commit()
+
+    response = client.post('/payments/', json=test_payment_data, headers=auth_headers)
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data['application_id'] == test_payment_data['application_id']
+    assert data['amount'] == 0
+    assert data['currency'] == 'USD'
+    assert data['status'] == 'approved'
+
+    payment = db_session.get(Payment, data['id'])
+    assert payment.group_id == test_group.id
 
 
 def test_create_payment_application_not_accepted(

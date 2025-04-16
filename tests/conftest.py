@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.citizens.models import Citizen
 from app.api.coupon_codes.models import CouponCode
+from app.api.groups.models import Group, GroupLeader
 from app.api.popup_city.models import PopUpCity
 from app.api.webhooks.dependencies import get_webhook_cache
 from app.core.config import Environment, settings
@@ -212,6 +213,26 @@ def test_coupon_code(db_session, test_popup_city):
     db_session.add(coupon_code)
     db_session.commit()
     return coupon_code
+
+
+@pytest.fixture
+def test_group(db_session, test_popup_city, test_citizen):
+    """Create a test group with the test citizen as leader"""
+    group = Group(
+        name='Test Group',
+        slug='test-group',
+        description='Test Description',
+        discount_percentage=10.0,
+        popup_city_id=test_popup_city.id,
+        max_members=5,
+    )
+    db_session.add(group)
+    db_session.flush()
+
+    group_leader = GroupLeader(citizen_id=test_citizen.id, group_id=group.id)
+    db_session.add(group_leader)
+    db_session.commit()
+    return group
 
 
 @pytest.fixture
