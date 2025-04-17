@@ -48,9 +48,6 @@ def calculate_status(
     ]:
         return reviews_status, requested_a_discount
 
-    if application.auto_approved:
-        return schemas.ApplicationStatus.ACCEPTED, requested_a_discount
-
     discount_assigned = getattr(application, 'discount_assigned', None)
     missing_discount = requested_a_discount and discount_assigned is None
     if not requires_approval and not requested_a_discount:
