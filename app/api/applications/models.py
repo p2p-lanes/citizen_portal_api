@@ -160,6 +160,9 @@ class Application(Base):
         if not self._status or self._status != ApplicationStatus.ACCEPTED.value:
             return self._status
 
+        if self.group_id is not None:
+            return ApplicationStatus.ACCEPTED.value
+
         if self.requested_discount and self.discount_assigned is None:
             return ApplicationStatus.IN_REVIEW.value
 
