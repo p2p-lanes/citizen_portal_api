@@ -41,8 +41,9 @@ def get_attendees(
 def get_attendee(
     attendee_id: int,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    attendee = attendee_crud.get(db=db, id=attendee_id)
+    attendee = attendee_crud.get(db=db, id=attendee_id, user=current_user)
     if not attendee:
         raise HTTPException(status_code=404, detail='Attendee not found')
     return attendee
@@ -57,7 +58,9 @@ def update_attendee(
     current_user: TokenData = Depends(get_current_user),
 ):
     logger.info('Updating attendee: %s: %s', attendee_id, attendee)
-    updated_attendee = attendee_crud.update(db=db, id=attendee_id, obj=attendee)
+    updated_attendee = attendee_crud.update(
+        db=db, id=attendee_id, obj=attendee, user=current_user
+    )
     if not updated_attendee:
         raise HTTPException(status_code=404, detail='Attendee not found')
     return updated_attendee
@@ -71,7 +74,7 @@ def delete_attendee(
     current_user: TokenData = Depends(get_current_user),
 ):
     logger.info('Deleting attendee: %s', attendee_id)
-    result = attendee_crud.delete(db=db, id=attendee_id)
+    result = attendee_crud.delete(db=db, id=attendee_id, user=current_user)
     if not result:
         raise HTTPException(status_code=404, detail='Attendee not found')
     return {'detail': 'Attendee deleted successfully'}
