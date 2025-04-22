@@ -29,8 +29,11 @@ def get_attendees(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=100),
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    return attendee_crud.find(db=db, filters=filters, skip=skip, limit=limit)
+    return attendee_crud.find(
+        db=db, filters=filters, skip=skip, limit=limit, user=current_user
+    )
 
 
 # Get attendee by ID
