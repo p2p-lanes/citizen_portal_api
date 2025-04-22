@@ -345,9 +345,8 @@ class CRUDApplication(
 
         attendees = []
         for result in query_results:
-            application: models.Application = result[
-                0
-            ]  # The Application object is the first element
+            # The Application object is the first element
+            application: models.Application = result[0]
             main_attendee = application.attendees[0]
 
             check_in, check_out = None, None
