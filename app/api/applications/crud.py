@@ -332,7 +332,12 @@ class CRUDApplication(
                 .where(AttendeeProduct.attendee_id == Attendee.id)
                 .correlate(Attendee),
             )
-            .order_by(info_not_shared_order, desc(brings_kids_order))
+            .order_by(
+                info_not_shared_order,
+                desc(brings_kids_order),
+                models.Application.created_at,
+                models.Application.id,
+            )
         )
 
         total = base_query.count()
@@ -340,7 +345,9 @@ class CRUDApplication(
 
         attendees = []
         for result in query_results:
-            application = result[0]  # The Application object is the first element
+            application: models.Application = result[
+                0
+            ]  # The Application object is the first element
             main_attendee = application.attendees[0]
 
             check_in, check_out = None, None
