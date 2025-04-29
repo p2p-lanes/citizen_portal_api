@@ -44,3 +44,13 @@ def create_payment(
 ):
     logger.info('%s Creating payment: %s', current_user.email, payment)
     return payment_crud.create(db=db, obj=payment, user=current_user)
+
+
+@router.post('/preview', response_model=schemas.PaymentPreview)
+def preview_payment(
+    payment: schemas.PaymentCreate,
+    current_user: TokenData = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    logger.info('%s Previewing payment: %s', current_user.email, payment)
+    return payment_crud.preview(db=db, obj=payment, user=current_user)

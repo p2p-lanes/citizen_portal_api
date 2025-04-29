@@ -3,8 +3,8 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
-from app.api.attendees.models import Attendee, AttendeeProduct
 from app.api.applications.models import Application
+from app.api.attendees.models import Attendee, AttendeeProduct
 from app.api.base_crud import CRUDBase
 from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.email_logs.crud import email_log
@@ -49,6 +49,14 @@ class CRUDPayment(
             filters = filters or schemas.PaymentFilter()
             filters.citizen_id = user.citizen_id
         return super().find(db, skip, limit, filters)
+
+    def preview(
+        self,
+        db: Session,
+        obj: schemas.PaymentCreate,
+        user: Optional[TokenData] = None,
+    ) -> schemas.PaymentPreview:
+        return payments_utils.preview_payment(db, obj, user)
 
     def create(
         self,

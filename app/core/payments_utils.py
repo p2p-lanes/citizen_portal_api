@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ from app.api.applications.models import Application
 from app.api.applications.schemas import ApplicationStatus
 from app.api.coupon_codes.crud import coupon_code as coupon_code_crud
 from app.api.payments import schemas
-from app.api.payments.schemas import InternalPaymentCreate
+from app.api.payments.schemas import PaymentPreview
 from app.api.products.crud import product as product_crud
 from app.api.products.models import Product
 from app.api.products.schemas import ProductFilter
@@ -95,29 +95,34 @@ def _calculate_price(
     return standard_amount + supporter_amount + patreon_amount
 
 
-def create_payment(
-    db: Session,
-    obj: schemas.PaymentCreate,
-    user: TokenData,
-) -> InternalPaymentCreate:
-    application = application_crud.get(db, obj.application_id, user)
+def _validate_application(application: Application):
     if application.status != ApplicationStatus.ACCEPTED.value:
         logger.error(
-            'Application %s from %s is not accepted', obj.application_id, user.email
+            'Application %s from %s is not accepted', application.id, application.email
         )
         raise HTTPException(status_code=400, detail='Application is not accepted')
 
+
+def _get_simplefi_api_key(application: Application):
     if not (simplefi_api_key := application.popup_city.simplefi_api_key):
         logger.error(
             'Popup city %s does not have a Simplefi API key. %s',
             application.popup_city_id,
-            user.email,
+            application.email,
         )
         raise HTTPException(
             status_code=400, detail='Popup city does not have a Simplefi API key'
         )
 
-    requested_product_ids = [p.product_id for p in obj.products]
+    return simplefi_api_key
+
+
+def _validate_products(
+    db: Session,
+    requested_product_ids: List[int],
+    application: Application,
+    user: TokenData,
+) -> List[Product]:
     valid_products = product_crud.find(
         db=db,
         filters=ProductFilter(
@@ -137,25 +142,38 @@ def create_payment(
         )
         raise HTTPException(status_code=400, detail=err_msg)
 
+    return valid_products
+
+
+def _check_patreon_status(
+    application: Application,
+    valid_products: List[Product],
+    requested_product_ids: List[int],
+    edit_passes: bool,
+):
     application_products = [p for a in application.attendees for p in a.products]
     already_patreon = any(p.category == 'patreon' for p in application_products)
     is_buying_patreon = any(
         p.category == 'patreon' for p in valid_products if p.id in requested_product_ids
     )
 
-    if obj.edit_passes and is_buying_patreon and not already_patreon:
-        logger.error('Cannot edit passes for Patreon products. %s', user.email)
+    if edit_passes and is_buying_patreon and not already_patreon:
+        logger.error('Cannot edit passes for Patreon products. %s', application.email)
         raise HTTPException(
             status_code=400,
             detail='Cannot edit passes for Patreon products',
         )
 
-    response = InternalPaymentCreate(
-        products=obj.products,
-        application_id=application.id,
-        currency='USD',
-    )
+    return already_patreon
 
+
+def _apply_discounts(
+    response: PaymentPreview,
+    db: Session,
+    obj: schemas.PaymentCreate,
+    application: Application,
+    already_patreon: bool,
+):
     discount_assigned = application.discount_assigned or 0
 
     response.amount = _calculate_price(
@@ -201,6 +219,64 @@ def create_payment(
             response.discount_value = coupon_code.discount_value
 
     if response.amount <= 0:
+        response.amount = 0
+
+    return response
+
+
+def _prepare_payment_response(
+    db: Session,
+    obj: schemas.PaymentCreate,
+    user: TokenData,
+) -> Tuple[schemas.PaymentPreview, Application, List[Product]]:
+    application = application_crud.get(db, obj.application_id, user)
+    _validate_application(application)
+
+    requested_product_ids = [p.product_id for p in obj.products]
+    valid_products = _validate_products(db, requested_product_ids, application, user)
+
+    already_patreon = _check_patreon_status(
+        application,
+        valid_products,
+        requested_product_ids,
+        obj.edit_passes,
+    )
+
+    response = PaymentPreview(
+        products=obj.products,
+        application_id=application.id,
+        currency='USD',
+    )
+
+    response = _apply_discounts(
+        response,
+        db,
+        obj,
+        application,
+        already_patreon,
+    )
+
+    return response, application, valid_products
+
+
+def preview_payment(
+    db: Session,
+    obj: schemas.PaymentCreate,
+    user: TokenData,
+) -> schemas.PaymentPreview:
+    response, _, _ = _prepare_payment_response(db, obj, user)
+    return response
+
+
+def create_payment(
+    db: Session,
+    obj: schemas.PaymentCreate,
+    user: TokenData,
+) -> PaymentPreview:
+    response, application, valid_products = _prepare_payment_response(db, obj, user)
+    simplefi_api_key = _get_simplefi_api_key(application)
+
+    if response.amount <= 0:
         response.status = 'approved'
         if response.amount < 0:
             application.credit = -response.amount
@@ -213,7 +289,7 @@ def create_payment(
         return response
 
     # --- Create a lookup for product names --- #
-    valid_products_dict = {p.id: p for p in valid_products}
+    valid_products_names = {p.id: p.name for p in valid_products}
 
     reference = {
         'email': application.email,
@@ -221,13 +297,11 @@ def create_payment(
         'products': [
             {
                 'product_id': req_prod.product_id,
-                'name': valid_products_dict[
-                    req_prod.product_id
-                ].name,  # Get name from lookup
-                'quantity': req_prod.quantity,  # Get quantity from request
-                'attendee_id': req_prod.attendee_id,  # Get attendee_id from request
+                'name': valid_products_names[req_prod.product_id],
+                'quantity': req_prod.quantity,
+                'attendee_id': req_prod.attendee_id,
             }
-            for req_prod in obj.products  # Iterate over requested products
+            for req_prod in obj.products
         ],
     }
 

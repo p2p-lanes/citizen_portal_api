@@ -44,7 +44,7 @@ class PaymentCreate(BaseModel):
         return v
 
 
-class InternalPaymentCreate(PaymentCreate, PaymentBase):
+class PaymentPreview(PaymentCreate, PaymentBase):
     coupon_code_id: Optional[int] = None
     coupon_code: Optional[str] = None
     discount_value: Optional[float] = None
