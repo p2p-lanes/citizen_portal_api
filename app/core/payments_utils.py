@@ -187,16 +187,18 @@ def _apply_discounts(
 
     if application.group:
         response.group_id = application.group.id
+        discount_value = application.group.discount_percentage
         discounted_amount = _calculate_price(
             db,
             obj.products,
-            discount_value=application.group.discount_percentage,
+            discount_value=discount_value,
             application=application,
             already_patreon=already_patreon,
             edit_passes=obj.edit_passes,
         )
         if discounted_amount < response.amount:
             response.amount = discounted_amount
+            response.discount_value = discount_value
 
     if obj.coupon_code:
         coupon_code = coupon_code_crud.get_by_code(
