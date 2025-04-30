@@ -204,11 +204,11 @@ def _apply_discounts(
         response.group_id = application.group.id
         discount_value = application.group.discount_percentage
         discounted_amount = _calculate_price(
-            db,
-            obj.products,
+            standard_amount=standard_amount,
+            supporter_amount=supporter_amount,
+            patreon_amount=patreon_amount,
             discount_value=discount_value,
             application=application,
-            already_patreon=already_patreon,
             edit_passes=obj.edit_passes,
         )
         if discounted_amount < response.amount:
@@ -222,11 +222,11 @@ def _apply_discounts(
             popup_city_id=application.popup_city_id,
         )
         discounted_amount = _calculate_price(
-            db,
-            obj.products,
+            standard_amount=standard_amount,
+            supporter_amount=supporter_amount,
+            patreon_amount=patreon_amount,
             discount_value=coupon_code.discount_value,
             application=application,
-            already_patreon=already_patreon,
             edit_passes=obj.edit_passes,
         )
         if discounted_amount < response.amount:
