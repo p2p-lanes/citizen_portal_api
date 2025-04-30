@@ -45,6 +45,7 @@ class PaymentCreate(BaseModel):
 
 
 class PaymentPreview(PaymentCreate, PaymentBase):
+    original_amount: Optional[float] = None
     coupon_code_id: Optional[int] = None
     coupon_code: Optional[str] = None
     discount_value: Optional[float] = None

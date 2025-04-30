@@ -38,23 +38,17 @@ def _get_credit(application: Application, discount_value: float) -> float:
     return _get_discounted_price(total, discount_value) + application.credit
 
 
-def _calculate_price(
+def _calculate_amounts(
     db: Session,
     requested_products: List[schemas.PaymentProduct],
-    discount_value: float,
-    application: Application,
     already_patreon: bool,
-    edit_passes: bool,
-) -> float:
-    credit = _get_credit(application, discount_value) if edit_passes else 0
-    logger.info('Credit: %s', credit)
-    attendees = {}
-
+) -> Tuple[float, float, float]:
     product_ids = list(set(rp.product_id for rp in requested_products))
     product_models = {
         p.id: p for p in db.query(Product).filter(Product.id.in_(product_ids)).all()
     }
 
+    attendees = {}
     for req_prod in requested_products:
         product_model = product_models.get(req_prod.product_id)
         if not product_model:
@@ -83,10 +77,23 @@ def _calculate_price(
     standard_amount = sum(a['standard'] for a in attendees.values())
     supporter_amount = sum(a['supporter'] for a in attendees.values())
     patreon_amount = sum(a['patreon'] for a in attendees.values())
-
     logger.info('Standard amount: %s', standard_amount)
     logger.info('Supporter amount: %s', supporter_amount)
     logger.info('Patreon amount: %s', patreon_amount)
+
+    return standard_amount, supporter_amount, patreon_amount
+
+
+def _calculate_price(
+    standard_amount: float,
+    supporter_amount: float,
+    patreon_amount: float,
+    discount_value: float,
+    application: Application,
+    edit_passes: bool,
+) -> float:
+    credit = _get_credit(application, discount_value) if edit_passes else 0
+    logger.info('Credit: %s', credit)
 
     if standard_amount > 0:
         standard_amount = _get_discounted_price(standard_amount, discount_value)
@@ -173,15 +180,23 @@ def _apply_discounts(
     obj: schemas.PaymentCreate,
     application: Application,
     already_patreon: bool,
-):
+) -> PaymentPreview:
     discount_assigned = application.discount_assigned or 0
+    response.discount_value = discount_assigned
 
-    response.amount = _calculate_price(
+    standard_amount, supporter_amount, patreon_amount = _calculate_amounts(
         db,
         obj.products,
+        already_patreon,
+    )
+
+    response.original_amount = standard_amount + supporter_amount + patreon_amount
+    response.amount = _calculate_price(
+        standard_amount=standard_amount,
+        supporter_amount=supporter_amount,
+        patreon_amount=patreon_amount,
         discount_value=discount_assigned,
         application=application,
-        already_patreon=already_patreon,
         edit_passes=obj.edit_passes,
     )
 
