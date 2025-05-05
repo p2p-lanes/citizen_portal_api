@@ -42,6 +42,7 @@ class Settings:
     COUPON_API_KEY: str = os.getenv('COUPON_API_KEY')
     ATTENDEES_API_KEY: str = os.getenv('ATTENDEES_API_KEY')
     GROUPS_API_KEY: str = os.getenv('GROUPS_API_KEY')
+    CHECK_IN_API_KEY: str = os.getenv('CHECK_IN_API_KEY')
 
     APPLICATIONS_TABLE_ID: str = os.getenv('APPLICATIONS_TABLE_ID')
 

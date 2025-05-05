@@ -34,16 +34,19 @@ def setup_test_api_keys():
     # Save original values
     original_coupon_key = settings.COUPON_API_KEY
     original_groups_key = settings.GROUPS_API_KEY
+    original_check_in_key = settings.CHECK_IN_API_KEY
 
     # Set test values
     settings.COUPON_API_KEY = 'test_coupon_api_key'
     settings.GROUPS_API_KEY = 'test_groups_api_key'
+    settings.CHECK_IN_API_KEY = 'test_check_in_api_key'
 
     yield
 
     # Restore original values after tests
     settings.COUPON_API_KEY = original_coupon_key
     settings.GROUPS_API_KEY = original_groups_key
+    settings.CHECK_IN_API_KEY = original_check_in_key
 
 
 @pytest.fixture(scope='session')
@@ -196,6 +199,59 @@ def test_products(db_session):
     db_session.add(product2)
     db_session.commit()
     return product1, product2
+
+
+@pytest.fixture
+def test_application_with_attendee(db_session, test_citizen, test_popup_city):
+    """Create a test application with the test citizen"""
+    from app.api.applications.models import Application
+    from app.api.applications.schemas import ApplicationStatus
+
+    application = Application(
+        id=1,
+        first_name='Test',
+        last_name='User',
+        email=test_citizen.primary_email,
+        citizen_id=test_citizen.id,
+        popup_city_id=test_popup_city.id,
+        _status=ApplicationStatus.ACCEPTED.value,
+    )
+    db_session.add(application)
+    db_session.commit()
+    return application
+
+
+@pytest.fixture
+def test_attendee(db_session, test_application_with_attendee):
+    """Create a test attendee with check-in code"""
+    from app.api.attendees.models import Attendee
+
+    attendee = Attendee(
+        id=1,
+        application_id=test_application_with_attendee.id,
+        name='Test Attendee',
+        category='attendee',
+        email='test-attendee@example.com',
+        check_in_code='TEST123',
+    )
+    db_session.add(attendee)
+    db_session.commit()
+    return attendee
+
+
+@pytest.fixture
+def test_attendee_product(db_session, test_attendee, test_products):
+    """Link a product to the test attendee"""
+    from app.api.attendees.models import AttendeeProduct
+
+    product = test_products[0]
+    attendee_product = AttendeeProduct(
+        attendee_id=test_attendee.id,
+        product_id=product.id,
+    )
+    db_session.add(attendee_product)
+    db_session.commit()
+    return attendee_product
 
 
 @pytest.fixture

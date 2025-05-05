@@ -1,10 +1,12 @@
+import random
+import string
 from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.base_crud import CRUDBase
-from app.core.security import TokenData
+from app.core.security import SYSTEM_TOKEN, TokenData
 
 from . import models, schemas
 
@@ -13,7 +15,7 @@ class CRUDAttendees(
     CRUDBase[models.Attendee, schemas.InternalAttendeeCreate, schemas.AttendeeUpdate]
 ):
     def _check_permission(self, db_obj: models.Attendee, user: TokenData) -> bool:
-        return db_obj.application.citizen_id == user.citizen_id
+        return db_obj.application.citizen_id == user.citizen_id or user == SYSTEM_TOKEN
 
     def get_by_email(self, db: Session, email: str) -> List[models.Attendee]:
         return db.query(self.model).filter(self.model.email == email).all()
@@ -37,6 +39,7 @@ class CRUDAttendees(
         obj: schemas.AttendeeCreate,
         user: TokenData,
     ) -> models.Attendee:
+        obj.check_in_code = ''.join(random.choices(string.ascii_uppercase, k=5))
         return super().create(db, obj, user)
 
     def update(

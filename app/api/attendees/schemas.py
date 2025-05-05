@@ -32,6 +32,7 @@ class AttendeeCreate(BaseModel):
 
 class InternalAttendeeCreate(AttendeeCreate):
     application_id: int
+    check_in_code: Optional[str] = None
 
 
 class AttendeeUpdate(BaseModel):

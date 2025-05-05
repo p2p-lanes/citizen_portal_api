@@ -42,6 +42,7 @@ class Attendee(Base):
     category = Column(String, nullable=False)
     email = Column(String)
     poap_url = Column(String)
+    check_in_code = Column(String, nullable=False)
 
     application: Mapped['Application'] = relationship(
         'Application', back_populates='attendees'
@@ -58,7 +59,6 @@ class Attendee(Base):
     payment_products: Mapped[List['PaymentProduct']] = relationship(
         'PaymentProduct', back_populates='attendee'
     )
-  
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
