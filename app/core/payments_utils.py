@@ -175,14 +175,20 @@ def _check_patreon_status(
 
 
 def _apply_discounts(
-    response: PaymentPreview,
     db: Session,
     obj: schemas.PaymentCreate,
     application: Application,
     already_patreon: bool,
 ) -> PaymentPreview:
     discount_assigned = application.discount_assigned or 0
-    response.discount_value = discount_assigned
+
+    response = PaymentPreview(
+        products=obj.products,
+        application_id=application.id,
+        currency='USD',
+        edit_passes=obj.edit_passes,
+        discount_assigned=discount_assigned,
+    )
 
     standard_amount, supporter_amount, patreon_amount = _calculate_amounts(
         db,
@@ -235,9 +241,6 @@ def _apply_discounts(
             response.coupon_code = coupon_code.code
             response.discount_value = coupon_code.discount_value
 
-    if response.amount <= 0:
-        response.amount = 0
-
     return response
 
 
@@ -259,14 +262,7 @@ def _prepare_payment_response(
         obj.edit_passes,
     )
 
-    response = PaymentPreview(
-        products=obj.products,
-        application_id=application.id,
-        currency='USD',
-    )
-
     response = _apply_discounts(
-        response,
         db,
         obj,
         application,
