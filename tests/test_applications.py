@@ -100,6 +100,21 @@ def test_get_applications_success(client, test_application):
     assert data[0]['citizen_id'] == citizen_id
 
 
+def test_get_applications_with_attendees(client, test_attendee_product):
+    response = client.get('/applications/', headers=get_auth_headers_for_citizen(1))
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['attendees'] is not None
+    assert len(data[0]['attendees']) == 1
+    assert data[0]['attendees'][0]['category'] == 'main'
+    assert data[0]['attendees'][0]['products'] is not None
+    assert len(data[0]['attendees'][0]['products']) == 1
+    attendee_product = data[0]['attendees'][0]['products'][0]
+    assert attendee_product['id'] == test_attendee_product.product_id
+    assert attendee_product['quantity'] == test_attendee_product.quantity
+
+
 def test_get_application_by_id_success(client, test_application):
     citizen_id = test_application['citizen_id']
     headers = get_auth_headers_for_citizen(citizen_id)

@@ -38,6 +38,10 @@ class Product(ProductBase):
     )
 
 
+class ProductWithQuantity(Product):
+    quantity: int
+
+
 class ProductFilter(BaseModel):
     id: Optional[int] = None
     id_in: Optional[List[int]] = None

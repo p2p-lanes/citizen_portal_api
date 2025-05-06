@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from app.api.products.schemas import Product
+from app.api.products.schemas import ProductWithQuantity
 
 
 class AttendeeBase(BaseModel):
@@ -50,9 +50,17 @@ class AttendeeUpdate(BaseModel):
 
 class Attendee(AttendeeBase):
     id: int
-    products: List[Product]
+    products: List[ProductWithQuantity]
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode='before')
+    def check_products_with_quantity(self) -> 'Attendee':
+        """Ensure attendees' products include quantity information"""
+        if hasattr(self, 'get_product_quantity') and self.products is not None:
+            for product in self.products:
+                product.quantity = self.get_product_quantity(product.id)
+        return self
 
 
 class AttendeeFilter(BaseModel):

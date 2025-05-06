@@ -230,7 +230,7 @@ def test_attendee(db_session, test_application_with_attendee):
         id=1,
         application_id=test_application_with_attendee.id,
         name='Test Attendee',
-        category='attendee',
+        category='main',
         email='test-attendee@example.com',
         check_in_code='TEST123',
     )

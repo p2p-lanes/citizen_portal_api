@@ -62,3 +62,9 @@ class Attendee(Base):
 
     created_at = Column(DateTime, default=current_time)
     updated_at = Column(DateTime, default=current_time, onupdate=current_time)
+
+    def get_product_quantity(self, product_id: int) -> int:
+        for attendee_product in self.attendee_products:
+            if attendee_product.product_id == product_id:
+                return attendee_product.quantity
+        return 0
