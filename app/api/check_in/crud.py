@@ -13,7 +13,8 @@ class CRUDCheckIn(
         models.CheckIn, schemas.InternalCheckInCreate, schemas.InternalCheckInCreate
     ]
 ):
-    def _validate_attendee(self, attendee: models.Attendee, code: str) -> bool:
+    def _validate_attendee(self, db: Session, attendee_id: int, code: str) -> bool:
+        attendee = attendee_crud.get(db, attendee_id, user=SYSTEM_TOKEN)
         return bool(attendee.products) and attendee.check_in_code == code
 
     def get_check_in_by_attendee_id(
