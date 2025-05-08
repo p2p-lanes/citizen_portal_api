@@ -20,6 +20,10 @@ class CRUDAttendees(
     def get_by_email(self, db: Session, email: str) -> List[models.Attendee]:
         return db.query(self.model).filter(self.model.email == email).all()
 
+    def get_by_code(self, db: Session, code: str) -> models.Attendee:
+        """Get a single record by code with permission check."""
+        return db.query(self.model).filter(self.model.check_in_code == code).first()
+
     def find(
         self,
         db: Session,

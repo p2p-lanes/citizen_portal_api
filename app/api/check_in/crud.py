@@ -13,8 +13,7 @@ class CRUDCheckIn(
         models.CheckIn, schemas.InternalCheckInCreate, schemas.InternalCheckInCreate
     ]
 ):
-    def _validate_attendee(self, db: Session, attendee_id: int, code: str) -> bool:
-        attendee = attendee_crud.get(db, attendee_id, user=SYSTEM_TOKEN)
+    def _validate_attendee(self, attendee: models.Attendee, code: str) -> bool:
         return bool(attendee.products) and attendee.check_in_code == code
 
     def get_check_in_by_attendee_id(
@@ -31,14 +30,15 @@ class CRUDCheckIn(
     def new_qr_check_in(
         self,
         db: Session,
-        obj: schemas.NewQRCheckIn,
+        code: str,
     ) -> schemas.CheckInResponse:
-        if not self._validate_attendee(db, obj.attendee_id, obj.code):
+        attendee = attendee_crud.get_by_code(db, code)
+        if not attendee.products:
             return schemas.CheckInResponse(success=False, first_check_in=False)
 
-        existing_check_in = self.get_check_in_by_attendee_id(db, obj.attendee_id)
+        existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
         if existing_check_in:
-            existing_check_in.code = obj.code
+            existing_check_in.code = code
             existing_check_in.qr_check_in = True
             if not existing_check_in.qr_scan_timestamp:
                 existing_check_in.qr_scan_timestamp = current_time()
@@ -46,8 +46,8 @@ class CRUDCheckIn(
             return schemas.CheckInResponse(success=True, first_check_in=False)
 
         new_check_in = schemas.InternalCheckInCreate(
-            code=obj.code,
-            attendee_id=obj.attendee_id,
+            code=code,
+            attendee_id=attendee.id,
             qr_check_in=True,
             qr_scan_timestamp=current_time(),
         )

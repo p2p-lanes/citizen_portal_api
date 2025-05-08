@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -16,7 +17,6 @@ class InternalCheckInCreate(BaseModel):
 
 class NewCheckIn(BaseModel):
     code: str
-    attendee_id: int
 
     @field_validator('code')
     def validate_code(cls, v):
@@ -30,6 +30,7 @@ class NewQRCheckIn(NewCheckIn):
 
 
 class NewVirtualCheckIn(NewCheckIn):
+    attendee_id: int
     arrival_date: datetime
     departure_date: datetime
 
