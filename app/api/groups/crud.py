@@ -68,7 +68,6 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
         self,
         group: models.Group,
         citizen_id: int,
-        application: Optional[Application] = None,
         update_existing: bool = False,
     ) -> None:
         """Validate if a citizen can be added to a group"""
@@ -83,12 +82,12 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
             else:
                 return
 
-        leaders_ids = [leader.id for leader in group.leaders]
-        if citizen_id in leaders_ids:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Citizen is a leader',
-            )
+        # leaders_ids = [leader.id for leader in group.leaders]
+        # if citizen_id in leaders_ids:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail='Citizen is a leader',
+        #     )
 
         if group.max_members is not None and len(group.members) >= group.max_members:
             raise HTTPException(
@@ -175,7 +174,9 @@ class CRUDGroup(CRUDBase[models.Group, schemas.GroupBase, schemas.GroupBase]):
 
         application = citizen.get_application(group.popup_city_id)
 
-        self._validate_member_addition(group, citizen.id, application, update_existing)
+        self._validate_member_addition(
+            group=group, citizen_id=citizen.id, update_existing=update_existing
+        )
 
         if not application:
             new_application = ApplicationCreate(
