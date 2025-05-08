@@ -17,10 +17,15 @@ def _create_payment_request(body: dict, simplefi_api_key: str):
             timeout=10,
         )
 
-    response = post_request()
-    logger.info('Simplefi response status: %s', response.status_code)
+    try:
+        response = post_request()
+        logger.info('Simplefi response status: %s', response.status_code)
+        retry = response.status_code >= 400
+    except requests.exceptions.RequestException as e:
+        logger.error('Simplefi error: %s', e)
+        retry = True
 
-    if response.status_code >= 400:
+    if retry:
         logger.error('Simplefi error, retrying...')
         time.sleep(5)
         response = post_request()
