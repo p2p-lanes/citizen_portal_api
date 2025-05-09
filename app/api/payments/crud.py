@@ -201,6 +201,7 @@ class CRUDPayment(
         self._send_payment_confirmed_email(payment)
 
         logger.info('Payment %s approved', payment.id)
+        db.commit()
         return updated_payment
 
 
