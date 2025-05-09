@@ -111,15 +111,20 @@ class CRUDPayment(
             if db_payment.edit_passes:
                 self._clear_application_products(db, db_payment)
 
-            self._add_products_to_attendees(db_payment)
             if db_payment.coupon_code_id is not None:
                 coupon_code_crud.use_coupon_code(db, db_payment.coupon_code_id)
+
+            self._add_products_to_attendees(db_payment)
+            self._send_payment_confirmed_email(db_payment)
 
         db.commit()
         db.refresh(db_payment)
         return db_payment
 
     def _add_products_to_attendees(self, payment: models.Payment) -> None:
+        if not payment.products_snapshot:
+            return
+
         logger.info('Adding products to attendees')
         for product_snapshot in payment.products_snapshot:
             attendee = product_snapshot.attendee
@@ -139,6 +144,26 @@ class CRUDPayment(
         attendees_ids = {a.id for a in application.attendees}
         query = AttendeeProduct.attendee_id.in_(attendees_ids)
         db.query(AttendeeProduct).filter(query).delete(synchronize_session=False)
+
+    def _send_payment_confirmed_email(self, payment: models.Payment) -> None:
+        ticket_list = []
+        if payment.products_snapshot:
+            for product_snapshot in payment.products_snapshot:
+                attendee = product_snapshot.attendee
+                ticket_list.append(f'{product_snapshot.product_name} ({attendee.name})')
+
+        params = {
+            'ticket_list': ', '.join(ticket_list),
+            'first_name': payment.application.first_name,
+        }
+        email_log.send_mail(
+            receiver_mail=payment.application.citizen.primary_email,
+            event=EmailEvent.PAYMENT_CONFIRMED.value,
+            params=params,
+            popup_city=payment.application.popup_city,
+            entity_type='payment',
+            entity_id=payment.id,
+        )
 
     def approve_payment(
         self,
@@ -169,35 +194,11 @@ class CRUDPayment(
             db.flush()
             db.refresh(payment.application)
 
-        # Add new products to attendees
-        ticket_list = []
-        if payment.products_snapshot:
-            logger.info(
-                'Processing %s products for payment %s',
-                len(payment.products_snapshot),
-                payment.id,
-            )
-            self._add_products_to_attendees(payment)
-            for product_snapshot in payment.products_snapshot:
-                attendee = product_snapshot.attendee
-                ticket_list.append(f'{product_snapshot.product_name} ({attendee.name})')
-            db.commit()
-
         if payment.coupon_code_id is not None:
             coupon_code_crud.use_coupon_code(db, payment.coupon_code_id)
 
-        params = {
-            'ticket_list': ', '.join(ticket_list),
-            'first_name': payment.application.first_name,
-        }
-        email_log.send_mail(
-            receiver_mail=payment.application.citizen.primary_email,
-            event=EmailEvent.PAYMENT_CONFIRMED.value,
-            params=params,
-            popup_city=payment.application.popup_city,
-            entity_type='payment',
-            entity_id=payment.id,
-        )
+        self._add_products_to_attendees(payment)
+        self._send_payment_confirmed_email(payment)
 
         logger.info('Payment %s approved', payment.id)
         return updated_payment
