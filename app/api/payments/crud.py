@@ -156,9 +156,12 @@ class CRUDPayment(
             'ticket_list': ', '.join(ticket_list),
             'first_name': payment.application.first_name,
         }
+        event = EmailEvent.PAYMENT_CONFIRMED.value
+        if payment.edit_passes and payment.amount == 0:
+            event = EmailEvent.EDIT_PASSES_CONFIRMED.value
         email_log.send_mail(
             receiver_mail=payment.application.citizen.primary_email,
-            event=EmailEvent.PAYMENT_CONFIRMED.value,
+            event=event,
             params=params,
             popup_city=payment.application.popup_city,
             entity_type='payment',

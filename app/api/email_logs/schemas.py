@@ -18,6 +18,7 @@ class EmailEvent(str, Enum):
     AUTH_CITIZEN_PORTAL = 'auth-citizen-portal'
     AUTH_CITIZEN_BY_CODE = 'auth-citizen-by-code'
     PAYMENT_CONFIRMED = 'payment-confirmed'
+    EDIT_PASSES_CONFIRMED = 'edit-passes-confirmed'
 
 
 class EmailLogFilter(BaseModel):
