@@ -42,6 +42,7 @@ class CRUDCheckIn(
 
         existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
         if existing_check_in:
+            logger.info('Existing check-in for attendee %s', attendee.id)
             existing_check_in.code = code
             existing_check_in.qr_check_in = True
             if not existing_check_in.qr_scan_timestamp:
@@ -49,6 +50,7 @@ class CRUDCheckIn(
 
             return schemas.CheckInResponse(success=True, first_check_in=False)
 
+        logger.info('Creating new check-in for attendee %s', attendee.id)
         new_check_in = schemas.InternalCheckInCreate(
             code=code,
             attendee_id=attendee.id,
@@ -63,6 +65,7 @@ class CRUDCheckIn(
         db: Session,
         obj: schemas.NewVirtualCheckIn,
     ) -> schemas.CheckInResponse:
+        logger.info('Validating attendee %s with code %s', obj.attendee_id, obj.code)
         if not self._validate_attendee(db, obj.attendee_id, obj.code):
             return schemas.CheckInResponse(success=False, first_check_in=False)
 
