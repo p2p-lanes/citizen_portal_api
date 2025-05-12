@@ -7,7 +7,7 @@ def test_qr_check_in_success(client, test_attendee, test_attendee_product, db_se
     """Test successful QR check-in"""
     response = client.post(
         '/check-in/qr',
-        json={'attendee_id': test_attendee.id, 'code': test_attendee.check_in_code},
+        json={'code': test_attendee.check_in_code},
         headers={'x-api-key': 'test_check_in_api_key'},
     )
 
@@ -18,7 +18,7 @@ def test_qr_check_in_success(client, test_attendee, test_attendee_product, db_se
     # Test subsequent check-in
     response = client.post(
         '/check-in/qr',
-        json={'attendee_id': test_attendee.id, 'code': test_attendee.check_in_code},
+        json={'code': test_attendee.check_in_code},
         headers={'x-api-key': 'test_check_in_api_key'},
     )
 
@@ -40,7 +40,7 @@ def test_qr_check_in_invalid_api_key(client, test_attendee):
     """Test QR check-in with invalid API key"""
     response = client.post(
         '/check-in/qr',
-        json={'attendee_id': test_attendee.id, 'code': test_attendee.check_in_code},
+        json={'code': test_attendee.check_in_code},
         headers={'x-api-key': 'invalid_api_key'},
     )
 
@@ -52,7 +52,7 @@ def test_qr_check_in_invalid_code(client, test_attendee):
     """Test QR check-in with invalid check-in code"""
     response = client.post(
         '/check-in/qr',
-        json={'attendee_id': test_attendee.id, 'code': 'WRONG_CODE'},
+        json={'code': 'WRONG_CODE'},
         headers={'x-api-key': 'test_check_in_api_key'},
     )
 
@@ -64,7 +64,7 @@ def test_qr_check_in_no_products(client, test_attendee):
     """Test QR check-in with an attendee that has no products"""
     response = client.post(
         '/check-in/qr',
-        json={'attendee_id': test_attendee.id, 'code': test_attendee.check_in_code},
+        json={'code': test_attendee.check_in_code},
         headers={'x-api-key': 'test_check_in_api_key'},
     )
 

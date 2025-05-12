@@ -91,6 +91,7 @@ def test_create_payment_with_group_success(
     test_products,
     db_session,
     mock_create_payment,
+    mock_email_template,
 ):
     from app.api.applications.models import Application
 
@@ -469,6 +470,7 @@ def test_use_coupon_code(
     test_payment_data,
     test_products,
     mock_create_payment,
+    mock_email_template,
     db_session,
 ):
     test_coupon_code.current_uses = 0

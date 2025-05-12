@@ -34,7 +34,7 @@ class CRUDCheckIn(
         code: str,
     ) -> schemas.CheckInResponse:
         attendee = attendee_crud.get_by_code(db, code)
-        if not attendee.products:
+        if not attendee or not attendee.products:
             return schemas.CheckInResponse(success=False, first_check_in=False)
 
         existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
