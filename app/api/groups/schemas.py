@@ -9,13 +9,6 @@ from app.api.products.schemas import Product
 class GroupMemberValidatorMixin:
     """Mixin class for shared group member validators"""
 
-    @field_validator('telegram', 'organization', 'role', 'gender')
-    @classmethod
-    def validate_optional_fields(cls, value: Optional[str]) -> Optional[str]:
-        if value is not None and not value:
-            raise ValueError('This field cannot be empty if provided')
-        return value
-
     @field_validator('email')
     @classmethod
     def clean_email(cls, value: Optional[str]) -> Optional[str]:
