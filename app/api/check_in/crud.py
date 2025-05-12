@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.api.attendees.crud import attendee as attendee_crud
 from app.api.base_crud import CRUDBase
+from app.core.logger import logger
 from app.core.security import SYSTEM_TOKEN
 from app.core.utils import current_time
 
@@ -34,7 +35,9 @@ class CRUDCheckIn(
         code: str,
     ) -> schemas.CheckInResponse:
         attendee = attendee_crud.get_by_code(db, code)
+        logger.info('Attendee with code %s found: %s', code, attendee is not None)
         if not attendee or not attendee.products:
+            logger.error('Attendee with code %s not found or has no products', code)
             return schemas.CheckInResponse(success=False, first_check_in=False)
 
         existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
@@ -65,6 +68,7 @@ class CRUDCheckIn(
 
         existing_check_in = self.get_check_in_by_attendee_id(db, obj.attendee_id)
         if existing_check_in:
+            logger.info('Existing check-in for attendee %s', obj.attendee_id)
             existing_check_in.code = obj.code
             existing_check_in.virtual_check_in = True
             if not existing_check_in.virtual_check_in_timestamp:
@@ -75,6 +79,7 @@ class CRUDCheckIn(
 
             return schemas.CheckInResponse(success=True, first_check_in=False)
 
+        logger.info('Creating new check-in for attendee %s', obj.attendee_id)
         new_check_in = schemas.InternalCheckInCreate(
             code=obj.code,
             attendee_id=obj.attendee_id,
