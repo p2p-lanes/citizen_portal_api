@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.api.applications.crud import application as application_crud
 from app.api.attendees.crud import attendee as attendee_crud
 from app.api.base_crud import CRUDBase
 from app.core.logger import logger
@@ -65,33 +66,44 @@ class CRUDCheckIn(
         db: Session,
         obj: schemas.NewVirtualCheckIn,
     ) -> schemas.CheckInResponse:
-        logger.info('Validating attendee %s with code %s', obj.attendee_id, obj.code)
-        if not self._validate_attendee(db, obj.attendee_id, obj.code):
+        logger.info('New virtual check-in for application %s', obj.application_id)
+        application = application_crud.get(db, obj.application_id, user=SYSTEM_TOKEN)
+        if not application:
+            logger.error('Application %s not found', obj.application_id)
             return schemas.CheckInResponse(success=False, first_check_in=False)
 
-        existing_check_in = self.get_check_in_by_attendee_id(db, obj.attendee_id)
-        if existing_check_in:
-            logger.info('Existing check-in for attendee %s', obj.attendee_id)
-            existing_check_in.code = obj.code
-            existing_check_in.virtual_check_in = True
-            if not existing_check_in.virtual_check_in_timestamp:
-                existing_check_in.virtual_check_in_timestamp = current_time()
-
-            existing_check_in.arrival_date = obj.arrival_date
-            existing_check_in.departure_date = obj.departure_date
-
-            return schemas.CheckInResponse(success=True, first_check_in=False)
-
-        logger.info('Creating new check-in for attendee %s', obj.attendee_id)
-        new_check_in = schemas.InternalCheckInCreate(
-            code=obj.code,
-            attendee_id=obj.attendee_id,
-            arrival_date=obj.arrival_date,
-            departure_date=obj.departure_date,
-            virtual_check_in=True,
-            virtual_check_in_timestamp=current_time(),
+        main_attendee = next(
+            attendee
+            for attendee in application.attendees
+            if attendee.category == 'main'
         )
-        super().create(db, new_check_in, SYSTEM_TOKEN)
+        if main_attendee.check_in_code != obj.code:
+            logger.error('Invalid code for application %s', obj.application_id)
+            return schemas.CheckInResponse(success=False, first_check_in=False)
+
+        for attendee in application.attendees:
+            existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
+            if existing_check_in:
+                logger.info('Existing check-in for attendee %s', attendee.id)
+                existing_check_in.code = obj.code
+                existing_check_in.virtual_check_in = True
+                if not existing_check_in.virtual_check_in_timestamp:
+                    existing_check_in.virtual_check_in_timestamp = current_time()
+
+                existing_check_in.arrival_date = obj.arrival_date
+                existing_check_in.departure_date = obj.departure_date
+            else:
+                logger.info('Creating new check-in for attendee %s', attendee.id)
+                new_check_in = schemas.InternalCheckInCreate(
+                    code=obj.code,
+                    attendee_id=attendee.id,
+                    arrival_date=obj.arrival_date,
+                    departure_date=obj.departure_date,
+                    virtual_check_in=True,
+                    virtual_check_in_timestamp=current_time(),
+                )
+                super().create(db, new_check_in, SYSTEM_TOKEN)
+
         return schemas.CheckInResponse(success=True, first_check_in=True)
 
 
