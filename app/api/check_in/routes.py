@@ -31,7 +31,4 @@ def new_virtual_check_in(
 ):
     if x_api_key != settings.CHECK_IN_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API key')
-    return check_in_crud.new_virtual_check_in(
-        db=db,
-        obj=check_in,
-    )
+    return check_in_crud.new_virtual_check_in(db=db, obj=check_in)

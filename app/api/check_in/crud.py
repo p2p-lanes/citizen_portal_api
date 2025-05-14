@@ -44,12 +44,13 @@ class CRUDCheckIn(
         existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
         if existing_check_in:
             logger.info('Existing check-in for attendee %s', attendee.id)
+            first_check_in = existing_check_in.qr_check_in
             existing_check_in.code = code
             existing_check_in.qr_check_in = True
             if not existing_check_in.qr_scan_timestamp:
                 existing_check_in.qr_scan_timestamp = current_time()
 
-            return schemas.CheckInResponse(success=True, first_check_in=False)
+            return schemas.CheckInResponse(success=True, first_check_in=first_check_in)
 
         logger.info('Creating new check-in for attendee %s', attendee.id)
         new_check_in = schemas.InternalCheckInCreate(
