@@ -50,6 +50,8 @@ class CRUDCheckIn(
             if not existing_check_in.qr_scan_timestamp:
                 existing_check_in.qr_scan_timestamp = current_time()
 
+            db.commit()
+
             return schemas.CheckInResponse(success=True, first_check_in=first_check_in)
 
         logger.info('Creating new check-in for attendee %s', attendee.id)
