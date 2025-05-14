@@ -43,7 +43,8 @@ class CRUDAttendees(
         obj: schemas.AttendeeCreate,
         user: TokenData,
     ) -> models.Attendee:
-        obj.check_in_code = ''.join(random.choices(string.ascii_uppercase, k=5))
+        code = ''.join(random.choices(string.ascii_uppercase, k=4))
+        obj.check_in_code = 'EE25' + code
         return super().create(db, obj, user)
 
     def update(
