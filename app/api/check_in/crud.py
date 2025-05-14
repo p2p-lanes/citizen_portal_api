@@ -83,6 +83,9 @@ class CRUDCheckIn(
             return schemas.CheckInResponse(success=False, first_check_in=False)
 
         for attendee in application.attendees:
+            if not attendee.products:
+                continue
+
             existing_check_in = self.get_check_in_by_attendee_id(db, attendee.id)
             if existing_check_in:
                 logger.info('Existing check-in for attendee %s', attendee.id)
