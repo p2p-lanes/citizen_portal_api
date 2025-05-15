@@ -47,6 +47,8 @@ class ApplicationBaseCommon(BaseModel):
     github_profile: Optional[str] = None
     minting_link: Optional[str] = None
 
+    area_of_expertise: Optional[str] = None
+    preferred_dates: Optional[str] = None
     hackathon_interest: Optional[bool] = None
     host_session: Optional[str] = None
     personal_goals: Optional[str] = None

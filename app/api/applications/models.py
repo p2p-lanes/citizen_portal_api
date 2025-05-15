@@ -53,6 +53,8 @@ class Application(Base):
     github_profile = Column(String)
     minting_link = Column(String)
 
+    area_of_expertise = Column(String)
+    preferred_dates = Column(String)
     hackathon_interest = Column(Boolean)
     host_session = Column(String)
     personal_goals = Column(String)
