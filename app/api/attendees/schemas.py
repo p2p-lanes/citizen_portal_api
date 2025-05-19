@@ -63,6 +63,21 @@ class Attendee(AttendeeBase):
         return self
 
 
+class MinProductsData(BaseModel):
+    name: str
+    category: str
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+
+class AttendeeWithTickets(BaseModel):
+    name: str
+    email: str
+    category: str
+    popup_city: str
+    products: List[MinProductsData]
+
+
 class AttendeeFilter(BaseModel):
     id: Optional[int] = None
     application_id: Optional[int] = None

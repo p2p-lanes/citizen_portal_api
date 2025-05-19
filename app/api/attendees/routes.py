@@ -26,3 +26,37 @@ def search_attendees_by_email(
             status_code=404, detail='No attendees found with this email'
         )
     return attendees
+
+
+@router.get('/tickets', response_model=list[schemas.AttendeeWithTickets])
+def get_tickets(
+    email: str,
+    x_api_key: str = Header(...),
+    db: Session = Depends(get_db),
+):
+    if x_api_key != settings.ATTENDEES_TICKETS_API_KEY:
+        raise HTTPException(status_code=403, detail='Invalid API key')
+
+    attendees = attendee_crud.get_by_email(db=db, email=email)
+
+    response = []
+    for attendee in attendees:
+        application = attendee.application
+        response.append(
+            schemas.AttendeeWithTickets(
+                name=attendee.name,
+                email=attendee.email,
+                category=attendee.category,
+                popup_city=application.popup_city.name,
+                products=[
+                    schemas.MinProductsData(
+                        name=p.name,
+                        category=p.category,
+                        start_date=p.start_date,
+                        end_date=p.end_date,
+                    )
+                    for p in attendee.products
+                ],
+            )
+        )
+    return response
