@@ -8,6 +8,7 @@ from typing import List
 from urllib.parse import urlencode, urljoin
 
 import qrcode
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
@@ -173,7 +174,7 @@ def process_application_for_check_in_reminder(application: Application):
     logger.info('Sending email to %s', application.email)
     email_log_crud.send_mail(
         receiver_mail=application.email,
-        event=EmailEvent.CHECK_IN_REMINDER,
+        event=EmailEvent.CHECK_IN,
         popup_city=application.popup_city,
         params=params,
         entity_type='application',
@@ -268,11 +269,17 @@ def get_applications_for_check_in_reminder(db: Session):
         raise ValueError('Popup not found')
 
     popup_id = popup.id
-    excluded_application_ids = get_sent_emails_by_event(
-        db, EmailEvent.CHECK_IN_REMINDER
-    )
 
-    check_in_sent = get_sent_emails_by_event(db, EmailEvent.CHECK_IN)
+    check_in_sent_once = (
+        db.query(EmailLog.entity_id)
+        .filter(
+            EmailLog.event == EmailEvent.CHECK_IN.value,
+            EmailLog.entity_type == 'application',
+        )
+        .group_by(EmailLog.entity_id)
+        .having(func.count(EmailLog.entity_id) == 1)
+        .all()
+    )
 
     check_in_completed = (
         db.query(Attendee.application_id)
@@ -281,7 +288,7 @@ def get_applications_for_check_in_reminder(db: Session):
         .distinct()
         .all()
     )
-    excluded_application_ids.extend([row[0] for row in check_in_completed])
+    check_in_completed = [row[0] for row in check_in_completed]
 
     one_day_from_now = current_time() + timedelta(days=1)
 
@@ -291,8 +298,8 @@ def get_applications_for_check_in_reminder(db: Session):
         .join(Attendee.products)
         .filter(
             Application.popup_city_id == popup_id,
-            Application.id.notin_(excluded_application_ids),
-            Application.id.in_(check_in_sent),
+            Application.id.notin_(check_in_completed),
+            Application.id.in_(check_in_sent_once),
             Product.start_date <= one_day_from_now,
         )
         .distinct()

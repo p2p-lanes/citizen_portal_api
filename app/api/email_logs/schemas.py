@@ -20,7 +20,6 @@ class EmailEvent(str, Enum):
     PAYMENT_CONFIRMED = 'payment-confirmed'
     EDIT_PASSES_CONFIRMED = 'edit-passes-confirmed'
     CHECK_IN = 'check-in'
-    CHECK_IN_REMINDER = 'check-in-reminder'
 
 
 class EmailLogFilter(BaseModel):
