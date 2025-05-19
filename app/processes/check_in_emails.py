@@ -24,6 +24,8 @@ from app.core.database import SessionLocal
 from app.core.logger import logger
 from app.core.utils import current_time
 
+POPUP_CITY_SLUG = 'edge-esmeralda'
+
 
 def extract_week_number_from_slug(slug: str) -> int:
     match = re.search(r'-?(\d+)', slug)
@@ -169,7 +171,6 @@ def process_application_for_check_in_reminder(application: Application):
     params = {'virtual_checkin_url': virtual_checkin_url}
 
     logger.info('Sending email to %s', application.email)
-    return
     email_log_crud.send_mail(
         receiver_mail=application.email,
         event=EmailEvent.CHECK_IN_REMINDER,
@@ -204,8 +205,15 @@ def get_sent_emails_by_templates(db: Session, templates: List[str]):
     return [log[0] for log in logs]
 
 
+def has_recent_payment(application: Application):
+    return any(
+        p.created_at > current_time() - timedelta(hours=1) and p.status == 'approved'
+        for p in application.payments
+    )
+
+
 def get_applications_for_check_in(db: Session):
-    popup = db.query(PopUpCity).filter(PopUpCity.slug == 'edge-esmeralda').first()
+    popup = db.query(PopUpCity).filter(PopUpCity.slug == POPUP_CITY_SLUG).first()
     if not popup:
         raise ValueError('Popup not found')
 
@@ -237,24 +245,25 @@ def get_applications_for_check_in(db: Session):
     )
     logger.info('Total applications found: %s', len(applications))
 
+    applications = [a for a in applications if not has_recent_payment(a)]
+
     logger.info('Total applications to process: %s', len(applications))
     logger.info('Applications ids to process: %s', [a.id for a in applications])
 
     return applications
 
 
-def check_in_info_and_qr():
+def check_in_info_and_qr(db: Session):
     logger.info('Starting check in info and QR code generation')
-    with SessionLocal() as db:
-        applications = get_applications_for_check_in(db)
-        logger.info('Total applications to process: %s', len(applications))
-        for application in applications:
-            process_application_for_check_in(application)
+    applications = get_applications_for_check_in(db)
+    logger.info('Total applications to process: %s', len(applications))
+    for application in applications:
+        process_application_for_check_in(application)
     logger.info('Finished check in info and QR code generation')
 
 
 def get_applications_for_check_in_reminder(db: Session):
-    popup = db.query(PopUpCity).filter(PopUpCity.slug == 'edge-esmeralda').first()
+    popup = db.query(PopUpCity).filter(PopUpCity.slug == POPUP_CITY_SLUG).first()
     if not popup:
         raise ValueError('Popup not found')
 
@@ -291,19 +300,23 @@ def get_applications_for_check_in_reminder(db: Session):
     )
 
 
-def check_in_reminder():
+def check_in_reminder(db: Session):
     logger.info('Starting check in reminder')
-    with SessionLocal() as db:
-        applications = get_applications_for_check_in_reminder(db)
-        logger.info('Total applications to process: %s', len(applications))
-        for application in applications:
-            process_application_for_check_in_reminder(application)
+    applications = get_applications_for_check_in_reminder(db)
+    logger.info('Total applications to process: %s', len(applications))
+    for application in applications:
+        process_application_for_check_in_reminder(application)
     logger.info('Finished check in reminder')
 
 
+def main():
+    with SessionLocal() as db:
+        check_in_info_and_qr(db)
+        logger.info('Finished check in info and QR code generation')
+        check_in_reminder(db)
+        logger.info('Finished check in reminder. Sleeping for 1 hour...')
+        time.sleep(1 * 60 * 60)
+
+
 if __name__ == '__main__':
-    check_in_info_and_qr()
-    logger.info('Finished check in info and QR code generation')
-    check_in_reminder()
-    logger.info('Finished check in reminder. Sleeping for 1 hour...')
-    time.sleep(1 * 60 * 60)
+    main()
