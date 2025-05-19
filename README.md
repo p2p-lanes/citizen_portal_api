@@ -19,14 +19,14 @@ This repository contains the code for the **EdgeOS API**, a FastAPI-based applic
 Create a `.env` file in the root directory with the following content:
 
 ```env
-ENVIRONMENT=development # Or testing, production
+ENVIRONMENT=develop # Or testing, production
 
 DB_USERNAME=myuser
 DB_PASSWORD=secret
 DB_HOST=postgres # Should match the service name in docker-compose.yml
 DB_PORT=5432
-NOCO_DB_NAME=noco_db
 DB_NAME=edgeos_db
+NOCO_DB_NAME=noco_db
 
 BACKEND_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:3000
