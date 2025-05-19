@@ -41,6 +41,7 @@ class Settings:
     NOCODB_WEBHOOK_SECRET: str = os.getenv('NOCODB_WEBHOOK_SECRET')
     COUPON_API_KEY: str = os.getenv('COUPON_API_KEY')
     ATTENDEES_API_KEY: str = os.getenv('ATTENDEES_API_KEY')
+    ATTENDEES_TICKETS_API_KEY: str = os.getenv('ATTENDEES_TICKETS_API_KEY')
     GROUPS_API_KEY: str = os.getenv('GROUPS_API_KEY')
     CHECK_IN_API_KEY: str = os.getenv('CHECK_IN_API_KEY')
 
