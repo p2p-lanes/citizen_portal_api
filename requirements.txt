@@ -36,6 +36,7 @@ orjson==3.10.12
 packaging==24.2
 parso==0.8.4
 pexpect==4.9.0
+pillow==11.2.1
 platformdirs==4.3.6
 prompt_toolkit==3.0.48
 psutil==6.1.0
@@ -54,6 +55,7 @@ python-jose[cryptography]==3.3.0
 python-multipart==0.0.17
 PyYAML==6.0.2
 pyzmq==26.2.0
+qrcode==8.2
 requests==2.32.3
 rich==13.9.4
 shellingham==1.5.4

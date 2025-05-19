@@ -1,6 +1,6 @@
 import requests
 
-from app.api.email_logs.schemas import EmailStatus
+from app.api.email_logs.schemas import EmailAttachment, EmailStatus
 from app.core.config import Environment, settings
 from app.core.logger import logger
 
@@ -10,6 +10,7 @@ def send_mail(
     *,
     template: str,
     params: dict,
+    attachments: list[EmailAttachment] = None,
 ):
     logger.info('sending %s email to %s', template, receiver_mail)
     url = 'https://api.postmarkapp.com/email/withTemplate'
@@ -26,6 +27,9 @@ def send_mail(
     }
     if settings.EMAIL_REPLY_TO:
         data['ReplyTo'] = settings.EMAIL_REPLY_TO
+
+    if attachments:
+        data['Attachments'] = [a.model_dump(by_alias=True) for a in attachments]
 
     if settings.ENVIRONMENT == Environment.TEST:
         return {'status': EmailStatus.SUCCESS}

@@ -8,7 +8,12 @@ from sqlalchemy.orm import Session
 from app.api.applications.models import Application
 from app.api.base_crud import CRUDBase
 from app.api.email_logs import models, schemas
-from app.api.email_logs.schemas import EmailEvent, EmailLogCreate, EmailStatus
+from app.api.email_logs.schemas import (
+    EmailAttachment,
+    EmailEvent,
+    EmailLogCreate,
+    EmailStatus,
+)
 from app.api.popup_city.models import PopUpCity
 from app.core.config import settings
 from app.core.database import SessionLocal
@@ -77,12 +82,14 @@ class CRUDEmailLog(
         spice: Optional[str] = None,
         citizen_id: Optional[int] = None,
         popup_slug: Optional[str] = None,
+        attachments: Optional[List[EmailAttachment]] = None,
     ) -> dict:
         if send_at and not entity_type and not entity_id:
             raise ValueError(
                 'entity_type and entity_id are required if send_at is provided'
             )
 
+        params = params or {}
         if spice and citizen_id and popup_slug:
             params['ticketing_url'] = _generate_authenticate_url(
                 receiver_mail, spice, citizen_id, popup_slug
@@ -92,7 +99,6 @@ class CRUDEmailLog(
         status = EmailStatus.FAILED
         error_message = None
         template = event
-        params = params or {}
         if popup_city:
             template = popup_city.get_email_template(event)
             params.update(
@@ -117,6 +123,7 @@ class CRUDEmailLog(
                 receiver_mail,
                 template=template,
                 params=params,
+                attachments=attachments,
             )
             status = response_data['status']
             return response_data
@@ -136,6 +143,7 @@ class CRUDEmailLog(
                     error_message=error_message,
                     entity_type=entity_type,
                     entity_id=entity_id,
+                    attachments=attachments,
                 )
                 self.create(db, obj=email_log_data)
             except Exception as db_error:
