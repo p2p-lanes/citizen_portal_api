@@ -3,6 +3,7 @@ import json
 import re
 import time
 from datetime import datetime, timedelta
+from enum import Enum
 from io import BytesIO
 from typing import List
 from urllib.parse import urlencode, urljoin
@@ -26,6 +27,22 @@ from app.core.logger import logger
 from app.core.utils import current_time
 
 POPUP_CITY_SLUG = 'edge-esmeralda'
+
+
+class EmailTemplate(str, Enum):
+    WEEK1 = 'checkin-ee25-week1'
+    WEEK2 = 'checkin-ee25-week2'
+    WEEK3 = 'checkin-ee25-week3'
+    WEEK4 = 'checkin-ee25-week4'
+    DAY = 'checkin-ee25-day'
+
+    @classmethod
+    def all(cls):
+        return [t.value for t in cls]
+
+    @classmethod
+    def from_week_number(cls, week_number: int):
+        return cls[f'WEEK{week_number}']
 
 
 def extract_week_number_from_slug(slug: str) -> int:
@@ -98,12 +115,12 @@ def get_check_in_template(application: Application):
                 first_product = product
 
     if not first_product or first_product.category in ['month', 'patreon']:
-        return 'checkin-ee25-week1'
+        return EmailTemplate.WEEK1
     if first_product.category == 'week':
         week_number = extract_week_number_from_slug(first_product.slug)
-        return f'checkin-ee25-week{week_number}'
+        return EmailTemplate.from_week_number(week_number)
     if first_product.category == 'day':
-        return 'checkin-ee25-day'
+        return EmailTemplate.DAY
 
     raise ValueError(f'Invalid product category: {first_product.category}')
 
@@ -219,17 +236,11 @@ def get_applications_for_check_in(db: Session):
         raise ValueError('Popup not found')
 
     popup_id = popup.id
-    templates = [
-        'checkin-ee25-week1',
-        'checkin-ee25-week2',
-        'checkin-ee25-week3',
-        'checkin-ee25-week4',
-        'checkin-ee25-day',
-    ]
+    templates = EmailTemplate.all()
     excluded_application_ids = get_sent_emails_by_templates(db, templates)
     logger.info('Excluded application IDs: %s', excluded_application_ids)
 
-    today = datetime(2025, 5, 22, 0, 0, 0)
+    today = current_time()
     five_days_from_now = today + timedelta(days=5)
 
     applications = (
