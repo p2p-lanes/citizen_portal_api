@@ -200,22 +200,11 @@ def process_application_for_check_in_reminder(application: Application):
     )
 
 
-def get_sent_emails_by_event(db: Session, event: EmailEvent):
-    return (
-        db.query(EmailLog.entity_id.distinct())
-        .filter(
-            EmailLog.event == event.value,
-            EmailLog.entity_type == 'application',
-        )
-        .all()
-    )
-
-
-def get_sent_emails_by_templates(db: Session, templates: List[str]):
+def get_sent_checkin_emails(db: Session):
     logs = (
         db.query(EmailLog.entity_id.distinct())
         .filter(
-            EmailLog.template.in_(templates),
+            EmailLog.template.in_(EmailTemplate.all()),
             EmailLog.entity_type == 'application',
         )
         .all()
@@ -236,8 +225,7 @@ def get_applications_for_check_in(db: Session):
         raise ValueError('Popup not found')
 
     popup_id = popup.id
-    templates = EmailTemplate.all()
-    excluded_application_ids = get_sent_emails_by_templates(db, templates)
+    excluded_application_ids = get_sent_checkin_emails(db)
     logger.info('Excluded application IDs: %s', excluded_application_ids)
 
     today = current_time()
@@ -282,13 +270,13 @@ def get_applications_for_check_in_reminder(db: Session):
     popup_id = popup.id
 
     check_in_sent_once = (
-        db.query(EmailLog.entity_id)
+        db.query(EmailLog.entity_id, EmailLog.receiver_email)
         .filter(
-            EmailLog.event == EmailEvent.CHECK_IN.value,
+            EmailLog.template.in_(EmailTemplate.all()),
             EmailLog.entity_type == 'application',
         )
-        .group_by(EmailLog.entity_id)
-        .having(func.count(EmailLog.entity_id) == 1)
+        .group_by(EmailLog.entity_id, EmailLog.receiver_email)
+        .having(func.count() == 1)
         .all()
     )
 
