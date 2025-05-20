@@ -270,7 +270,7 @@ def get_applications_for_check_in_reminder(db: Session):
     popup_id = popup.id
 
     check_in_sent_once = (
-        db.query(EmailLog.entity_id, EmailLog.receiver_email)
+        db.query(EmailLog.entity_id)
         .filter(
             EmailLog.template.in_(EmailTemplate.all()),
             EmailLog.entity_type == 'application',
@@ -279,6 +279,7 @@ def get_applications_for_check_in_reminder(db: Session):
         .having(func.count() == 1)
         .all()
     )
+    check_in_sent_once = [row[0] for row in check_in_sent_once]
 
     check_in_completed = (
         db.query(Attendee.application_id)
