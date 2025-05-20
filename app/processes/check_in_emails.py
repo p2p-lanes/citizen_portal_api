@@ -191,8 +191,7 @@ def process_application_for_check_in_reminder(application: Application):
     logger.info('Sending email to %s', application.email)
     email_log_crud.send_mail(
         receiver_mail=application.email,
-        event=EmailEvent.CHECK_IN,
-        popup_city=application.popup_city,
+        event=get_check_in_template(application),
         params=params,
         entity_type='application',
         entity_id=application.id,
