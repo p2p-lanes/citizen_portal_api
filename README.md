@@ -1,5 +1,17 @@
 # EdgeOS API
 
+## Table of Contents
+- [Features](#features)
+- [Requirements](#requirements)
+- [Environment Variables](#environment-variables)
+- [Running the Application](#running-the-application)
+- [API Documentation](#api-documentation)
+- [Documentation](#documentation)
+- [Local Development](#local-development)
+- [Stopping the Application](#stopping-the-application)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
 This repository contains the code for the **EdgeOS API**, a FastAPI-based application that interacts with a PostgreSQL database. It also includes a **NocoDB** service for database management through an intuitive UI. The setup is containerized using Docker Compose for easy deployment.
 
 
@@ -82,9 +94,11 @@ Once the API is running, you can access the automatically generated documentatio
 These interfaces allow you to explore and interact with the available API endpoints.
 
 
-## Configuring NocoDB
+## Documentation
 
-For detailed steps on connecting NocoDB to the PostgreSQL database, please refer to the [NocoDB Setup Guide](docs/nocodb_setup.md).
+- [Full Documentation Index](docs/index.md)
+- [NocoDB Setup Guide](docs/nocodb_setup.md): Guide for connecting NocoDB to the PostgreSQL database.
+- [Email Management System](docs/email_management.md): Comprehensive documentation of the email system, including templates, scheduling, and automated processes.
 
 
 ## Local Development
