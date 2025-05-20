@@ -97,8 +97,11 @@ These interfaces allow you to explore and interact with the available API endpoi
 ## Documentation
 
 - [Full Documentation Index](docs/index.md)
-- [NocoDB Setup Guide](docs/nocodb_setup.md): Guide for connecting NocoDB to the PostgreSQL database.
+- [Architecture Overview](docs/architecture.md): System architecture, components, and data flow diagrams.
 - [Email Management System](docs/email_management.md): Comprehensive documentation of the email system, including templates, scheduling, and automated processes.
+- [NocoDB Setup Guide](docs/nocodb_setup.md): Guide for connecting NocoDB to the PostgreSQL database.
+- [NocoDB Webhooks](docs/nocodb_webhooks.md): Documentation on NocoDB webhook integration and event handling.
+- [Status Calculation](docs/status_calculation.md): Explanation of the status calculation algorithms and business logic.
 
 
 ## Local Development
