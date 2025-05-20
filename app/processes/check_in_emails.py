@@ -269,12 +269,12 @@ def get_applications_for_check_in_reminder(db: Session):
     popup_id = popup.id
 
     check_in_sent_once = (
-        db.query(EmailLog.entity_id)
+        db.query(EmailLog.receiver_email)
         .filter(
             EmailLog.template.in_(EmailTemplate.all()),
             EmailLog.entity_type == 'application',
         )
-        .group_by(EmailLog.entity_id, EmailLog.receiver_email)
+        .group_by(EmailLog.receiver_email)
         .having(func.count() == 1)
         .all()
     )
@@ -298,7 +298,7 @@ def get_applications_for_check_in_reminder(db: Session):
         .filter(
             Application.popup_city_id == popup_id,
             Application.id.notin_(check_in_completed),
-            Application.id.in_(check_in_sent_once),
+            Application.email.in_(check_in_sent_once),
             Product.start_date <= one_day_from_now,
         )
         .distinct()
