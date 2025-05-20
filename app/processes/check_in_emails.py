@@ -9,7 +9,7 @@ from typing import List
 from urllib.parse import urlencode, urljoin
 
 import qrcode
-from sqlalchemy import func
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.api.applications.models import Application
@@ -17,7 +17,8 @@ from app.api.attendees.models import Attendee
 from app.api.check_in.models import CheckIn
 from app.api.email_logs.crud import email_log as email_log_crud
 from app.api.email_logs.models import EmailLog
-from app.api.email_logs.schemas import EmailAttachment, EmailEvent
+from app.api.email_logs.schemas import EmailAttachment
+from app.api.payments.models import Payment
 from app.api.popup_city.models import PopUpCity
 from app.api.products.models import Product
 from app.core import models
@@ -208,13 +209,6 @@ def get_sent_checkin_emails(db: Session):
     return [log[0] for log in logs]
 
 
-def has_recent_payment(application: Application):
-    return any(
-        p.created_at > current_time() - timedelta(hours=1) and p.status == 'approved'
-        for p in application.payments
-    )
-
-
 def get_applications_for_check_in(db: Session):
     popup = db.query(PopUpCity).filter(PopUpCity.slug == POPUP_CITY_SLUG).first()
     if not popup:
@@ -226,6 +220,7 @@ def get_applications_for_check_in(db: Session):
 
     today = current_time()
     five_days_from_now = today + timedelta(days=5)
+    one_hour_ago = current_time() - timedelta(hours=1)
 
     applications = (
         db.query(Application)
@@ -235,15 +230,15 @@ def get_applications_for_check_in(db: Session):
             Application.popup_city_id == popup_id,
             Application.email.notin_(excluded_application_emails),
             Product.start_date <= five_days_from_now,
+            # <-- this line excludes any application that has at least one approved payment in the last hour
+            ~Application.payments.any(
+                and_(Payment.created_at > one_hour_ago, Payment.status == 'approved')
+            ),
         )
         .distinct()
         .all()
     )
     logger.info('Total applications found: %s', len(applications))
-
-    applications = [a for a in applications if not has_recent_payment(a)]
-
-    logger.info('Total applications to process: %s', len(applications))
     logger.info('Applications ids to process: %s', [a.id for a in applications])
 
     return applications
