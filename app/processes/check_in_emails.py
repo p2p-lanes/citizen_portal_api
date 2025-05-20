@@ -201,11 +201,8 @@ def process_application_for_check_in_reminder(application: Application):
 
 def get_sent_checkin_emails(db: Session):
     logs = (
-        db.query(EmailLog.entity_id.distinct())
-        .filter(
-            EmailLog.template.in_(EmailTemplate.all()),
-            EmailLog.entity_type == 'application',
-        )
+        db.query(EmailLog.receiver_email.distinct())
+        .filter(EmailLog.template.in_(EmailTemplate.all()))
         .all()
     )
     return [log[0] for log in logs]
@@ -224,8 +221,8 @@ def get_applications_for_check_in(db: Session):
         raise ValueError('Popup not found')
 
     popup_id = popup.id
-    excluded_application_ids = get_sent_checkin_emails(db)
-    logger.info('Excluded application IDs: %s', excluded_application_ids)
+    excluded_application_emails = get_sent_checkin_emails(db)
+    logger.info('Excluded application emails: %s', excluded_application_emails)
 
     today = current_time()
     five_days_from_now = today + timedelta(days=5)
@@ -236,7 +233,7 @@ def get_applications_for_check_in(db: Session):
         .join(Attendee.products)
         .filter(
             Application.popup_city_id == popup_id,
-            Application.id.notin_(excluded_application_ids),
+            Application.email.notin_(excluded_application_emails),
             Product.start_date <= five_days_from_now,
         )
         .distinct()
