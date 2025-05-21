@@ -10,6 +10,7 @@ class AttendeeBase(BaseModel):
     application_id: int
     name: str
     category: str
+    check_in_code: str
     email: Optional[str] = None
     group_id: Optional[int] = None
     created_at: Optional[datetime] = None
