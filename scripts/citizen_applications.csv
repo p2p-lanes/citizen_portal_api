@@ -1,0 +1,11 @@
+primary_email,first_name,last_name,telegram,gender,role,organization,app_role,app_gender,age,residence,local_resident,area_of_expertise
+sofia.martinez@test.com,Sofía,Martínez,@sofim,female,participant,InnovAr,designer,female,27,Buenos Aires,True,UX/UI Design
+emily.johnson@hotmail.com,Emily,Johnson,@emjay,female,participant,CodeForward,dev,female,30,Córdoba,False,Backend Development
+camila.rojas@test.com,Camila,Rojas,@camilitas,female,participant,CreaDigital,content,female,25,Rosario,False,Content Strategy
+michael.smith@test.com,Michael,Smith,@msmith,male,mentor,MentorBridge,coach,male,35,New York,False,Leadership Coaching
+valentina.suarez@test.com,Valentina,Suárez,@valesuarez,female,participant,DiseñaYa,designer,female,26,La Plata,True,Graphic Design
+alejandro.torres@outlook.com,Alejandro,Torres,@atorres,male,participant,CodeBase,dev,male,29,Mendoza,False,Full-Stack Development
+rachel.adams@test.com,Rachel,Adams,@rachelad,female,organizer,OpenWorks,logistics,female,32,Boston,False,Event Planning
+bruno.fernandez@test.com,Bruno,Fernández,@brunofer,male,participant,DevBA,dev,male,28,Buenos Aires,True,Mobile Development
+marina.luna@test.com,Marina,Luna,@marinal,female,participant,EcoTech,researcher,female,24,Tigre,True,Environmental Research
+ivan.rios@test.com,Iván,Ríos,@ivanrios,male,participant,HackSociety,dev,male,31,San Isidro,False,Cybersecurity
