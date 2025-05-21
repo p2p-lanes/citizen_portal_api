@@ -42,21 +42,31 @@ def get_tickets(
     response = []
     for attendee in attendees:
         application = attendee.application
+        products = [
+            schemas.MinProductsData(
+                name=p.name,
+                category=p.category,
+                start_date=p.start_date,
+                end_date=p.end_date,
+            )
+            for p in attendee.products
+        ]
+        if not products and application.popup_city.applications_imported:
+            products = [
+                schemas.MinProductsData(
+                    name=f'Ticket for {application.popup_city.name}',
+                    category='ticket',
+                    start_date=application.popup_city.start_date,
+                    end_date=application.popup_city.end_date,
+                )
+            ]
         response.append(
             schemas.AttendeeWithTickets(
                 name=attendee.name,
                 email=attendee.email,
                 category=attendee.category,
                 popup_city=application.popup_city.name,
-                products=[
-                    schemas.MinProductsData(
-                        name=p.name,
-                        category=p.category,
-                        start_date=p.start_date,
-                        end_date=p.end_date,
-                    )
-                    for p in attendee.products
-                ],
+                products=products,
             )
         )
     return response
