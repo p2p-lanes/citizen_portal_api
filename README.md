@@ -137,6 +137,31 @@ To stop and remove all running containers, run:
 docker compose down
 ```
 
+
+## Connecting to the Database with psql
+
+You can connect to the PostgreSQL database using the `psql` command-line tool. Make sure you have `psql` installed on your machine.
+
+Use the following command (replace values as needed, or use those from your `.env` file):
+
+```bash
+psql -h localhost -p 5432 -U myuser -d edgeos_db
+```
+
+- `-h`: Hostname (use `localhost` if running locally, or `postgres` if inside the Docker network)
+- `-p`: Port (default is `5432`)
+- `-U`: Username (from your `.env`, e.g., `myuser`)
+- `-d`: Database name (from your `.env`, e.g., `edgeos_db`)
+
+You will be prompted for the password (from your `.env`, e.g., `secret`).
+
+If you are running the command from inside the API or NocoDB container, use `postgres` as the host:
+
+```bash
+docker compose exec postgres psql -U myuser -d edgeos_db
+```
+
+
 ## Notes
 - The API service includes a health check endpoint at `/`.
 - NocoDB allows you to manage the database through a web interface.
