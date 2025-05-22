@@ -1,0 +1,34 @@
+name,slug,price,compare_price,popup_city_id,description,category,attendee_category,start_date,end_date,is_active,exclusive
+Week 3,week3-spouse,800.0,907.0,4,This reflects the price of a week ticket if you buy last minute.,week,spouse,2025-06-08 03:00:00,2025-06-15 03:00:00,True,False
+Month,month-spouse,2229.0,2470.0,4,This reflects the price of a month-long ticket if you buy last minute.,month,spouse,2025-05-24 03:00:00,2025-06-21 03:00:00,True,False
+Weekday (single day),weekday,190.0,,4,"Single day tickets, Monday to Friday.",day,main,2025-05-24 15:00:00,2025-06-20 03:00:00,True,False
+Week 4,week4,1070.0,1210.0,4,This reflects the price of a week ticket if you buy last minute.,week,main,2025-06-15 15:00:00,2025-06-21 03:00:00,True,False
+Week 2,week2-spouse,816.0,907.0,4,This reflects the price of a week ticket if you buy last minute.,week,spouse,2025-06-01 03:00:00,2025-06-08 03:00:00,True,False
+Weekday (single day),weekday-spouse,190.0,,4,"Single day tickets, Monday to Friday.",day,spouse,2025-05-24 03:00:00,2025-06-20 03:00:00,True,False
+Weekend (full),weekend-full,445.0,,4,"Single day tickets, Monday to Friday.",day,main,2025-05-24 15:00:00,2025-05-27 03:00:00,True,False
+Week 1 without Camp,week1-teen,436.0,484.0,4,This reflects the price of a week ticket if you buy last minute.,week,teen,2025-05-24 03:00:00,2025-06-01 03:00:00,True,False
+Patron Pass,patreon,7500.0,7500.0,4,,patreon,main,2025-05-24 15:00:00,2025-06-21 03:00:00,True,False
+Week 2 without Camp,week2-teen,436.0,484.0,4,This reflects the price of a week ticket if you buy last minute.,week,teen,2025-05-24 03:00:00,2025-06-01 03:00:00,True,False
+Week 3 without Camp,week3-teen,436.0,484.0,4,This reflects the price of a week ticket if you buy last minute.,week,teen,2025-05-24 03:00:00,2025-06-01 03:00:00,True,False
+Week 4 without Camp,week4-teen,436.0,484.0,4,This reflects the price of a week ticket if you buy last minute.,week,teen,2025-05-24 03:00:00,2025-06-01 03:00:00,True,False
+Weekend (single day),weekend-day,245.0,,4,"Single day tickets, Monday to Friday.",day,main,2025-05-24 15:00:00,2025-05-31 03:00:00,True,False
+Camp - Month,month-kid-camp,1200.0,1200.0,4,,month,kid,2025-05-24 03:00:00,2025-06-21 03:00:00,True,False
+Camp - Week 4,week4-kid-camp,450.0,450.0,4,,week,kid,2025-06-15 03:00:00,2025-06-21 03:00:00,True,False
+Camp - Week 3,week3-kid-camp,450.0,450.0,4,,week,kid,2025-06-08 03:00:00,2025-06-15 03:00:00,True,False
+Camp - Week 2,week2-kid-camp,450.0,450.0,4,,week,kid,2025-06-01 03:00:00,2025-06-08 03:00:00,True,False
+Camp - Week 1,week1-kid-camp,450.0,450.0,4,,week,kid,2025-05-24 03:00:00,2025-06-01 03:00:00,True,False
+Weekend (full),weekend-full-spouse,445.0,,4,"Single day tickets, Monday to Friday.",day,spouse,2025-05-24 03:00:00,2025-05-27 03:00:00,True,False
+Week 1,week1,1090.0,1210.0,4,This reflects the price of a week ticket if you buy last minute.,week,main,2025-05-24 15:00:00,2025-06-01 03:00:00,True,False
+Weekend (single day),weekend-day-spouse,245.0,,4,"Single day tickets, Monday to Friday.",day,spouse,2025-05-24 03:00:00,2025-05-31 03:00:00,True,False
+Week 3,week3,1090.0,1210.0,4,This reflects the price of a week ticket if you buy last minute.,week,main,2025-06-08 15:00:00,2025-06-15 03:00:00,True,False
+Month without Camp,month-teen-no-camp,1188.0,1315.0,4,This reflects the price of a month-long ticket if you buy last minute.,month,teen,2025-05-24 03:00:00,2025-06-21 03:00:00,True,False
+Week 4,week4-spouse,816.0,907.0,4,This reflects the price of a week ticket if you buy last minute.,week,spouse,2025-06-15 03:00:00,2025-06-21 03:00:00,True,False
+Month without Camp,month-kid-no-camp-1,0.0,0.0,4,,week,kid,2025-05-24 03:00:00,2025-06-21 03:00:00,True,False
+Single Day,day-kid,20.0,,4,"Valid for one day, any day of the week.",day,kid,2025-05-24 03:00:00,2025-06-20 03:00:00,True,False
+Single Day,day-teen,20.0,,4,Day Pass valid for any day of the week.,day,teen,2025-05-24 03:00:00,2025-06-20 03:00:00,True,False
+Full Weekend,weekend-teen,40.0,,4,,day,teen,2025-05-24 03:00:00,2025-05-27 03:00:00,True,False
+Full Weekend,weekend-kid,40.0,,4,Valid for Saturday and Sunday.,day,kid,2025-05-24 03:00:00,2025-05-27 03:00:00,True,False
+Week 1,week1-spouse,816.0,907.0,4,This reflects the price of a week ticket if you buy last minute.,week,spouse,2025-05-24 03:00:00,2025-06-01 03:00:00,True,False
+FREE ,month-kid-free-1,0.0,0.0,4,,week,baby,2025-05-24 03:00:00,2025-06-21 03:00:00,True,False
+Month,month,2965.0,3290.0,4,This reflects the price of a month-long ticket if you buy last minute.,month,main,2025-05-24 15:00:00,2025-06-21 03:00:00,True,False
+Week 2,week2,1090.0,1210.0,4,This reflects the price of a week ticket if you buy last minute.,week,main,2025-06-01 15:00:00,2025-06-08 03:00:00,True,False

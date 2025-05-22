@@ -1,5 +1,17 @@
 # EdgeOS API
 
+## Table of Contents
+- [Features](#features)
+- [Requirements](#requirements)
+- [Environment Variables](#environment-variables)
+- [Running the Application](#running-the-application)
+- [API Documentation](#api-documentation)
+- [Documentation](#documentation)
+- [Local Development](#local-development)
+- [Stopping the Application](#stopping-the-application)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
 This repository contains the code for the **EdgeOS API**, a FastAPI-based application that interacts with a PostgreSQL database. It also includes a **NocoDB** service for database management through an intuitive UI. The setup is containerized using Docker Compose for easy deployment.
 
 
@@ -8,6 +20,11 @@ This repository contains the code for the **EdgeOS API**, a FastAPI-based applic
 - **PostgreSQL** for relational database storage.
 - **NocoDB** as a no-code interface for managing the database.
 - Docker Compose for simplified multi-container deployment.
+
+
+## Related Projects
+
+- **EdgeOS Frontend**: [https://github.com/p2p-lanes/EdgeOS](https://github.com/p2p-lanes/EdgeOS)
 
 
 ## Requirements
@@ -82,9 +99,14 @@ Once the API is running, you can access the automatically generated documentatio
 These interfaces allow you to explore and interact with the available API endpoints.
 
 
-## Configuring NocoDB
+## Documentation
 
-For detailed steps on connecting NocoDB to the PostgreSQL database, please refer to the [NocoDB Setup Guide](docs/nocodb_setup.md).
+- [Full Documentation Index](docs/index.md)
+- [Architecture Overview](docs/architecture.md): System architecture, components, and data flow diagrams.
+- [Email Management System](docs/email_management.md): Comprehensive documentation of the email system, including templates, scheduling, and automated processes.
+- [NocoDB Setup Guide](docs/nocodb_setup.md): Guide for connecting NocoDB to the PostgreSQL database.
+- [NocoDB Webhooks](docs/nocodb_webhooks.md): Documentation on NocoDB webhook integration and event handling.
+- [Status Calculation](docs/status_calculation.md): Explanation of the status calculation algorithms and business logic.
 
 
 ## Local Development
@@ -113,12 +135,56 @@ If you want to run the API locally for development purposes without Docker:
 This will start the API on `http://localhost:8000` and automatically reload when you save code changes.
 
 
+## Populating the Database with Demo Data
+
+To quickly populate the database with demo data (including a sample PopUpCity, citizens, and applications), you can use the provided script:
+
+**Using Docker Compose:**
+
+```bash
+docker compose exec api python scripts/populate_demo_data.py
+```
+
+**Or, if running locally:**
+
+```bash
+python scripts/populate_demo_data.py
+```
+
+The script will prompt for confirmation before making changes. It loads data from the `scripts/popup_city.json`, `scripts/email_templates.csv`, and `scripts/citizen_applications.csv` files. Make sure these files are present and properly configured before running the script.
+
+
 ## Stopping the Application
 To stop and remove all running containers, run:
 
 ```bash
 docker compose down
 ```
+
+
+## Connecting to the Database with psql
+
+You can connect to the PostgreSQL database using the `psql` command-line tool. Make sure you have `psql` installed on your machine.
+
+Use the following command (replace values as needed, or use those from your `.env` file):
+
+```bash
+psql -h localhost -p 5432 -U myuser -d edgeos_db
+```
+
+- `-h`: Hostname (use `localhost` if running locally, or `postgres` if inside the Docker network)
+- `-p`: Port (default is `5432`)
+- `-U`: Username (from your `.env`, e.g., `myuser`)
+- `-d`: Database name (from your `.env`, e.g., `edgeos_db`)
+
+You will be prompted for the password (from your `.env`, e.g., `secret`).
+
+If you are running the command from inside the API or NocoDB container, use `postgres` as the host:
+
+```bash
+docker compose exec postgres psql -U myuser -d edgeos_db
+```
+
 
 ## Notes
 - The API service includes a health check endpoint at `/`.

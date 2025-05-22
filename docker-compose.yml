@@ -12,6 +12,8 @@ services:
     restart: always
     volumes:
       - "nc_data:/usr/app/data"
+    env_file:
+      - .env
 
   api:
     build: .

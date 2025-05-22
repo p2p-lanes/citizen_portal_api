@@ -1,0 +1,10 @@
+event,template,frequency
+application-received,application-received-ee25,
+application-approved,application-approved-ee25,
+application-approved-scholar,application-approved-scholar-ee25,
+application-approved-nonscholar,application-approved-nonscholar-ee25,
+application-rejected,application-rejected-ee25,
+payment-confirmed,payment-confirmed-ee25,
+application-in-draft,application-in-draft-ee25,"12h,2d,7d,14d,30d,60d"
+purchase-reminder,purchase-reminder-ee25,"3d,7d,14d,30d"
+edit-passes-confirmed,edited-passes-ee25,

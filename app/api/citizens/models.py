@@ -54,7 +54,7 @@ class Citizen(Base):
     role = Column(String)
     residence = Column(String)
     social_media = Column(String)
-    age = Column(Integer)
+    age = Column(String)
     gender = Column(String)
     eth_address = Column(String)
     referral = Column(String)
