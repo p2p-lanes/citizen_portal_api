@@ -92,6 +92,7 @@ class Application(Base):
     lina_review = Column(String)
 
     auto_approved = Column(Boolean, nullable=False, default=False)
+    not_attending = Column(Boolean, nullable=False, default=False)
 
     credit = Column(Float, default=0, nullable=False)
 
