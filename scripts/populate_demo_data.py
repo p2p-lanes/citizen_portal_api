@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 from datetime import datetime, timedelta
 
@@ -18,27 +19,21 @@ from app.core.database import SessionLocal, create_db
 from app.core.security import SYSTEM_TOKEN, TokenData
 
 
-def create_popup_city(db: Session):
+def load_popup_city_json(json_path: str):
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    # Parse date strings to datetime objects
+    data['start_date'] = datetime.fromisoformat(data['start_date'])
+    data['end_date'] = datetime.fromisoformat(data['end_date'])
+    return data
+
+
+def create_popup_city(db: Session, popup_data: dict):
     print('Creating PopUpCity...')
-    popup_data = popup_schemas.PopUpCityCreate(
-        name='Demo City',
-        slug='demo-city',
-        tagline='A city for demo purposes',
-        location='DemoLand',
-        passes_description='Demo pass',
-        image_url='https://example.com/demo.png',
-        start_date=datetime.now(),
-        end_date=datetime.now() + timedelta(days=30),
-        clickable_in_portal=True,
-        visible_in_portal=True,
-        requires_approval=False,
-        allows_spouse=True,
-        allows_children=True,
-        allows_coupons=True,
-    )
-    popup_city = popup_crud.popup_city.get_by_name(db, popup_data.name)
+    popup_schema = popup_schemas.PopUpCityCreate(**popup_data)
+    popup_city = popup_crud.popup_city.get_by_name(db, popup_schema.name)
     if not popup_city:
-        popup_city = popup_crud.popup_city.create(db, popup_data, SYSTEM_TOKEN)
+        popup_city = popup_crud.popup_city.create(db, popup_schema, SYSTEM_TOKEN)
     print(f'PopUpCity created: {popup_city.id} - {popup_city.name}')
     return popup_city
 
@@ -153,7 +148,7 @@ def main():
         print(f'Username: {settings.DB_USERNAME}')
 
         print('\nThis script will create demo data in the database:')
-        print('1. A PopUpCity named "Demo City"')
+        print('1. A PopUpCity from popup_city.json')
         print('2. Citizens and Applications from citizen_applications.csv')
 
         confirm = input('Do you want to proceed? (y/N): ')
@@ -161,7 +156,9 @@ def main():
             print('Operation cancelled')
             return
 
-        popup_city = create_popup_city(db)
+        json_path = os.path.join(os.path.dirname(__file__), 'popup_city.json')
+        popup_data = load_popup_city_json(json_path)
+        popup_city = create_popup_city(db, popup_data)
         populate_email_templates(db, popup_city)
         csv_path = os.path.join(os.path.dirname(__file__), 'citizen_applications.csv')
         process_citizens_and_applications(db, popup_city, csv_path)

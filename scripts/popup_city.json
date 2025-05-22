@@ -1,0 +1,16 @@
+{
+    "name": "Demo City",
+    "slug": "demo-city",
+    "tagline": "A city for demo purposes",
+    "location": "DemoLand",
+    "passes_description": "Demo pass",
+    "image_url": "https://cdn.prod.website-files.com/67475a01312f8d8225a6b46e/6751bf69596d8a1e1a99d291_half-banner-min.jpg",
+    "start_date": "2024-06-01T00:00:00",
+    "end_date": "2024-07-01T00:00:00",
+    "clickable_in_portal": true,
+    "visible_in_portal": true,
+    "requires_approval": false,
+    "allows_spouse": true,
+    "allows_children": true,
+    "allows_coupons": true
+}
