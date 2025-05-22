@@ -13,6 +13,8 @@ from app.api.citizens.models import Citizen
 from app.api.popup_city import crud as popup_crud
 from app.api.popup_city import schemas as popup_schemas
 from app.api.popup_city.models import EmailTemplate, PopUpCity
+from app.api.products import crud as product_crud
+from app.api.products import schemas as product_schemas
 from app.core import models
 from app.core.config import settings
 from app.core.database import SessionLocal, create_db
@@ -136,6 +138,74 @@ def process_citizens_and_applications(
         create_application_for_citizen(db, row, citizen, popup_city)
 
 
+def read_products_csv(csv_path: str):
+    with open(csv_path, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        return list(reader)
+
+
+def parse_bool(val):
+    if isinstance(val, bool):
+        return val
+    if val is None or val == '':
+        return False
+    return str(val).strip().lower() == 'true'
+
+
+def parse_float(val):
+    try:
+        return float(val) if val not in (None, '', 'None') else None
+    except Exception:
+        return None
+
+
+def parse_datetime(val):
+    if not val or val.strip() == '':
+        return None
+    try:
+        # Try ISO first
+        return datetime.fromisoformat(val)
+    except Exception:
+        # Try common format
+        try:
+            return datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
+        except Exception:
+            return None
+
+
+def populate_products(db: Session, popup_city: PopUpCity):
+    print('Populating products...')
+    csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
+    rows = read_products_csv(csv_path)
+    for row in rows:
+        # Check if product already exists by slug and popup_city_id
+        exists = (
+            db.query(product_crud.models.Product)
+            .filter_by(slug=row['slug'], popup_city_id=popup_city.id)
+            .first()
+        )
+        if exists:
+            print(f'Product already exists: {row["slug"]} ({popup_city.id})')
+            continue
+        product_data = product_schemas.ProductCreate(
+            name=row.get('name'),
+            slug=row.get('slug'),
+            price=parse_float(row.get('price')),
+            compare_price=parse_float(row.get('compare_price')),
+            popup_city_id=popup_city.id,
+            description=row.get('description') or None,
+            category=row.get('category') or None,
+            attendee_category=row.get('attendee_category') or None,
+            start_date=parse_datetime(row.get('start_date')),
+            end_date=parse_datetime(row.get('end_date')),
+            is_active=parse_bool(row.get('is_active')),
+            exclusive=parse_bool(row.get('exclusive')),
+        )
+        product_crud.product.create(db, product_data, SYSTEM_TOKEN)
+        print(f'Added product: {row.get("name")} ({row.get("slug")})')
+    db.commit()
+
+
 def main():
     create_db()
     db = SessionLocal()
@@ -160,6 +230,7 @@ def main():
         popup_data = load_popup_city_json(json_path)
         popup_city = create_popup_city(db, popup_data)
         populate_email_templates(db, popup_city)
+        populate_products(db, popup_city)
         csv_path = os.path.join(os.path.dirname(__file__), 'citizen_applications.csv')
         process_citizens_and_applications(db, popup_city, csv_path)
     finally:
