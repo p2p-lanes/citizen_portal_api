@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code into the container
 COPY app app
+COPY scripts scripts
 COPY main.py main.py
 
 # Expose the FastAPI default port
