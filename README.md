@@ -22,6 +22,11 @@ This repository contains the code for the **EdgeOS API**, a FastAPI-based applic
 - Docker Compose for simplified multi-container deployment.
 
 
+## Related Projects
+
+- **EdgeOS Frontend**: [https://github.com/p2p-lanes/EdgeOS](https://github.com/p2p-lanes/EdgeOS)
+
+
 ## Requirements
 - [Docker](https://www.docker.com/get-started) installed on your machine.
 - [Docker Compose](https://docs.docker.com/compose/) installed.
@@ -128,6 +133,25 @@ If you want to run the API locally for development purposes without Docker:
     (Assuming your FastAPI instance is named `app` in `main.py`)
 
 This will start the API on `http://localhost:8000` and automatically reload when you save code changes.
+
+
+## Populating the Database with Demo Data
+
+To quickly populate the database with demo data (including a sample PopUpCity, citizens, and applications), you can use the provided script:
+
+**Using Docker Compose:**
+
+```bash
+docker compose exec api python scripts/populate_demo_data.py
+```
+
+**Or, if running locally:**
+
+```bash
+python scripts/populate_demo_data.py
+```
+
+The script will prompt for confirmation before making changes. It loads data from the `scripts/popup_city.json`, `scripts/email_templates.csv`, and `scripts/citizen_applications.csv` files. Make sure these files are present and properly configured before running the script.
 
 
 ## Stopping the Application
