@@ -52,7 +52,12 @@ class CRUDCheckIn(
 
             db.commit()
 
-            return schemas.CheckInResponse(success=True, first_check_in=first_check_in)
+            return schemas.CheckInResponse(
+                success=True,
+                first_check_in=first_check_in,
+                name=attendee.name,
+                scan_time=existing_check_in.qr_scan_timestamp,
+            )
 
         logger.info('Creating new check-in for attendee %s', attendee.id)
         new_check_in = schemas.InternalCheckInCreate(
@@ -62,7 +67,12 @@ class CRUDCheckIn(
             qr_scan_timestamp=current_time(),
         )
         super().create(db, new_check_in, SYSTEM_TOKEN)
-        return schemas.CheckInResponse(success=True, first_check_in=True)
+        return schemas.CheckInResponse(
+            success=True,
+            first_check_in=True,
+            name=attendee.name,
+            scan_time=new_check_in.qr_scan_timestamp,
+        )
 
     def new_virtual_check_in(
         self,

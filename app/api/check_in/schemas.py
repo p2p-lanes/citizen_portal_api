@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -37,3 +38,5 @@ class NewVirtualCheckIn(NewCheckIn):
 class CheckInResponse(BaseModel):
     success: bool
     first_check_in: bool
+    name: Optional[str] = None
+    scan_time: Optional[datetime] = None
