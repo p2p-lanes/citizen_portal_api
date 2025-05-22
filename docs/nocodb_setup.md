@@ -42,6 +42,22 @@ Click on **"Test Connection"** to confirm the setup, then click **"Add Source"**
 
 Your database is now connected to NocoDB, and you can start managing your data through the NocoDB interface. 
 
+### 8. API Token Generation
+
+To use NocoDB's REST APIs, you'll need to generate an API token:
+
+1. Navigate to **"Team & Settings"** in the left sidebar
+2. Click on **"Tokens"** in the settings menu
+3. Click **"Create new token"**
+4. Give your token a descriptive name
+5. Copy the generated token
+6. Open your `.env` file and add the token as:
+   ```
+   NOCODB_TOKEN=your_copied_token
+   ```
+
+Keep this token secure as it provides access to your NocoDB instance through the API.
+
 ---
 
 **← [Back to Documentation Index](./index.md)**
